@@ -1,0 +1,18 @@
+<coverage>
+  <packages>
+    <package name="sample">
+      <classes>
+        <class filename="src/math.c">
+          <lines>
+            <line number="5" hits="1"/>
+            <line number="6" hits="1"/>
+            <line number="10" hits="2"/>
+            <line number="11" hits="2"/>
+            <line number="15" hits="0"/>
+            <line number="16" hits="0"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>

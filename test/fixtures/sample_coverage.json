@@ -1,0 +1,46 @@
+{
+  "version": "2.0.1",
+  "data": [
+    {
+      "files": [
+        {
+          "filename": "src/math.cpp",
+          "lines": [
+            {
+              "line_number": 5,
+              "count": 1
+            },
+            {
+              "line_number": 6,
+              "count": 1
+            },
+            {
+              "line_number": 10,
+              "count": 3,
+              "regions": [
+                {
+                  "count": 3,
+                  "covered": true
+                }
+              ]
+            },
+            {
+              "line_number": 11,
+              "count": 2
+            },
+            {
+              "line_number": 15,
+              "count": 0,
+              "regions": [
+                {
+                  "count": 0,
+                  "covered": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

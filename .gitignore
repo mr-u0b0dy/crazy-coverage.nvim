@@ -1,0 +1,13 @@
+*.swp
+*.swo
+*~
+.DS_Store
+.netrwhist
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+coverage.lcov
+coverage.json
+coverage.xml
