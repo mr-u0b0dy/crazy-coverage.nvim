@@ -21,9 +21,14 @@ We welcome contributions! Here's how you can help:
 
 ### Running Tests
 ```bash
-# Tests coming soon - currently manual testing
-# Test with your local Neovim installation:
-# nvim --cmd "set rtp+=/path/to/crazy-coverage.nvim"
+# Quick tests (no dependencies)
+nvim --headless -u NONE +"lua dofile('test/run_tests.lua')" +qa
+
+# Plenary/Busted tests (with organized suites)
+nvim --headless --noplugin -u NONE -c "set rtp+=$(pwd)" +"lua require('test.spec.lcov_parser_spec')" +qa
+
+# Format detection tests
+nvim --headless -u NONE +"lua dofile('test/test_format_detection.lua')" +qa
 ```
 
 ## Areas for Contribution

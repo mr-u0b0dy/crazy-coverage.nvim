@@ -38,7 +38,7 @@ crazy-coverage.nvim uses a modular, two-layer architecture:
 ## Directory Structure
 
 ```
-lua/coverage/
+lua/crazy-coverage/
 ├── init.lua                # Main API and command setup
 ├── config.lua              # Configuration and defaults
 ├── utils.lua               # Format detection, file I/O
@@ -48,6 +48,10 @@ lua/coverage/
 │   ├── lcov.lua            # LCOV parser
 │   ├── llvm_json.lua       # LLVM JSON parser
 │   └── cobertura.lua       # Cobertura XML parser
+└── converter/
+    ├── gcov.lua            # GCOV converter
+    └── llvm_profdata.lua   # LLVM Profdata converter
+```
 └── converter/
     ├── gcov.lua            # GCOV → LCOV converter
     └── llvm_profdata.lua   # Profdata → JSON converter

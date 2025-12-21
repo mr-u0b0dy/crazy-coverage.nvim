@@ -7,7 +7,6 @@
 The fastest way to test without installing plenary:
 
 ```bash
-cd nvim-crazy-coverage
 nvim --headless -u NONE +"lua dofile('test/run_tests.lua')" +qa
 ```
 
@@ -21,7 +20,7 @@ For comprehensive testing with organized test suites:
 # Requires plenary.nvim plugin installed
 nvim --headless --noplugin -u NONE \
   -c "set rtp+=$(pwd)" \
-  -c "luafile test/spec/run_tests.lua" +qa!
+  -c "lua require('test.spec.lcov_parser_spec')" +qa!
 ```
 
 Or use the bash wrapper:
@@ -33,18 +32,19 @@ bash test/spec/run_tests.sh
 
 ```
 test/
-├── spec/                      # Plenary/Busted suites
-│   ├── lcov_parser_spec.lua   # LCOV parser tests
-│   ├── json_parser_spec.lua   # LLVM JSON parser tests
+├── spec/                         # Plenary/Busted test suites
+│   ├── lcov_parser_spec.lua      # LCOV parser tests
 │   ├── cobertura_parser_spec.lua # Cobertura XML parser tests
-│   ├── edge_cases_spec.lua    # Multi-file, empty, detection
-│   ├── run_tests.lua          # Plenary test runner
-│   └── run_tests.sh           # Bash wrapper
-├── fixtures/                  # Sample coverage files
-├── run_tests.lua              # Legacy headless tests
-├── run_parse.lua              # Parser demo
-├── run_render_demo.lua        # Renderer demo
-└── test_format_detection.lua  # Format detection test
+│   ├── json_parser_spec.lua      # LLVM JSON parser tests
+│   ├── edge_cases_spec.lua       # Multi-file, empty, detection
+│   ├── validation_spec.lua       # Input validation tests
+│   ├── run_tests.lua             # Plenary test runner
+│   └── run_tests.sh              # Bash wrapper
+├── fixtures/                     # Sample coverage files (all formats)
+├── run_tests.lua                 # Quick headless tests
+├── test_format_detection.lua     # Format detection tests
+├── run_parse.lua                 # Parser demo
+└── run_render_demo.lua           # Renderer demo
 ```
 
 ### Test Fixtures
