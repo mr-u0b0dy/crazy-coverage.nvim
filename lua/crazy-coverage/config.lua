@@ -16,6 +16,9 @@ local M = {
 
   -- Show branch summary per line (taken/total)
   show_branch_summary = false,
+  
+  -- Enable line highlighting
+  enable_line_hl = true,
 
   -- Auto load coverage when opening file
   auto_load = true,
@@ -95,26 +98,38 @@ end
 
 --- Setup highlight groups
 function M.setup_highlights()
-  local ns_id = vim.api.nvim_create_namespace("coverage")
-
-  vim.api.nvim_set_hl(ns_id, M.covered_hl, {
-    fg = "#00ff00",
-    bg = nil,
-    bold = false,
+  -- Define highlights in global namespace (0)
+  vim.api.nvim_set_hl(0, M.covered_hl, {
+    bg = "#00AA00",
+    fg = "NONE",
+    bold = true,
+    default = false,
   })
 
-  vim.api.nvim_set_hl(ns_id, M.uncovered_hl, {
-    fg = "#ff0000",
-    bg = nil,
-    bold = false,
+  vim.api.nvim_set_hl(0, M.uncovered_hl, {
+    bg = "#FF0000",
+    fg = "NONE",
+    bold = true,
+    default = false,
   })
 
-  vim.api.nvim_set_hl(ns_id, M.partial_hl, {
-    fg = "#ffaa00",
-    bg = nil,
-    bold = false,
+  vim.api.nvim_set_hl(0, M.partial_hl, {
+    bg = "#FFAA00",
+    fg = "NONE",
+    bold = true,
+    default = false,
   })
 end
+
+-- Re-apply highlights when colorscheme changes so custom groups persist
+local _hl_augroup = vim.api.nvim_create_augroup("CrazyCoverageHighlights", { clear = true })
+vim.api.nvim_create_autocmd("ColorScheme", {
+  group = _hl_augroup,
+  pattern = "*",
+  callback = function()
+    M.setup_highlights()
+  end,
+})
 
 --- Merge user config
 ---@param user_config table
@@ -132,6 +147,7 @@ function M.set_config(user_config)
     show_hit_count = true,
     show_percentage = true,
     show_branch_summary = true,
+    enable_line_hl = true,
     auto_load = true,
     coverage_patterns = true,
     project_markers = true,

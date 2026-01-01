@@ -3,7 +3,7 @@ local M = {}
 local config = require("crazy-coverage.config")
 local utils = require("crazy-coverage.utils")
 
-M.namespace = vim.api.nvim_create_namespace("coverage")
+M.namespace = vim.api.nvim_create_namespace("coverage_plugin")
 
 --- Clear all coverage marks from a buffer
 ---@param buf number|nil
@@ -50,6 +50,7 @@ function M.render(coverage_data)
     end
   end
   
+  vim.notify("Coverage rendered for " .. rendered_count .. " file(s)", vim.log.levels.INFO)
   return rendered_count
 end
 
@@ -66,11 +67,16 @@ function M.render_file(buf, file_entry)
   end
   
   if not file_entry.lines or type(file_entry.lines) ~= "table" then
+    vim.notify("No line data for " .. (file_entry.path or "unknown"), vim.log.levels.WARN)
     return -- No line data, skip silently
   end
 
   -- Clear previous marks for this buffer
   M.clear_buffer(buf)
+  
+  vim.notify("Rendering " .. #file_entry.lines .. " lines for " .. file_entry.path, vim.log.levels.INFO)
+  vim.notify("enable_line_hl = " .. tostring(config.enable_line_hl), vim.log.levels.INFO)
+  vim.notify("Highlight groups: " .. config.covered_hl .. ", " .. config.uncovered_hl .. ", " .. config.partial_hl, vim.log.levels.INFO)
 
   -- Create a map of line coverage for fast lookup
   local line_map = {}
@@ -97,6 +103,8 @@ function M.render_file(buf, file_entry)
 
     -- Determine highlight group
     local hl_group = covered and config.covered_hl or config.uncovered_hl
+    
+    vim.notify("Line " .. line_num .. ": " .. hl_group .. " (hit_count=" .. hit_count .. ")", vim.log.levels.DEBUG)
 
     -- Build virtual text
     local virt_text = {}
@@ -131,16 +139,42 @@ function M.render_file(buf, file_entry)
       end
     end
 
-    -- Place extmark on line
+    -- Place extmark on line with both virtual text and line highlighting
     if #virt_text > 0 then
-      vim.api.nvim_buf_set_extmark(buf, M.namespace, line_num - 1, 0, {
+      local extmark_opts = {
         virt_text = virt_text,
         virt_text_pos = config.virt_text_pos,
-        priority = 100,
+        priority = 200,
         hl_eol = false,
+        strict = false,
+      }
+      
+      -- Add line highlighting if enabled
+      if config.enable_line_hl then
+        extmark_opts.line_hl_group = hl_group
+      end
+      
+      local ok, err = pcall(vim.api.nvim_buf_set_extmark, buf, M.namespace, line_num - 1, 0, extmark_opts)
+      if not ok then
+        vim.notify("Failed to set extmark on line " .. line_num .. ": " .. tostring(err), vim.log.levels.ERROR)
+      end
+    elseif config.enable_line_hl then
+      -- If no virtual text but line highlighting is enabled
+      local ok2, err2 = pcall(vim.api.nvim_buf_set_extmark, buf, M.namespace, line_num - 1, 0, {
+        line_hl_group = hl_group,
+        priority = 200,
+        strict = false,
       })
+      if not ok2 then
+        vim.notify("Failed to set extmark (line_hl) on line " .. line_num .. ": " .. tostring(err2), vim.log.levels.ERROR)
+      end
     end
   end
+  
+  -- Verify highlights after rendering
+  local hl_covered = vim.api.nvim_get_hl(0, { name = config.covered_hl })
+  local hl_uncovered = vim.api.nvim_get_hl(0, { name = config.uncovered_hl })
+  vim.notify("Highlight check - Covered: " .. vim.inspect(hl_covered) .. " | Uncovered: " .. vim.inspect(hl_uncovered), vim.log.levels.INFO)
 end
 
 --- Set up highlight groups
