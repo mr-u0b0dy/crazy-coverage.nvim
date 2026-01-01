@@ -45,6 +45,17 @@ Then add to your config:
 require("crazy-coverage").setup()
 ```
 
+### AstroVim Configuration
+
+For AstroVim users, check out the complete example configuration with keybindings at:
+[examples/astrovim-config.lua](examples/astrovim-config.lua)
+
+Place this file in `~/.config/nvim/lua/plugins/crazy-coverage.lua` to get started with:
+- **`<leader>l`** prefix for coverage management (load, toggle, enable, disable, clear)
+- **`{c/}c`** to navigate between covered lines
+- **`{p/}p`** to navigate between partially covered lines
+- **`{u/}u`** to navigate between uncovered lines
+
 ## Quick Start
 
 ```lua
@@ -56,6 +67,11 @@ require("crazy-coverage").setup()
 
 -- Clear coverage
 :CoverageClear
+
+-- Navigate through coverage
+:CoverageNextUncovered   " Jump to next uncovered line
+:CoveragePrevCovered     " Jump to previous covered line
+:CoverageNextPartial     " Jump to next partially covered line
 ```
 
 ## Configuration
