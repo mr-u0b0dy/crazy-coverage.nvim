@@ -15,7 +15,6 @@ return {
         show_hit_count = true,         -- Show hit counts inline
         show_branch_summary = false,   -- Show branch coverage as b:taken/total
         auto_load = true,              -- Auto-load coverage on file open
-        enable_line_hl = false,        -- Enable line highlighting (optional)
       })
     end,
     keys = {

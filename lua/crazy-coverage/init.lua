@@ -106,7 +106,7 @@ end
 
 --- Toggle coverage overlay on/off
 function M.toggle()
-  if M.state.enabled then
+  if state.is_enabled then
     M.disable()
   else
     M.enable()
