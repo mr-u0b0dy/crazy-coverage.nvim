@@ -122,7 +122,6 @@ function M.enable()
       vim.notify("Failed to render coverage: " .. tostring(err), vim.log.levels.ERROR)
       return
     end
-    vim.notify("Coverage overlay enabled", vim.log.levels.INFO)
   else
     vim.notify("No coverage data loaded. Use :CoverageLoad first", vim.log.levels.WARN)
   end
@@ -132,7 +131,6 @@ end
 function M.disable()
   state.is_enabled = false
   renderer.clear_all()
-  vim.notify("Coverage overlay disabled", vim.log.levels.INFO)
 end
 
 --- Clear all coverage data
@@ -141,7 +139,6 @@ function M.clear()
   state.coverage_data = nil
   state.coverage_file = nil
   state.is_enabled = false
-  vim.notify("Coverage cleared", vim.log.levels.INFO)
 end
 
 --- Get coverage info for the current buffer
@@ -257,8 +254,6 @@ local function navigate_to_coverage(direction, filter)
   if found_line then
     vim.api.nvim_win_set_cursor(0, { found_line, 0 })
     vim.cmd("normal! zz") -- Center the screen
-  else
-    vim.notify("No matching coverage line found", vim.log.levels.INFO)
   end
 end
 

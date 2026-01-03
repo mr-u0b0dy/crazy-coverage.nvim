@@ -50,7 +50,6 @@ function M.render(coverage_data)
     end
   end
   
-  vim.notify("Coverage rendered for " .. rendered_count .. " file(s)", vim.log.levels.INFO)
   return rendered_count
 end
 
@@ -73,10 +72,6 @@ function M.render_file(buf, file_entry)
 
   -- Clear previous marks for this buffer
   M.clear_buffer(buf)
-  
-  vim.notify("Rendering " .. #file_entry.lines .. " lines for " .. file_entry.path, vim.log.levels.INFO)
-  vim.notify("enable_line_hl = " .. tostring(config.enable_line_hl), vim.log.levels.INFO)
-  vim.notify("Highlight groups: " .. config.covered_hl .. ", " .. config.uncovered_hl .. ", " .. config.partial_hl, vim.log.levels.INFO)
 
   -- Create a map of line coverage for fast lookup
   local line_map = {}
@@ -103,8 +98,6 @@ function M.render_file(buf, file_entry)
 
     -- Determine highlight group
     local hl_group = covered and config.covered_hl or config.uncovered_hl
-    
-    vim.notify("Line " .. line_num .. ": " .. hl_group .. " (hit_count=" .. hit_count .. ")", vim.log.levels.DEBUG)
 
     -- Build virtual text
     local virt_text = {}
@@ -170,11 +163,6 @@ function M.render_file(buf, file_entry)
       end
     end
   end
-  
-  -- Verify highlights after rendering
-  local hl_covered = vim.api.nvim_get_hl(0, { name = config.covered_hl })
-  local hl_uncovered = vim.api.nvim_get_hl(0, { name = config.uncovered_hl })
-  vim.notify("Highlight check - Covered: " .. vim.inspect(hl_covered) .. " | Uncovered: " .. vim.inspect(hl_uncovered), vim.log.levels.INFO)
 end
 
 --- Set up highlight groups
