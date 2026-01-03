@@ -48,7 +48,7 @@ require("crazy-coverage").setup()
 ### AstroVim Configuration
 
 For AstroVim users, check out the complete example configuration with keybindings at:
-[examples/astrovim-config.lua](examples/astrovim-config.lua)
+[config examples/astrovim-config.lua](config%20examples/astrovim-config.lua)
 
 Place this file in `~/.config/nvim/lua/plugins/crazy-coverage.lua` to get started with:
 - **`<leader>l`** prefix for coverage management (load, toggle, enable, disable, clear)
