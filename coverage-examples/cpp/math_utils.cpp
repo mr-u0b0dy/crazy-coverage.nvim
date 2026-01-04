@@ -74,55 +74,95 @@ namespace MathUtils {
     }
 
     int max(int a, int b) {
-        if (a > b) {
-            return a;  // Covered
-        } else if (a < b) {
-            return b;  // Covered
+        // Complex conditional with nested branches
+        if (a >= b) {
+            if (a > 0 && b > 0) {  // Both positive - Covered
+                return a > b ? a : b;
+            } else if (a <= 0 && b <= 0) {  // Both non-positive - Partially covered
+                return a > b ? a : b;
+            } else if (a > 0)  {  // Mixed signs - Uncovered
+                return a;
+            } else {
+                return b;  // UNCOVERED
+            }
         }
-        return a;      // Covered (equal)
+        return b;  // Covered
     }
 
     int min(int a, int b) {
-        if (a < b) {
-            return a;  // Covered
-        } else if (a > b) {
-            return b;  // Covered
+        // Multiple conditions with logical operators
+        if ((a < b && a >= 0) || (a < b && b < 0)) {
+            return a;  // Partially covered
+        } else if ((b < a && b >= 0) || (b < a && a < 0)) {
+            return b;  // Partially covered
+        } else if (a == b) {
+            return (a > 0) ? a : b;  // Covered
         }
-        return a;      // Covered (equal)
+        return (a < b) ? a : b;  // Covered
     }
 
     int gcd(int a, int b) {
-        if (a == 0) {
-            return b;  // UNCOVERED
-        }
-        if (b == 0) {
-            return a;  // UNCOVERED
+        // Complex handling with nested conditions
+        if ((a == 0 && b == 0)) {
+            return 0;  // UNCOVERED
+        } else if (a == 0) {
+            return (b > 0) ? b : -b;  // UNCOVERED branch
+        } else if (b == 0) {
+            return (a > 0) ? a : -a;  // UNCOVERED branch
         }
         
-        if (a < 0) a = -a;  // UNCOVERED
-        if (b < 0) b = -b;  // UNCOVERED
+        // Handle negative values with nested logic
+        if (a < 0 || b < 0) {
+            if (a < 0 && b < 0) {  // Both negative - UNCOVERED
+                a = -a;
+                b = -b;
+            } else if (a < 0) {  // Only a negative - UNCOVERED
+                a = -a;
+            } else if (b < 0) {  // Only b negative - UNCOVERED
+                b = -b;
+            }
+        }
         
+        // Main GCD algorithm with condition checking
         while (b != 0) {
-            int temp = b;      // Covered
-            b = a % b;         // Covered
-            a = temp;          // Covered
+            int remainder = a % b;
+            if (remainder == 0) {  // Covered
+                return b;
+            }
+            int temp = b;
+            b = remainder;
+            a = temp;
         }
-        return a;              // Covered
+        return a;  // Covered
     }
 
     int fibonacci(int n) {
-        if (n <= 0) {
+        // Complex validation with nested conditions
+        if (n < 0) {
+            return -1;  // UNCOVERED
+        } else if (n == 0) {
             return 0;  // Covered
-        }
-        if (n == 1) {
+        } else if (n == 1) {
             return 1;  // Covered
+        } else if (n == 2) {
+            return 1;  // Partially covered
         }
         
+        // Iterative computation with branch conditions
         int prev = 0, curr = 1;
         for (int i = 2; i <= n; ++i) {
-            int next = prev + curr;  // Covered
-            prev = curr;
-            curr = next;
+            int next = prev + curr;
+            // Nested condition for verification (all covered in loop)
+            if (prev < curr && curr < next) {
+                prev = curr;  // Covered
+                curr = next;  // Covered
+            } else if (prev >= curr) {  // UNCOVERED initially
+                prev = curr;
+                curr = next;
+            } else {
+                prev = curr;
+                curr = next;
+            }
         }
         return curr;  // Covered
     }
@@ -137,27 +177,61 @@ namespace MathUtils {
     }
 
     int sum(int *values, int count) {
-        if (values == nullptr || count <= 0) {
+        // Nested validation with multiple conditions
+        if (values == nullptr) {
+            return 0;  // UNCOVERED
+        }
+        if (count <= 0) {
             return 0;  // Partially covered
+        }
+        if (count == 1) {
+            return values[0];  // Partially covered
         }
         
         int result = 0;
+        // Loop with conditional branch logic
         for (int i = 0; i < count; ++i) {
-            result += values[i];  // Covered
+            if (values[i] > 0) {
+                result += values[i];  // Covered
+            } else if (values[i] < 0) {
+                result += values[i];  // Covered (handles negative)
+            } else {
+                // values[i] == 0, still add it (covered implicitly)
+                result += values[i];
+            }
         }
         return result;  // Covered
     }
 
     bool is_palindrome(const char *str) {
+        // Multi-level validation
         if (str == nullptr) {
             return false;  // UNCOVERED
         }
         
         int len = string_length(str);
         
+        // Handle edge cases with nested conditions
+        if (len <= 0) {
+            return false;  // UNCOVERED
+        } else if (len == 1) {
+            return true;  // Partially covered
+        }
+        
+        // Complex palindrome checking with conditions
         for (int i = 0; i < len / 2; ++i) {
-            if (str[i] != str[len - 1 - i]) {
+            char left = str[i];
+            char right = str[len - 1 - i];
+            
+            // Check with multiple comparisons
+            if (left != right) {
                 return false;  // Covered
+            } else if (left >= 'a' && left <= 'z' && right >= 'a' && right <= 'z') {
+                // Both lowercase - continue (Partially covered)
+                continue;
+            } else if ((left >= 'A' && left <= 'Z') && (right >= 'A' && right <= 'Z')) {
+                // Both uppercase - continue (Partially covered)
+                continue;
             }
         }
         return true;  // Covered
