@@ -91,6 +91,27 @@ require("crazy-coverage").setup({
 - [Supported Formats](doc/formats.md) - Coverage format details and generation
 - [Architecture](doc/architecture.md) - Plugin design and extension guide
 - [Development](doc/development.md) - Testing and contributing
+- [Coverage Examples](coverage-examples/) - C and C++ examples with GCC/LLVM/LCOV
+
+## Coverage Examples
+
+Get started quickly with the provided examples:
+
+```bash
+cd coverage-examples/c
+make lcov           # Build, run, and generate LCOV coverage report
+# Then in Neovim: :CoverageLoad build/coverage/coverage.lcov
+
+# Or with LLVM:
+make llvm-report    # Build, run, and generate LLVM JSON coverage
+# Then in Neovim: :CoverageLoad build/coverage/coverage.json
+```
+
+See [coverage-examples/README.md](coverage-examples/README.md) for full details on:
+- **C examples** with GCC coverage and LLVM coverage
+- **C++ examples** with GCC coverage and LLVM coverage  
+- Makefile targets for different coverage tools
+- Step-by-step instructions for each tool
 
 ## Requirements
 
