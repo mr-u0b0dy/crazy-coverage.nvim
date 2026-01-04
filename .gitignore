@@ -3,11 +3,29 @@
 *~
 .DS_Store
 .netrwhist
+
+# Build artifacts and coverage data
+build/
+*.o
+*.a
+*.so
+
+# GCC Coverage files
 *.gcda
 *.gcno
 *.gcov
+
+# LLVM Coverage files
 *.profraw
 *.profdata
+
+# Coverage reports
 coverage.lcov
 coverage.json
 coverage.xml
+coverage.info
+
+# IDE
+.vscode/
+.idea/
+*.swp
