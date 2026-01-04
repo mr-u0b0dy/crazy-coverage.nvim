@@ -90,7 +90,7 @@ llvm-report: llvm run-llvm
 	@echo "Converting LLVM profile to JSON..."
 	@mkdir -p $(COVERAGE_DIR)
 	cd $(BUILD_DIR) && llvm-profdata merge -o $(TARGET).profdata $(TARGET).profraw
-	cd $(BUILD_DIR) && llvm-cov export -format=json ./$(TARGET) -instr-profile=$(TARGET).profdata > coverage.json
+	cd $(BUILD_DIR) && llvm-cov export ./$(TARGET) -instr-profile=$(TARGET).profdata > coverage.json
 	cp $(BUILD_DIR)/coverage.json $(COVERAGE_DIR)/
 	@echo "✓ LLVM JSON report generated: $(COVERAGE_DIR)/coverage.json"
 	@echo ""
