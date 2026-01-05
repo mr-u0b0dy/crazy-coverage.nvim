@@ -51,22 +51,23 @@ For AstroVim users, check out the complete example configuration with keybinding
 [config examples/astrovim-config.lua](config%20examples/astrovim-config.lua)
 
 Place this file in `~/.config/nvim/lua/plugins/crazy-coverage.lua` to get started with:
-- **`<leader>l`** prefix for coverage management (load, toggle, enable, disable, clear)
-- **`{c/}c`** to navigate between covered lines
-- **`{p/}p`** to navigate between partially covered lines
-- **`{u/}u`** to navigate between uncovered lines
+- **`<leader>ct`** - Toggle coverage overlay (auto-loads, watches for changes)
+- **`<leader>ch`** - Toggle hit count display
+- **`}c` / `{c`** - Navigate to next/previous covered lines
+- **`}p` / `{p`** - Navigate to next/previous partially covered lines
+- **`}u` / `{u`** - Navigate to next/previous uncovered lines
 
 ## Quick Start
 
 ```lua
--- Load coverage file (auto-detects format)
-:CoverageLoad coverage.lcov
-
--- Toggle coverage overlay
+-- Toggle coverage overlay (auto-loads coverage file, watches for changes)
 :CoverageToggle
 
--- Clear coverage
-:CoverageClear
+-- Toggle hit count display
+:CoverageToggleHitCount
+
+-- Manually load specific coverage file (optional)
+:CoverageLoad coverage.lcov
 
 -- Navigate through coverage
 :CoverageNextUncovered   " Jump to next uncovered line
@@ -74,19 +75,152 @@ Place this file in `~/.config/nvim/lua/plugins/crazy-coverage.lua` to get starte
 :CoverageNextPartial     " Jump to next partially covered line
 ```
 
+### Smart Toggle Features
+
+**When enabled** (`:CoverageToggle` or `<leader>ct`):
+- Auto-finds and loads coverage file in project
+- Enables overlay with line highlighting
+- Shows hit counts (configurable via `default_show_hit_count`)
+- Starts file watcher (checks every 2 seconds)
+- Auto-reloads and notifies when coverage file changes
+
+**When disabled** (`:CoverageToggle` again):
+- Clears all overlays
+- Stops file watching
+- Cleans up all resources
+
 ## Configuration
+
+### Basic Setup
 
 ```lua
 require("crazy-coverage").setup({
-  virt_text_pos = "eol",           -- "eol", "inline", "overlay", "right_align"
-  show_hit_count = true,            -- Show hit counts
-  show_branch_summary = false,      -- Show branch coverage as b:taken/total
-  auto_load = true,                 -- Auto-load on file open
+  virt_text_pos = "eol",              -- Virtual text position
+  default_show_hit_count = true,      -- Show hit counts by default when overlay enabled
+  show_hit_count = true,              -- Current hit count display state
+  show_branch_summary = false,        -- Show branch coverage as b:taken/total
+  enable_line_hl = true,              -- Enable line highlighting
+})
+```
+
+### All Configuration Options
+
+```lua
+require("crazy-coverage").setup({
+  -- ===== Display Options =====
+  
+  -- Virtual text position for coverage information
+  -- Options: "eol" (end of line), "inline", "overlay", "right_align"
+  virt_text_pos = "eol",
+  
+  -- Show hit counts by default when coverage overlay is enabled
+  -- Set to false if you want to manually toggle hit counts each time
+  default_show_hit_count = true,
+  
+  -- Current state: show hit count in virtual text
+  show_hit_count = true,
+  
+  -- Show percentage coverage for each line
+  show_percentage = false,
+  
+  -- Show branch coverage summary per line (format: b:taken/total)
+  -- Example: "b:2/4" means 2 out of 4 branches were taken
+  show_branch_summary = false,
+  
+  -- Enable line highlighting (background colors)
+  enable_line_hl = true,
+  
+  -- ===== Highlight Groups =====
+  
+  -- Highlight group names for covered/uncovered/partial lines
+  -- You can customize these with your own highlight groups
+  covered_hl = "CoverageCovered",      -- Green background by default
+  uncovered_hl = "CoverageUncovered",  -- Red background by default
+  partial_hl = "CoveragePartial",      -- Orange background by default
+  
+  -- ===== Auto-Loading =====
+  
+  -- Auto-load coverage when opening a file (deprecated: use CoverageToggle instead)
+  auto_load = true,
+  
+  -- ===== Coverage File Detection =====
+  
+  -- Coverage file patterns to search for per language
+  -- Plugin will look for these files in the project root
+  coverage_patterns = {
+    c = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
+    cpp = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
+  },
+  
+  -- Patterns used to find the project root directory
+  -- Plugin searches upward from current file until it finds one of these
+  project_markers = { 
+    ".git", 
+    "CMakeLists.txt", 
+    "Makefile", 
+    "compile_commands.json" 
+  },
+  
+  -- ===== Cache Settings =====
+  
+  -- Enable caching of parsed coverage data
+  cache_enabled = true,
+  
+  -- Directory for storing cached coverage data
+  cache_dir = vim.fn.stdpath("cache") .. "/crazy-coverage.nvim",
+})
+```
+
+### Configuration Examples
+
+**Minimal Setup (Defaults)**
+```lua
+require("crazy-coverage").setup()
+```
+
+**Inline Hit Counts with No Branch Summary**
+```lua
+require("crazy-coverage").setup({
+  virt_text_pos = "inline",
+  show_hit_count = true,
+  show_branch_summary = false,
+})
+```
+
+**Right-Aligned with Branch Coverage**
+```lua
+require("crazy-coverage").setup({
+  virt_text_pos = "right_align",
+  show_hit_count = true,
+  show_branch_summary = true,
+})
+```
+
+**Custom Highlight Groups**
+```lua
+-- Define your own colors
+vim.api.nvim_set_hl(0, "MyCovered", { bg = "#004400", fg = "#00FF00" })
+vim.api.nvim_set_hl(0, "MyUncovered", { bg = "#440000", fg = "#FF0000" })
+vim.api.nvim_set_hl(0, "MyPartial", { bg = "#444400", fg = "#FFFF00" })
+
+require("crazy-coverage").setup({
+  covered_hl = "MyCovered",
+  uncovered_hl = "MyUncovered",
+  partial_hl = "MyPartial",
+})
+```
+
+**Manual Hit Count Control**
+```lua
+require("crazy-coverage").setup({
+  default_show_hit_count = false,  -- Don't show hit counts by default
+  -- Use <leader>ch to toggle hit counts on/off
 })
 ```
 
 ## Documentation
 
+- [Configuration Reference](doc/configuration.md) - Complete guide to all config options
 - [Usage Guide](doc/usage.md) - Commands, configuration, and examples
 - [Supported Formats](doc/formats.md) - Coverage format details and generation
 - [Architecture](doc/architecture.md) - Plugin design and extension guide
