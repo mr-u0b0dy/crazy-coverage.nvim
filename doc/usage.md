@@ -1,103 +1,329 @@
 # Usage Guide
 
+Complete guide to using crazy-coverage.nvim for viewing and navigating code coverage in Neovim.
+
+## Table of Contents
+
+- [Commands](#commands)
+- [Smart Toggle Workflow](#smart-toggle-workflow)
+- [Navigation](#navigation)
+- [Keybindings](#keybindings)
+- [Common Workflows](#common-workflows)
+- [Display Modes](#display-modes)
+
+---
+
 ## Commands
 
-### Loading Coverage
+### Coverage Management
 
-- `:CoverageLoad [file]` - Load coverage from a file (auto-detects format)
-  - If no file specified, searches project root for common coverage files
-  - Supports: `.lcov`, `.info`, `.json`, `.xml`, `.gcda`, `.gcno`, `.profdata`
+| Command | Description |
+|---------|-------------|
+| `:CoverageToggle` | **Smart toggle**: Auto-loads coverage, enables overlay, watches for changes |
+| `:CoverageLoad <file>` | Manually load specific coverage file |
+| `:CoverageToggleHitCount` | Toggle hit count display on/off |
 
-- `:CoverageAutoLoad` - Auto-load coverage file for current buffer
+### Navigation Commands
 
-### Controlling Display
+| Command | Description |
+|---------|-------------|
+| `:CoverageNextCovered` | Jump to next covered line |
+| `:CoveragePrevCovered` | Jump to previous covered line |
+| `:CoverageNextPartial` | Jump to next partially covered line (branches) |
+| `:CoveragePrevPartial` | Jump to previous partially covered line |
+| `:CoverageNextUncovered` | Jump to next uncovered line |
+| `:CoveragePrevUncovered` | Jump to previous uncovered line |
 
-- `:CoverageToggle` - Toggle coverage overlay on/off
-- `:CoverageEnable` - Enable coverage overlay
-- `:CoverageDisable` - Disable coverage overlay
-- `:CoverageClear` - Clear all coverage data
+---
 
-## Configuration
+## Smart Toggle Workflow
 
-### Basic Setup
+The `:CoverageToggle` command provides a complete coverage management solution:
+
+### When Enabled
+
+1. **Auto-detects** coverage file in project root
+2. **Loads** coverage data automatically  
+3. **Displays** overlay with line highlighting
+4. **Shows** hit counts (if `default_show_hit_count = true`)
+5. **Watches** coverage file for changes (polls every 2 seconds)
+6. **Auto-reloads** when coverage file updates
+7. **Notifies** you when coverage is refreshed
+
+### When Disabled
+
+1. **Clears** all overlays and highlights
+2. **Stops** file watching
+3. **Releases** all resources
+
+### Example
+
+```vim
+" Open a source file
+:e src/math_utils.c
+
+" Enable coverage (auto-loads, watches file)
+:CoverageToggle
+
+" Work on your code, run tests in another terminal:
+" $ make test && make lcov
+
+" Coverage automatically reloads when file changes!
+" You'll see a notification: "Coverage reloaded"
+
+" When done, disable everything:
+:CoverageToggle
+```
+
+---
+
+## Navigation
+
+Navigate through coverage using Vim-style motions:
+
+### Keybindings
+
+| Keys | Command | Description |
+|------|---------|-------------|
+| `}c` | `:CoverageNextCovered` | Next covered line |
+| `{c` | `:CoveragePrevCovered` | Previous covered line |
+| `}p` | `:CoverageNextPartial` | Next partial line |
+| `{p` | `:CoveragePrevPartial` | Previous partial line |
+| `}u` | `:CoverageNextUncovered` | Next uncovered line |
+| `{u` | `:CoveragePrevUncovered` | Previous uncovered line |
+
+### Navigation Tips
+
+**Find Untested Code**
+```vim
+" Jump through all uncovered lines
+}u    " Next uncovered
+}u    " Next uncovered again
+{u    " Go back to previous uncovered
+```
+
+**Review Branch Coverage**
+```vim
+" Jump through partially covered lines (missed branches)
+}p    " Next partial
+}p    " Next partial again
+```
+
+**Quick Coverage Check**
+```vim
+" Jump to first uncovered line
+gg    " Go to top of file
+}u    " Jump to first uncovered line
+```
+
+---
+
+## Keybindings
+
+### Recommended Setup (AstroVim/lazy.nvim)
+
+```lua
+keys = {
+  -- Main commands
+  { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
+  { "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
+  
+  -- Navigate covered lines
+  { "}c", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered" },
+  { "{c", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev Covered" },
+  
+  -- Navigate partial lines
+  { "}p", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next Partial" },
+  { "{p", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev Partial" },
+  
+  -- Navigate uncovered lines
+  { "}u", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
+  { "{u", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
+}
+```
+
+### Minimal Setup
+
+```lua
+keys = {
+  { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
+  { "}u", "<cmd>CoverageNextUncovered<cr>", desc = "Next Uncovered" },
+  { "{u", "<cmd>CoveragePrevUncovered<cr>", desc = "Prev Uncovered" },
+}
+```
+
+### Manual vim.keymap Setup
+
+```lua
+local function map(mode, lhs, rhs, desc)
+  vim.keymap.set(mode, lhs, rhs, { desc = desc, silent = true })
+end
+
+map("n", "<leader>ct", "<cmd>CoverageToggle<cr>", "Coverage: Toggle")
+map("n", "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", "Coverage: Toggle Hit Count")
+map("n", "}u", "<cmd>CoverageNextUncovered<cr>", "Coverage: Next Uncovered")
+map("n", "{u", "<cmd>CoveragePrevUncovered<cr>", "Coverage: Prev Uncovered")
+map("n", "}p", "<cmd>CoverageNextPartial<cr>", "Coverage: Next Partial")
+map("n", "{p", "<cmd>CoveragePrevPartial<cr>", "Coverage: Prev Partial")
+```
+
+---
+
+## Common Workflows
+
+### Workflow 1: Test-Driven Development
+
+```vim
+" 1. Write a new function
+:e src/new_feature.c
+
+" 2. Enable coverage
+:CoverageToggle
+
+" 3. All lines show as uncovered (red)
+
+" 4. Write and run tests in terminal
+" $ make test && make lcov
+
+" 5. Coverage auto-reloads, lines turn green/orange
+
+" 6. Jump to uncovered lines
+}u
+
+" 7. Add more tests, coverage auto-updates
+```
+
+### Workflow 2: Code Review
+
+```vim
+" 1. Checkout PR branch
+" $ git checkout pr/feature-branch
+
+" 2. Generate coverage
+" $ make test && make lcov
+
+" 3. Open files and enable coverage
+:e src/feature.c
+:CoverageToggle
+
+" 4. Review uncovered code
+}u    " Jump to uncovered lines
+" Check if uncovered code needs tests
+
+" 5. Review partial coverage (missed branches)
+}p    " Jump to partial lines
+" Check if all edge cases are tested
+```
+
+### Workflow 3: Refactoring
+
+```vim
+" 1. Load coverage before refactoring
+:e src/legacy.c
+:CoverageToggle
+
+" 2. See which lines are tested (green)
+
+" 3. Refactor only tested code
+" (or add tests first if needed)
+
+" 4. Re-run tests
+" $ make test && make lcov
+
+" 5. Coverage auto-reloads
+" Ensure coverage didn't decrease
+```
+
+---
+
+## Display Modes
+
+### Virtual Text Position
+
+Control where coverage info appears:
+
+```lua
+-- End of line (default)
+require("crazy-coverage").setup({
+  virt_text_pos = "eol",
+})
+-- Example: print("hello");    |-- 5
+
+-- Inline (after code)
+require("crazy-coverage").setup({
+  virt_text_pos = "inline",
+})
+-- Example: print("hello");  5
+
+-- Right aligned
+require("crazy-coverage").setup({
+  virt_text_pos = "right_align",
+})
+-- Example: print("hello");                  5
+
+-- Overlay (replaces line)
+require("crazy-coverage").setup({
+  virt_text_pos = "overlay",
+})
+-- Example: (line is replaced with coverage info)
+```
+
+### Hit Count Display
+
+Toggle hit counts on/off:
+
+```vim
+" Enable hit counts
+:CoverageToggleHitCount
+" Lines show:  5  (executed 5 times)
+
+" Disable hit counts
+:CoverageToggleHitCount
+" Lines show only color highlighting
+```
+
+### Branch Coverage
+
+Show branch coverage per line:
 
 ```lua
 require("crazy-coverage").setup({
-  -- Virtual text position
-  virt_text_pos = "eol",           -- "eol", "inline", "overlay", "right_align"
-  
-  -- Display options
-  show_hit_count = true,            -- Show execution count
-  show_percentage = false,          -- Show percentage instead of count
-  show_branch_summary = false,      -- Show per-line branch summary (b:taken/total)
-  
-  -- Auto-loading
-  auto_load = true,                 -- Auto-load coverage on file open
-  
-  -- Highlight groups
-  covered_hl = "CoverageCovered",   -- Covered lines
-  uncovered_hl = "CoverageUncovered", -- Uncovered lines
-  partial_hl = "CoveragePartial",   -- Partially covered (branches)
+  show_branch_summary = true,
 })
 ```
 
-### Custom Highlight Colors
+Display format: `5 b:2/4`
+- `5` = hit count (line executed 5 times)
+- `b:2/4` = 2 out of 4 branches taken
+
+### Line Highlighting
+
+Coverage status shown via background colors:
+
+| Color | Status | Meaning |
+|-------|--------|---------|
+| Green | Covered | Line fully executed, all branches taken |
+| Orange | Partial | Line executed, but some branches not taken |
+| Red | Uncovered | Line never executed |
+
+Customize colors:
 
 ```lua
--- Set up plugin first
+-- Define custom highlights before setup
+vim.api.nvim_set_hl(0, "CoverageCovered", { bg = "#004400" })
+vim.api.nvim_set_hl(0, "CoverageUncovered", { bg = "#440000" })
+vim.api.nvim_set_hl(0, "CoveragePartial", { bg = "#444400" })
+
 require("crazy-coverage").setup()
-
--- Then customize colors
-vim.api.nvim_set_hl(0, "CoverageCovered", { 
-  fg = "#00ff00", 
-  bold = true 
-})
-
-vim.api.nvim_set_hl(0, "CoverageUncovered", { 
-  fg = "#ff0000" 
-})
-
-vim.api.nvim_set_hl(0, "CoveragePartial", { 
-  fg = "#ffaa00" 
-})
 ```
 
-### Key Mappings
+---
 
-```lua
--- Example key mappings
-vim.keymap.set("n", "<leader>cl", "<cmd>CoverageLoad<CR>", { desc = "Load coverage" })
-vim.keymap.set("n", "<leader>ct", "<cmd>CoverageToggle<CR>", { desc = "Toggle coverage" })
-vim.keymap.set("n", "<leader>cc", "<cmd>CoverageClear<CR>", { desc = "Clear coverage" })
-```
+## Next Steps
 
-## Examples
-
-### Example 1: Basic Usage
-
-```lua
--- Load and view coverage
-:CoverageLoad coverage.lcov
--- Coverage overlay appears with hit counts
-
--- Toggle off
-:CoverageToggle
-
--- Toggle back on
-:CoverageToggle
-```
-
-### Example 2: With Branch Coverage
-
-```lua
-require("crazy-coverage").setup({
-  show_hit_count = true,
-  show_branch_summary = true,  -- Enable branch display
-})
-
--- Load coverage with branch data
-:CoverageLoad coverage.lcov
--- See: "5 b:1/2" (5 hits, 1 of 2 branches taken)
+- See [Configuration Reference](configuration.md) for all 15+ config options
+- See [Coverage Examples](../coverage-examples/) for C/C++ examples
+- See [Supported Formats](formats.md) for coverage generation details
 ```
 
 ### Example 3: Auto-loading
