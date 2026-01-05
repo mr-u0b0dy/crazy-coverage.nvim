@@ -51,8 +51,8 @@ Complete installation instructions for crazy-coverage.nvim across different plug
   keys = {
     { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
     { "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
-    { "}u", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
-    { "{u", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
+    { "}cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
+    { "{cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
   },
   config = function()
     require("crazy-coverage").setup()
@@ -152,16 +152,16 @@ return {
     { "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
     
     -- Navigation: Covered lines
-    { "}c", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered Line" },
-    { "{c", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev Covered Line" },
+    { "}cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered Line" },
+    { "{cc", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev Covered Line" },
     
     -- Navigation: Partially covered lines
-    { "}p", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next Partial Line" },
-    { "{p", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev Partial Line" },
+    { "}cp", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next Partial Line" },
+    { "{cp", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev Partial Line" },
     
     -- Navigation: Uncovered lines
-    { "}u", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered Line" },
-    { "{u", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered Line" },
+    { "}cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered Line" },
+    { "{cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered Line" },
   },
   
   opts = {
@@ -182,8 +182,8 @@ return {
   "mr-u0b0dy/crazy-coverage.nvim",
   keys = {
     { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
-    { "}u", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
-    { "{u", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
+    { "}cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
+    { "{cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
   },
 }
 ```

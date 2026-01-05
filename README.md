@@ -12,7 +12,7 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 
 ## Installation
 
-### lazy.nvim
+### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua
 {
@@ -23,7 +23,7 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 }
 ```
 
-### packer.nvim
+### Using [packer.nvim](https://github.com/wbthomason/packer.nvim)
 
 ```lua
 use {
@@ -43,8 +43,8 @@ See [Installation Guide](doc/installation.md) for other plugin managers and Astr
 :CoverageToggle
 
 -- Navigate uncovered code
-}u  " Next uncovered line
-{u  " Previous uncovered line
+}cu  " Next uncovered line
+{cu  " Previous uncovered line
 ```
 
 **What the toggle does:**

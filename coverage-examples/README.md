@@ -172,10 +172,10 @@ With the AstroVim configuration (see [config examples/astrovim-config.lua](../co
 - `<leader>ct` - Toggle coverage overlay (auto-loads, watches for changes)
 - `<leader>ch` - Toggle hit count display
 
-**Navigation** (`{/}` then `c/p/u`):
-- `}c` / `{c` - Next/Previous covered line
-- `}p` / `{p` - Next/Previous partially covered line
-- `}u` / `{u` - Next/Previous uncovered line
+**Navigation** (`{/}` then `c` then `c/p/u`):
+- `}cc` / `{cc` - Next/Previous covered line
+- `}cp` / `{cp` - Next/Previous partially covered line
+- `}cu` / `{cu` - Next/Previous uncovered line
 
 The navigation follows Vim's natural `{` and `}` motion keys for moving between blocks, making it intuitive to jump between coverage regions.
 

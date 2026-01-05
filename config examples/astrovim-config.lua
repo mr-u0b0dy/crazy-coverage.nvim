@@ -25,15 +25,15 @@ return {
       -- Toggle hit count display
       { "<Leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Toggle hit count display" },
 
-      -- Navigation: {/} then c/p/u for prev/next covered/partial/uncovered
-      { "}c", "<cmd>CoverageNextCovered<cr>", desc = "Next covered line" },
-      { "{c", "<cmd>CoveragePrevCovered<cr>", desc = "Prev covered line" },
+      -- Navigation: {/} then c, then c/p/u for prev/next covered/partial/uncovered
+      { "}cc", "<cmd>CoverageNextCovered<cr>", desc = "Next covered line" },
+      { "{cc", "<cmd>CoveragePrevCovered<cr>", desc = "Prev covered line" },
       
-      { "}p", "<cmd>CoverageNextPartial<cr>", desc = "Next partial line" },
-      { "{p", "<cmd>CoveragePrevPartial<cr>", desc = "Prev partial line" },
+      { "}cp", "<cmd>CoverageNextPartial<cr>", desc = "Next partial line" },
+      { "{cp", "<cmd>CoveragePrevPartial<cr>", desc = "Prev partial line" },
       
-      { "}u", "<cmd>CoverageNextUncovered<cr>", desc = "Next uncovered line" },
-      { "{u", "<cmd>CoveragePrevUncovered<cr>", desc = "Prev uncovered line" },
+      { "}cu", "<cmd>CoverageNextUncovered<cr>", desc = "Next uncovered line" },
+      { "{cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Prev uncovered line" },
     },
   },
 }
