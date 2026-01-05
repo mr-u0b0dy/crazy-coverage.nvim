@@ -18,25 +18,25 @@ return {
       })
     end,
     keys = {
-      -- Coverage loading and management (<leader>l prefix)
-      { "<Leader>ll", "<cmd>CoverageLoad<cr>", desc = "Load coverage file" },
-      { "<Leader>lt", "<cmd>CoverageToggle<cr>", desc = "Toggle coverage overlay" },
-      { "<Leader>le", "<cmd>CoverageEnable<cr>", desc = "Enable coverage overlay" },
-      { "<Leader>ld", "<cmd>CoverageDisable<cr>", desc = "Disable coverage overlay" },
-      { "<Leader>lc", "<cmd>CoverageClear<cr>", desc = "Clear coverage data" },
-      { "<Leader>la", "<cmd>CoverageAutoLoad<cr>", desc = "Auto-load coverage" },
+      -- Coverage management (<leader>c prefix)
+      { "<Leader>cl", "<cmd>CoverageLoad<cr>", desc = "Load coverage file" },
+      { "<Leader>ct", "<cmd>CoverageToggle<cr>", desc = "Toggle coverage overlay" },
+      { "<Leader>cc", "<cmd>CoverageClear<cr>", desc = "Clear coverage data" },
+      { "<Leader>ca", "<cmd>CoverageAutoLoad<cr>", desc = "Auto-load coverage" },
+      
+      -- Display toggles (<leader>c prefix)
+      { "<Leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Toggle hit count display" },
+      { "<Leader>cd", "<cmd>CoverageToggleLineDisplay<cr>", desc = "Toggle line highlighting" },
 
-      -- Navigation shortcuts for covered lines
+      -- Navigation: {/} then c/p/u for prev/next covered/partial/uncovered
       { "}c", "<cmd>CoverageNextCovered<cr>", desc = "Next covered line" },
-      { "{c", "<cmd>CoveragePrevCovered<cr>", desc = "Previous covered line" },
-
-      -- Navigation shortcuts for partially covered lines
-      { "}p", "<cmd>CoverageNextPartial<cr>", desc = "Next partially covered line" },
-      { "{p", "<cmd>CoveragePrevPartial<cr>", desc = "Previous partially covered line" },
-
-      -- Navigation shortcuts for uncovered lines
+      { "{c", "<cmd>CoveragePrevCovered<cr>", desc = "Prev covered line" },
+      
+      { "}p", "<cmd>CoverageNextPartial<cr>", desc = "Next partial line" },
+      { "{p", "<cmd>CoveragePrevPartial<cr>", desc = "Prev partial line" },
+      
       { "}u", "<cmd>CoverageNextUncovered<cr>", desc = "Next uncovered line" },
-      { "{u", "<cmd>CoveragePrevUncovered<cr>", desc = "Previous uncovered line" },
+      { "{u", "<cmd>CoveragePrevUncovered<cr>", desc = "Prev uncovered line" },
     },
   },
 }

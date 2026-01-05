@@ -319,6 +319,36 @@ function M.prev_partial()
   end)
 end
 
+--- Toggle hit count display
+function M.toggle_hitcount()
+  local current_config = config.get_config()
+  current_config.show_hit_count = not current_config.show_hit_count
+  config.set_config(current_config)
+  
+  -- Re-render if coverage is enabled
+  if state.is_enabled and state.coverage_data then
+    renderer.render(state.coverage_data)
+  end
+  
+  local status = current_config.show_hit_count and "enabled" or "disabled"
+  vim.notify("Hit count display " .. status, vim.log.levels.INFO)
+end
+
+--- Toggle line display (highlighting)
+function M.toggle_line_display()
+  local current_config = config.get_config()
+  current_config.enable_line_hl = not current_config.enable_line_hl
+  config.set_config(current_config)
+  
+  -- Re-render if coverage is enabled
+  if state.is_enabled and state.coverage_data then
+    renderer.render(state.coverage_data)
+  end
+  
+  local status = current_config.enable_line_hl and "enabled" or "disabled"
+  vim.notify("Line highlighting " .. status, vim.log.levels.INFO)
+end
+
 --- Create user commands
 function M.create_commands()
   vim.api.nvim_create_user_command("CoverageLoad", function(opts)
@@ -376,6 +406,14 @@ function M.create_commands()
 
   vim.api.nvim_create_user_command("CoveragePrevPartial", function()
     M.prev_partial()
+  end, {})
+  
+  vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
+    M.toggle_hitcount()
+  end, {})
+  
+  vim.api.nvim_create_user_command("CoverageToggleLineDisplay", function()
+    M.toggle_line_display()
   end, {})
 end
 

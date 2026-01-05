@@ -141,19 +141,34 @@ brew install llvm                  # macOS
 After generating coverage:
 
 ```vim
-" Load GCC/LCOV coverage
+" Load coverage
 :CoverageLoad build/coverage/coverage.lcov
 
-" Load LLVM JSON coverage
-:CoverageLoad build/coverage/coverage.json
+" Management commands
+:CoverageToggle              " Toggle overlay on/off
+:CoverageClear               " Clear coverage data
+:CoverageAutoLoad            " Auto-load coverage for current buffer
 
-" Toggle overlay
-:CoverageToggle
-
-" Navigate
-}u    " Next uncovered line
-{u    " Previous uncovered line
-}c    " Next covered line
+" Display toggles
+:CoverageToggleHitCount      " Toggle hit count display
+:CoverageToggleLineDisplay   " Toggle line highlighting
 ```
 
-For AstroVim users, see [config examples/astrovim-config.lua](../config%20examples/astrovim-config.lua) for keybinding setup.
+### Navigation Keybindings
+
+With the AstroVim configuration (see [config examples/astrovim-config.lua](../config%20examples/astrovim-config.lua)):
+
+**Coverage Management** (`<leader>c` prefix):
+- `<leader>cl` - Load coverage file
+- `<leader>ct` - Toggle coverage overlay
+- `<leader>cc` - Clear coverage data
+- `<leader>ca` - Auto-load coverage
+- `<leader>ch` - Toggle hit count display
+- `<leader>cd` - Toggle line highlighting
+
+**Navigation** (`{/}` then `c/p/u`):
+- `}c` / `{c` - Next/Previous covered line
+- `}p` / `{p` - Next/Previous partially covered line
+- `}u` / `{u` - Next/Previous uncovered line
+
+The navigation follows Vim's natural `{` and `}` motion keys for moving between blocks, making it intuitive to jump between coverage regions.

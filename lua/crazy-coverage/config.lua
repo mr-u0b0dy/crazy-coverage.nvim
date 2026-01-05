@@ -164,4 +164,10 @@ function M.set_config(user_config)
   end
 end
 
+--- Get current config
+---@return table
+function M.get_config()
+  return vim.deepcopy(M)
+end
+
 return M
