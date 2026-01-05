@@ -101,14 +101,75 @@ enable_line_hl = true
 
 ## Highlight Groups
 
+### `auto_adapt_colors`
+
+**Type:** `boolean`  
+**Default:** `true`
+
+Automatically adapt coverage colors based on your current colorscheme. When enabled, the plugin detects whether you're using a dark or light theme and adjusts the coverage highlight colors accordingly.
+
+- **Dark themes**: Uses lighter, saturated colors for better visibility
+- **Light themes**: Uses darker, muted colors for comfortable reading
+
+```lua
+auto_adapt_colors = true  -- Automatically match your theme
+```
+
+Set to `false` to use manual color configuration:
+
+```lua
+require("crazy-coverage").setup({
+  auto_adapt_colors = false,  -- Disable auto-adaptation
+  colors = {
+    -- Use your own colors
+    covered = { bg = "#00AA00", fg = "#FFFFFF" },
+    uncovered = { bg = "#FF0000", fg = "#FFFFFF" },
+    partial = { bg = "#FFAA00", fg = "#FFFFFF" },
+  },
+})
+```
+
+### `colors`
+
+**Type:** `table`  
+**Default:** `{ covered = nil, uncovered = nil, partial = nil }`
+
+Manual color overrides for coverage highlighting. Each color can be:
+- A hex string: `"#00AA00"` (sets background only)
+- A table: `{ bg = "#00AA00", fg = "#FFFFFF" }` (sets background and foreground)
+- `nil` (uses auto-adapted colors if `auto_adapt_colors = true`)
+
+```lua
+-- Example 1: Simple hex colors (background only)
+colors = {
+  covered = "#004400",
+  uncovered = "#440000",
+  partial = "#444400",
+}
+
+-- Example 2: Full control with bg and fg
+colors = {
+  covered = { bg = "#003300", fg = "#00FF00" },
+  uncovered = { bg = "#330000", fg = "#FF4444" },
+  partial = { bg = "#332200", fg = "#FFAA00" },
+}
+
+-- Example 3: Override only specific colors, let others adapt
+colors = {
+  covered = nil,          -- Auto-adapt
+  uncovered = "#330000",  -- Manual red
+  partial = nil,          -- Auto-adapt
+}
+```
+
 ### `covered_hl`
 
 **Type:** `string`  
 **Default:** `"CoverageCovered"`
 
-Highlight group name for covered lines. By default, this is set to green background.
+Highlight group name for covered lines. The plugin creates this highlight group automatically based on `auto_adapt_colors` and `colors` settings.
 
-You can customize the appearance by defining your own highlight:
+You can also define your own highlight group:
 
 ```lua
 vim.api.nvim_set_hl(0, "MyCovered", { bg = "#004400", fg = "#00FF00" })
@@ -123,10 +184,10 @@ require("crazy-coverage").setup({
 **Type:** `string`  
 **Default:** `"CoverageUncovered"`
 
-Highlight group name for uncovered lines. By default, this is set to red background.
+Highlight group name for uncovered lines.
 
 ```lua
-covered_hl = "CoverageUncovered"
+uncovered_hl = "CoverageUncovered"
 ```
 
 ### `partial_hl`
@@ -134,28 +195,93 @@ covered_hl = "CoverageUncovered"
 **Type:** `string`  
 **Default:** `"CoveragePartial"`
 
-Highlight group name for partially covered lines (lines with branch coverage where some branches were taken and others weren't). By default, this is set to orange background.
+Highlight group name for partially covered lines (lines with branch coverage where some branches were taken and others weren't).
 
 ```lua
 partial_hl = "CoveragePartial"
 ```
 
-### Default Highlight Colors
+### Color Configuration Examples
 
-The plugin defines these default colors:
+**Example 1: Auto-adapt colors (default)**
 
 ```lua
--- Covered lines (green)
-CoverageCovered = { bg = "#00AA00", fg = "NONE", bold = true }
-
--- Uncovered lines (red)
-CoverageUncovered = { bg = "#FF0000", fg = "NONE", bold = true }
-
--- Partially covered lines (orange)
-CoveragePartial = { bg = "#FFAA00", fg = "NONE", bold = true }
+require("crazy-coverage").setup({
+  auto_adapt_colors = true,  -- Automatically match your theme
+})
 ```
 
-These are re-applied when the colorscheme changes.
+**Example 2: Disable auto-adaptation, use custom colors**
+
+```lua
+require("crazy-coverage").setup({
+  auto_adapt_colors = false,
+  colors = {
+    covered = { bg = "#1a4d1a", fg = "#66ff66" },    -- Dark green
+    uncovered = { bg = "#4d1a1a", fg = "#ff6666" },  -- Dark red
+    partial = { bg = "#4d4d1a", fg = "#ffff66" },    -- Dark yellow
+  },
+})
+```
+
+**Example 3: Auto-adapt with manual overrides**
+
+```lua
+require("crazy-coverage").setup({
+  auto_adapt_colors = true,      -- Auto-adapt based on theme
+  colors = {
+    covered = nil,               -- Use auto-adapted color
+    uncovered = "#660000",       -- Force dark red
+    partial = nil,               -- Use auto-adapted color
+  },
+})
+```
+
+**Example 4: Subtle colors for light themes**
+
+```lua
+require("crazy-coverage").setup({
+  auto_adapt_colors = false,
+  colors = {
+    covered = { bg = "#e6ffe6", fg = "#006600" },    -- Very light green
+    uncovered = { bg = "#ffe6e6", fg = "#660000" },  -- Very light red
+    partial = { bg = "#fffacd", fg = "#666600" },    -- Light yellow
+  },
+})
+```
+
+**Example 5: High contrast colors for dark themes**
+
+```lua
+require("crazy-coverage").setup({
+  auto_adapt_colors = false,
+  colors = {
+    covered = { bg = "#00ff00", fg = "#000000" },    -- Bright green
+    uncovered = { bg = "#ff0000", fg = "#ffffff" },  -- Bright red
+    partial = { bg = "#ffff00", fg = "#000000" },    -- Bright yellow
+  },
+})
+```
+
+### Default Highlight Colors
+
+When auto-adaptation is enabled, the plugin detects your theme and uses:
+
+**Dark themes:**
+```lua
+covered   = { bg = "#003300", fg = "#00FF00" }  -- Dark green bg, bright green fg
+uncovered = { bg = "#330000", fg = "#FF4444" }  -- Dark red bg, bright red fg
+partial   = { bg = "#332200", fg = "#FFAA00" }  -- Dark yellow bg, bright orange fg
+```
+
+**Light themes:**
+```lua
+covered   = { bg = "#CCFFCC", fg = "#006600" }  -- Light green bg, dark green fg
+uncovered = { bg = "#FFCCCC", fg = "#CC0000" }  -- Light red bg, dark red fg
+partial   = { bg = "#FFEECC", fg = "#CC6600" }  -- Light yellow bg, dark orange fg
+```
+
+These colors are automatically re-applied when the colorscheme changes.
 
 ## File Detection
 

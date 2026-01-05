@@ -5,6 +5,18 @@ local M = {
   uncovered_hl = "CoverageUncovered",
   partial_hl = "CoveragePartial",
 
+  -- Auto-adapt colors based on current theme (background and foreground)
+  -- When enabled, automatically adjusts coverage colors to match your colorscheme
+  auto_adapt_colors = true,
+
+  -- Manual color overrides (used when auto_adapt_colors = false)
+  -- Set to nil to use auto-adaptation, or provide color values
+  colors = {
+    covered = nil,     -- e.g., "#00AA00" or { bg = "#00AA00", fg = "#FFFFFF" }
+    uncovered = nil,   -- e.g., "#FF0000" or { bg = "#FF0000", fg = "#FFFFFF" }
+    partial = nil,     -- e.g., "#FFAA00" or { bg = "#FFAA00", fg = "#FFFFFF" }
+  },
+
   -- Virtual text position: 'eol', 'inline', 'overlay', 'right_align'
   virt_text_pos = "eol",
 
@@ -99,26 +111,142 @@ function M.find_project_root(start_path)
   return nil
 end
 
+--- Detect theme colors for auto-adaptation
+---@return table colors Table with bg and fg from current Normal highlight
+local function detect_theme_colors()
+  local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
+  
+  local bg = normal_hl.bg or 0x000000
+  local fg = normal_hl.fg or 0xFFFFFF
+  
+  -- Convert to hex strings
+  local bg_hex = string.format("#%06X", bg)
+  local fg_hex = string.format("#%06X", fg)
+  
+  return { bg = bg_hex, fg = fg_hex }
+end
+
+--- Calculate luminance of a color
+---@param hex string Hex color string like "#RRGGBB"
+---@return number Luminance value between 0 and 1
+local function get_luminance(hex)
+  local r, g, b = hex:match("#(%x%x)(%x%x)(%x%x)")
+  if not r then return 0.5 end
+  
+  r, g, b = tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255
+  
+  -- Convert to linear RGB
+  local function to_linear(c)
+    return c <= 0.03928 and c / 12.92 or math.pow((c + 0.055) / 1.055, 2.4)
+  end
+  
+  r, g, b = to_linear(r), to_linear(g), to_linear(b)
+  
+  -- Calculate relative luminance
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+end
+
+--- Adjust color brightness
+---@param hex string Hex color string
+---@param factor number Brightness factor (< 1 darker, > 1 lighter)
+---@return string Adjusted hex color
+local function adjust_brightness(hex, factor)
+  local r, g, b = hex:match("#(%x%x)(%x%x)(%x%x)")
+  if not r then return hex end
+  
+  r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
+  
+  r = math.min(255, math.floor(r * factor))
+  g = math.min(255, math.floor(g * factor))
+  b = math.min(255, math.floor(b * factor))
+  
+  return string.format("#%02X%02X%02X", r, g, b)
+end
+
+--- Generate adaptive colors based on theme
+---@param theme_colors table Table with bg and fg colors
+---@return table colors Table with covered, uncovered, and partial colors
+local function generate_adaptive_colors(theme_colors)
+  local bg_luminance = get_luminance(theme_colors.bg)
+  local is_dark_theme = bg_luminance < 0.5
+  
+  local colors = {}
+  
+  if is_dark_theme then
+    -- Dark theme: use lighter, saturated colors
+    colors.covered = { bg = "#003300", fg = "#00FF00" }
+    colors.uncovered = { bg = "#330000", fg = "#FF4444" }
+    colors.partial = { bg = "#332200", fg = "#FFAA00" }
+  else
+    -- Light theme: use darker, muted colors
+    colors.covered = { bg = "#CCFFCC", fg = "#006600" }
+    colors.uncovered = { bg = "#FFCCCC", fg = "#CC0000" }
+    colors.partial = { bg = "#FFEECC", fg = "#CC6600" }
+  end
+  
+  return colors
+end
+
 --- Setup highlight groups
 function M.setup_highlights()
+  local colors
+  
+  if M.auto_adapt_colors then
+    -- Auto-detect theme and adapt colors
+    local theme_colors = detect_theme_colors()
+    colors = generate_adaptive_colors(theme_colors)
+    
+    -- Allow manual overrides even with auto-adaptation
+    if M.colors.covered then
+      colors.covered = M.colors.covered
+    end
+    if M.colors.uncovered then
+      colors.uncovered = M.colors.uncovered
+    end
+    if M.colors.partial then
+      colors.partial = M.colors.partial
+    end
+  else
+    -- Use manual colors or fallback to defaults
+    colors = {
+      covered = M.colors.covered or { bg = "#00AA00", fg = "NONE" },
+      uncovered = M.colors.uncovered or { bg = "#FF0000", fg = "NONE" },
+      partial = M.colors.partial or { bg = "#FFAA00", fg = "NONE" },
+    }
+  end
+  
+  -- Normalize color format (support both string and table formats)
+  local function normalize_color(color)
+    if type(color) == "string" then
+      return { bg = color, fg = "NONE" }
+    elseif type(color) == "table" then
+      return color
+    end
+    return { bg = "#00AA00", fg = "NONE" }
+  end
+  
+  local covered_color = normalize_color(colors.covered)
+  local uncovered_color = normalize_color(colors.uncovered)
+  local partial_color = normalize_color(colors.partial)
+  
   -- Define highlights in global namespace (0)
   vim.api.nvim_set_hl(0, M.covered_hl, {
-    bg = "#00AA00",
-    fg = "NONE",
+    bg = covered_color.bg,
+    fg = covered_color.fg,
     bold = true,
     default = false,
   })
 
   vim.api.nvim_set_hl(0, M.uncovered_hl, {
-    bg = "#FF0000",
-    fg = "NONE",
+    bg = uncovered_color.bg,
+    fg = uncovered_color.fg,
     bold = true,
     default = false,
   })
 
   vim.api.nvim_set_hl(0, M.partial_hl, {
-    bg = "#FFAA00",
-    fg = "NONE",
+    bg = partial_color.bg,
+    fg = partial_color.fg,
     bold = true,
     default = false,
   })
@@ -146,6 +274,8 @@ function M.set_config(user_config)
     covered_hl = true,
     uncovered_hl = true,
     partial_hl = true,
+    auto_adapt_colors = true,
+    colors = true,
     virt_text_pos = true,
     show_hit_count = true,
     default_show_hit_count = true,

@@ -62,6 +62,7 @@ See [Installation Guide](doc/installation.md) for other plugin managers and Astr
 require("crazy-coverage").setup({
   default_show_hit_count = true,  -- Show hit counts by default
   virt_text_pos = "eol",          -- "eol", "inline", "overlay", "right_align"
+  auto_adapt_colors = true,       -- Auto-adapt colors to your theme
 })
 ```
 
@@ -74,10 +75,22 @@ require("crazy-coverage").setup({
   show_branch_summary = true,
 })
 
--- Custom colors
-vim.api.nvim_set_hl(0, "MyCovered", { bg = "#004400" })
+-- Custom colors (disable auto-adaptation)
 require("crazy-coverage").setup({
-  covered_hl = "MyCovered",
+  auto_adapt_colors = false,
+  colors = {
+    covered = { bg = "#1a4d1a", fg = "#66ff66" },
+    uncovered = { bg = "#4d1a1a", fg = "#ff6666" },
+    partial = { bg = "#4d4d1a", fg = "#ffff66" },
+  },
+})
+
+-- Auto-adapt with one manual override
+require("crazy-coverage").setup({
+  auto_adapt_colors = true,  -- Adapt most colors
+  colors = {
+    uncovered = "#660000",   -- But always use dark red for uncovered
+  },
 })
 ```
 
