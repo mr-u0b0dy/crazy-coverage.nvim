@@ -8,8 +8,11 @@ local M = {
   -- Virtual text position: 'eol', 'inline', 'overlay', 'right_align'
   virt_text_pos = "eol",
 
-  -- Show hit count in virtual text
+  -- Show hit count in virtual text by default when overlay is enabled
   show_hit_count = true,
+  
+  -- Show hit count by default when toggling overlay on
+  default_show_hit_count = true,
 
   -- Show percentage for lines
   show_percentage = false,
@@ -145,6 +148,7 @@ function M.set_config(user_config)
     partial_hl = true,
     virt_text_pos = true,
     show_hit_count = true,
+    default_show_hit_count = true,
     show_percentage = true,
     show_branch_summary = true,
     enable_line_hl = true,

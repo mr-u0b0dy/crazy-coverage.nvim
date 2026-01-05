@@ -11,22 +11,19 @@ return {
     lazy = false, -- Load on startup
     config = function()
       require("crazy-coverage").setup({
-        virt_text_pos = "eol",        -- "eol", "inline", "overlay", "right_align"
-        show_hit_count = true,         -- Show hit counts inline
-        show_branch_summary = false,   -- Show branch coverage as b:taken/total
-        auto_load = true,              -- Auto-load coverage on file open
+        virt_text_pos = "eol",           -- "eol", "inline", "overlay", "right_align"
+        default_show_hit_count = true,   -- Show hit counts by default when overlay is enabled
+        show_hit_count = true,           -- Current hit count display state
+        show_branch_summary = false,     -- Show branch coverage as b:taken/total
+        enable_line_hl = true,           -- Enable line highlighting
       })
     end,
     keys = {
-      -- Coverage management (<leader>c prefix)
-      { "<Leader>cl", "<cmd>CoverageLoad<cr>", desc = "Load coverage file" },
+      -- Coverage overlay toggle (auto-loads and watches for file changes)
       { "<Leader>ct", "<cmd>CoverageToggle<cr>", desc = "Toggle coverage overlay" },
-      { "<Leader>cc", "<cmd>CoverageClear<cr>", desc = "Clear coverage data" },
-      { "<Leader>ca", "<cmd>CoverageAutoLoad<cr>", desc = "Auto-load coverage" },
       
-      -- Display toggles (<leader>c prefix)
+      -- Toggle hit count display
       { "<Leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Toggle hit count display" },
-      { "<Leader>cd", "<cmd>CoverageToggleLineDisplay<cr>", desc = "Toggle line highlighting" },
 
       -- Navigation: {/} then c/p/u for prev/next covered/partial/uncovered
       { "}c", "<cmd>CoverageNextCovered<cr>", desc = "Next covered line" },

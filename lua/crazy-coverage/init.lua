@@ -12,6 +12,8 @@ local state = {
   coverage_file = nil,
   is_enabled = false,
   is_initialized = false,
+  file_watcher = nil,
+  last_modified = nil,
 }
 
 --- Get current state (read-only access)
@@ -92,53 +94,93 @@ function M.load_coverage(file_path)
   return true
 end
 
---- Auto-load coverage for current buffer
-function M.auto_load()
-  if state.is_enabled then
+--- Start watching coverage file for changes
+local function start_file_watcher()
+  if state.file_watcher then
+    return -- Already watching
+  end
+  
+  if not state.coverage_file or not utils.file_exists(state.coverage_file) then
     return
   end
+  
+  -- Check file modification time
+  local function check_file_modified()
+    local stat = vim.loop.fs_stat(state.coverage_file)
+    if stat then
+      local current_mtime = stat.mtime.sec
+      if state.last_modified and current_mtime > state.last_modified then
+        vim.notify("Coverage file updated, reloading...", vim.log.levels.INFO)
+        M.load_coverage(state.coverage_file)
+      end
+      state.last_modified = current_mtime
+    end
+  end
+  
+  -- Initial modification time
+  local stat = vim.loop.fs_stat(state.coverage_file)
+  if stat then
+    state.last_modified = stat.mtime.sec
+  end
+  
+  -- Create timer to check every 2 seconds
+  state.file_watcher = vim.loop.new_timer()
+  state.file_watcher:start(2000, 2000, vim.schedule_wrap(check_file_modified))
+end
 
-  local coverage_file = config.get_coverage_file()
-  if coverage_file then
-    M.load_coverage(coverage_file)
+--- Stop watching coverage file
+local function stop_file_watcher()
+  if state.file_watcher then
+    state.file_watcher:stop()
+    state.file_watcher:close()
+    state.file_watcher = nil
+    state.last_modified = nil
   end
 end
 
---- Toggle coverage overlay on/off
+--- Toggle coverage overlay (unified function)
 function M.toggle()
   if state.is_enabled then
-    M.disable()
+    -- Disable: clear everything and stop watching
+    renderer.clear_all()
+    stop_file_watcher()
+    state.coverage_data = nil
+    state.coverage_file = nil
+    state.is_enabled = false
+    vim.notify("Coverage disabled", vim.log.levels.INFO)
   else
-    M.enable()
-  end
-end
-
---- Enable coverage overlay
-function M.enable()
-  if state.coverage_data then
-    state.is_enabled = true
-    local ok, err = pcall(renderer.render, state.coverage_data)
-    if not ok then
-      vim.notify("Failed to render coverage: " .. tostring(err), vim.log.levels.ERROR)
+    -- Enable: find and load coverage file, start watching
+    local coverage_file = config.get_coverage_file()
+    if not coverage_file then
+      vim.notify("No coverage file found in project", vim.log.levels.WARN)
       return
     end
-  else
-    vim.notify("No coverage data loaded. Use :CoverageLoad first", vim.log.levels.WARN)
+    
+    if M.load_coverage(coverage_file) then
+      start_file_watcher()
+    end
   end
 end
 
---- Disable coverage overlay
-function M.disable()
-  state.is_enabled = false
-  renderer.clear_all()
+--- Enable coverage overlay (deprecated, use toggle)
+function M.enable()
+  if not state.is_enabled then
+    M.toggle()
+  end
 end
 
---- Clear all coverage data
+--- Disable coverage overlay (deprecated, use toggle)
+function M.disable()
+  if state.is_enabled then
+    M.toggle()
+  end
+end
+
+--- Clear all coverage data (deprecated, use toggle to disable)
 function M.clear()
-  renderer.clear_all()
-  state.coverage_data = nil
-  state.coverage_file = nil
-  state.is_enabled = false
+  if state.is_enabled then
+    M.toggle()
+  end
 end
 
 --- Get coverage info for the current buffer
@@ -334,23 +376,17 @@ function M.toggle_hitcount()
   vim.notify("Hit count display " .. status, vim.log.levels.INFO)
 end
 
---- Toggle line display (highlighting)
-function M.toggle_line_display()
-  local current_config = config.get_config()
-  current_config.enable_line_hl = not current_config.enable_line_hl
-  config.set_config(current_config)
-  
-  -- Re-render if coverage is enabled
-  if state.is_enabled and state.coverage_data then
-    renderer.render(state.coverage_data)
-  end
-  
-  local status = current_config.enable_line_hl and "enabled" or "disabled"
-  vim.notify("Line highlighting " .. status, vim.log.levels.INFO)
-end
-
 --- Create user commands
 function M.create_commands()
+  vim.api.nvim_create_user_command("CoverageToggle", function()
+    M.toggle()
+  end, {})
+
+  vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
+    M.toggle_hitcount()
+  end, {})
+  
+  -- Load coverage from specific file
   vim.api.nvim_create_user_command("CoverageLoad", function(opts)
     local file = opts.args
     if file == "" then
@@ -361,27 +397,10 @@ function M.create_commands()
       end
     end
     M.load_coverage(file)
+    if state.is_enabled then
+      start_file_watcher()
+    end
   end, { nargs = "?" })
-
-  vim.api.nvim_create_user_command("CoverageToggle", function()
-    M.toggle()
-  end, {})
-
-  vim.api.nvim_create_user_command("CoverageEnable", function()
-    M.enable()
-  end, {})
-
-  vim.api.nvim_create_user_command("CoverageDisable", function()
-    M.disable()
-  end, {})
-
-  vim.api.nvim_create_user_command("CoverageClear", function()
-    M.clear()
-  end, {})
-
-  vim.api.nvim_create_user_command("CoverageAutoLoad", function()
-    M.auto_load()
-  end, {})
 
   -- Navigation commands
   vim.api.nvim_create_user_command("CoverageNextCovered", function()
@@ -410,10 +429,6 @@ function M.create_commands()
   
   vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
     M.toggle_hitcount()
-  end, {})
-  
-  vim.api.nvim_create_user_command("CoverageToggleLineDisplay", function()
-    M.toggle_line_display()
   end, {})
 end
 

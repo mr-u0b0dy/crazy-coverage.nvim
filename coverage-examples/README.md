@@ -141,30 +141,36 @@ brew install llvm                  # macOS
 After generating coverage:
 
 ```vim
-" Load coverage
+" Single command to toggle coverage on/off
+:CoverageToggle              " Auto-loads coverage, watches for changes, enables overlay
+
+" Display toggle
+:CoverageToggleHitCount      " Toggle hit count display on/off
+
+" Manual load (optional)
 :CoverageLoad build/coverage/coverage.lcov
-
-" Management commands
-:CoverageToggle              " Toggle overlay on/off
-:CoverageClear               " Clear coverage data
-:CoverageAutoLoad            " Auto-load coverage for current buffer
-
-" Display toggles
-:CoverageToggleHitCount      " Toggle hit count display
-:CoverageToggleLineDisplay   " Toggle line highlighting
 ```
+
+### Smart Toggle Features
+
+When you enable coverage with `:CoverageToggle`:
+- ✓ Automatically finds and loads coverage file in project
+- ✓ Watches coverage file for changes and auto-reloads
+- ✓ Shows notification when coverage file is updated
+- ✓ Enables overlay with hit counts (configurable default)
+
+When you disable with `:CoverageToggle`:
+- ✓ Clears all coverage overlays
+- ✓ Stops file watching
+- ✓ Cleans up all resources
 
 ### Navigation Keybindings
 
 With the AstroVim configuration (see [config examples/astrovim-config.lua](../config%20examples/astrovim-config.lua)):
 
 **Coverage Management** (`<leader>c` prefix):
-- `<leader>cl` - Load coverage file
-- `<leader>ct` - Toggle coverage overlay
-- `<leader>cc` - Clear coverage data
-- `<leader>ca` - Auto-load coverage
+- `<leader>ct` - Toggle coverage overlay (auto-loads, watches for changes)
 - `<leader>ch` - Toggle hit count display
-- `<leader>cd` - Toggle line highlighting
 
 **Navigation** (`{/}` then `c/p/u`):
 - `}c` / `{c` - Next/Previous covered line
@@ -172,3 +178,13 @@ With the AstroVim configuration (see [config examples/astrovim-config.lua](../co
 - `}u` / `{u` - Next/Previous uncovered line
 
 The navigation follows Vim's natural `{` and `}` motion keys for moving between blocks, making it intuitive to jump between coverage regions.
+
+### Configuration Options
+
+```lua
+require("crazy-coverage").setup({
+  default_show_hit_count = true,  -- Show hit counts by default when overlay is enabled
+  enable_line_hl = true,          -- Enable line highlighting
+  virt_text_pos = "eol",          -- Position: "eol", "inline", "overlay", "right_align"
+})
+```
