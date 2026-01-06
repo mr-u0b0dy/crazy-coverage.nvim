@@ -10,6 +10,13 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 - **Configurable**: Customize colors, position, and display options
 - **Navigation**: Jump between covered/uncovered/partial lines
 
+## Supported Languages
+
+- **C/C++** - GCC (gcov/lcov), LLVM/Clang
+- **Any Language** - Via LCOV, Cobertura XML, or LLVM JSON formats
+
+The plugin supports any language that can generate coverage in one of the supported formats.
+
 ## Installation
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)

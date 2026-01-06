@@ -30,7 +30,7 @@ GCC_COVERAGE_FLAGS = --coverage -fprofile-arcs -ftest-coverage
 # LLVM Coverage flags
 LLVM_COVERAGE_FLAGS = -fprofile-instr-generate -fcoverage-mapping
 
-.PHONY: help gcov lcov llvm llvm-report clean run
+.PHONY: help gcov lcov llvm llvm-report cobertura clean run
 
 help:
 	@echo "Coverage Generation Examples - C"
@@ -40,6 +40,7 @@ help:
 	@echo "  make lcov           - Build and generate LCOV report"
 	@echo "  make llvm           - Build with LLVM/clang coverage"
 	@echo "  make llvm-report    - Build LLVM and generate JSON report"
+	@echo "  make cobertura      - Build and generate Cobertura XML report"
 	@echo "  make run            - Run the test program"
 	@echo "  make clean          - Clean build artifacts"
 	@echo ""
@@ -47,6 +48,7 @@ help:
 	@echo "  $$ make gcov        # Build with GCC coverage"
 	@echo "  $$ make run         # Run and generate coverage data"
 	@echo "  $$ make lcov        # Generate LCOV report (coverage.lcov)"
+	@echo "  $$ make cobertura   # Generate Cobertura XML report (coverage.xml)"
 	@echo ""
 
 # ===== GCC/gcov Coverage =====
@@ -96,6 +98,21 @@ llvm-report: llvm run-llvm
 	@echo ""
 	@echo "Load in crazy-coverage.nvim:"
 	@echo "  :CoverageLoad $(COVERAGE_DIR)/coverage.json"
+
+# ===== Cobertura XML Report =====
+cobertura: lcov
+	@echo ""
+	@echo "Converting LCOV to Cobertura XML..."
+	@mkdir -p $(COVERAGE_DIR)
+	cd $(BUILD_DIR) && python3 -m lcov_cobertura coverage.lcov -o coverage.xml 2>/dev/null || \
+		(echo "Note: python3-lcov-cobertura not installed"; \
+		 echo "Install with: pip install lcov-cobertura"; \
+		 exit 1)
+	cp $(BUILD_DIR)/coverage.xml $(COVERAGE_DIR)/
+	@echo "✓ Cobertura XML report generated: $(COVERAGE_DIR)/coverage.xml"
+	@echo ""
+	@echo "Load in crazy-coverage.nvim:"
+	@echo "  :CoverageLoad $(COVERAGE_DIR)/coverage.xml"
 
 # ===== Build Rules =====
 $(BUILD_DIR):
