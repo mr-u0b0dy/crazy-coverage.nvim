@@ -7,7 +7,7 @@ This directory contains example configurations for integrating crazy-coverage.nv
 Copy `astrovim-config.lua` to your AstroVim configuration:
 
 ```bash
-cp "config examples/astrovim-config.lua" ~/.config/nvim/lua/plugins/crazy-coverage.lua
+cp configs/astrovim-config.lua ~/.config/nvim/lua/plugins/crazy-coverage.lua
 ```
 
 Or for local development:

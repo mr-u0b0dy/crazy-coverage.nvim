@@ -20,10 +20,10 @@ return {
     end,
     keys = {
       -- Coverage overlay toggle (auto-loads and watches for file changes)
-      { "<Leader>ct", "<cmd>CoverageToggle<cr>", desc = "Toggle coverage overlay" },
+      { "<Leader>lt", "<cmd>CoverageToggle<cr>", desc = "Toggle coverage overlay" },
       
       -- Toggle hit count display
-      { "<Leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Toggle hit count display" },
+      { "<Leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Toggle hit count display" },
 
       -- Navigation: {/} then c, then c/p/u for prev/next covered/partial/uncovered
       { "}cc", "<cmd>CoverageNextCovered<cr>", desc = "Next covered line" },

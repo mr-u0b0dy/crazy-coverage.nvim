@@ -166,7 +166,7 @@ When you disable with `:CoverageToggle`:
 
 ### Navigation Keybindings
 
-With the AstroVim configuration (see [config examples/astrovim-config.lua](../config%20examples/astrovim-config.lua)):
+With the AstroVim configuration (see [configs/astrovim-config.lua](../configs/astrovim-config.lua)):
 
 **Coverage Management** (`<leader>c` prefix):
 - `<leader>ct` - Toggle coverage overlay (auto-loads, watches for changes)
