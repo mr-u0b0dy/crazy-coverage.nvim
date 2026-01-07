@@ -44,6 +44,15 @@ local M = {
     cpp = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
   },
 
+  -- Directories to search for coverage files (relative to project root)
+  -- Search order: standard directories first, then custom directories
+  coverage_dirs = {
+    "build/coverage",  -- Standard CMake coverage output
+    "coverage",        -- Standard coverage directory
+    "build",           -- Build directory root
+    ".",               -- Project root
+  },
+
   -- Project root patterns (for finding coverage files)
   project_markers = { ".git", "CMakeLists.txt", "Makefile", "compile_commands.json" },
 
@@ -51,6 +60,44 @@ local M = {
   cache_enabled = true,
   cache_dir = vim.fn.stdpath("cache") .. "/crazy-coverage.nvim",
 }
+
+--- Check if file is a valid coverage file by detecting its format
+---@param file_path string
+---@return boolean
+local function is_coverage_file(file_path)
+  if vim.fn.filereadable(file_path) ~= 1 then
+    return false
+  end
+  
+  local lines = vim.fn.readfile(file_path, '', 10)
+  if not lines or #lines == 0 then
+    return false
+  end
+  
+  local content = table.concat(lines, "\n")
+  
+  -- Format detection patterns (LCOV, LLVM JSON, Cobertura XML)
+  local patterns = {
+    "^TN:", "^FN:", "^DA:", "end_of_record",  -- LCOV
+    '"version".*"data"', '"data".*{',         -- LLVM JSON
+    "<coverage", "<package", "<class", "<line", -- Cobertura XML
+  }
+  
+  for _, pattern in ipairs(patterns) do
+    if content:match(pattern) then
+      return true
+    end
+  end
+  
+  -- Extension-based fallback
+  local ext = file_path:match("%.([^.]+)$")
+  local valid_exts = {
+    lcov = true, info = true, json = true, xml = true,
+    profdata = true, gcda = true, gcno = true,
+  }
+  
+  return valid_exts[ext] or false
+end
 
 --- Get coverage file for current buffer
 ---@param buf number|nil
@@ -67,20 +114,50 @@ function M.get_coverage_file(buf)
     return nil
   end
 
-  -- Look for coverage files in project root
-  local coverage_files = {
-    project_root .. "/coverage.lcov",
-    project_root .. "/coverage.json",
-    project_root .. "/coverage.xml",
-    project_root .. "/coverage.profdata",
-  }
-
-  for _, file in ipairs(coverage_files) do
-    if vim.fn.filereadable(file) == 1 then
-      return file
+  -- Collect all coverage patterns
+  local patterns = {}
+  for _, pattern_list in pairs(M.coverage_patterns) do
+    for _, pattern in ipairs(pattern_list) do
+      if not vim.tbl_contains(patterns, pattern) then
+        table.insert(patterns, pattern)
+      end
     end
   end
 
+  -- Search for files with supported extensions
+  for _, dir in ipairs(M.coverage_dirs) do
+    local search_dir = project_root .. "/" .. dir
+    
+    if vim.fn.isdirectory(search_dir) == 1 then
+      for _, pattern in ipairs(patterns) do
+        local files = vim.fn.glob(search_dir .. "/" .. pattern, false, true)
+        if files and #files > 0 then
+          table.sort(files)
+          local file = files[1]
+          
+          -- Verify file is valid coverage format
+          if is_coverage_file(file) then
+            return file
+          else
+            vim.notify(
+              string.format("Found '%s' but it's not a valid coverage file", vim.fn.fnamemodify(file, ":t")),
+              vim.log.levels.WARN
+            )
+          end
+        end
+      end
+    end
+  end
+
+  -- No coverage file found - notify user
+  local searched_dirs = vim.tbl_map(function(d) return project_root .. "/" .. d end, M.coverage_dirs)
+  local msg = string.format(
+    "Coverage file not found.\n\nSearched directories:\n  %s\n\nSupported patterns: %s\n\nTo customize search directories, add to your config:\n  coverage_dirs = { 'your/custom/dir', ... }",
+    table.concat(searched_dirs, "\n  "),
+    table.concat(patterns, ", ")
+  )
+  vim.notify(msg, vim.log.levels.INFO)
+  
   return nil
 end
 
@@ -284,6 +361,7 @@ function M.set_config(user_config)
     enable_line_hl = true,
     auto_load = true,
     coverage_patterns = true,
+    coverage_dirs = true,
     project_markers = true,
     cache_enabled = true,
     cache_dir = true,

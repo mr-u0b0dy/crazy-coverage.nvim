@@ -285,6 +285,42 @@ These colors are automatically re-applied when the colorscheme changes.
 
 ## File Detection
 
+### `coverage_dirs`
+
+**Type:** `table`  
+**Default:**
+```lua
+{
+  "build/coverage",  -- Standard CMake coverage output
+  "coverage",        -- Standard coverage directory
+  "build",           -- Build directory root
+  ".",               -- Project root
+}
+```
+
+Directories to search for coverage files, relative to the project root. The plugin searches each directory in order and uses the first coverage file found.
+
+**Search order example:**
+1. `project_root/build/coverage/coverage.lcov`
+2. `project_root/build/coverage/coverage.json`
+3. `project_root/coverage/coverage.lcov`
+4. `project_root/coverage/coverage.json`
+5. `project_root/build/coverage.lcov`
+6. ... and so on
+
+Custom directories:
+
+```lua
+-- Add custom coverage output directory
+coverage_dirs = {
+  "build/coverage",      -- CMake default
+  ".coverage",           -- Custom location
+  "build/reports",       -- Another location
+  "coverage",            -- Standard location
+  ".",                   -- Project root
+}
+```
+
 ### `coverage_patterns`
 
 **Type:** `table`  
@@ -296,7 +332,7 @@ These colors are automatically re-applied when the colorscheme changes.
 }
 ```
 
-File patterns to search for when auto-detecting coverage files. The plugin will search for these patterns in the project root directory.
+File patterns to search for when auto-detecting coverage files. The plugin will search for these patterns in the configured directories.
 
 You can add support for other languages:
 
@@ -384,12 +420,24 @@ require("crazy-coverage").setup({
   show_branch_summary = true,
   enable_line_hl = true,
   
-  -- Highlight groups
+  -- Colors
+  auto_adapt_colors = true,
+  colors = {
+    covered = nil,
+    uncovered = nil,
+    partial = nil,
+  },
   covered_hl = "CoverageCovered",
   uncovered_hl = "CoverageUncovered",
   partial_hl = "CoveragePartial",
   
   -- File detection
+  coverage_dirs = {
+    "build/coverage",
+    "coverage",
+    "build",
+    ".",
+  },
   coverage_patterns = {
     c = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
     cpp = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
@@ -428,6 +476,19 @@ require("crazy-coverage").setup({
 require("crazy-coverage").setup({
   virt_text_pos = "right_align",
   default_show_hit_count = false,
+})
+```
+
+### Custom Coverage Search Directories
+
+```lua
+require("crazy-coverage").setup({
+  coverage_dirs = {
+    "build/coverage",    -- CMake default
+    ".coverage",         -- Custom location
+    "coverage-reports",  -- Another location
+    ".",                 -- Project root fallback
+  },
 })
 ```
 
