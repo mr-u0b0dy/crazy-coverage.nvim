@@ -40,9 +40,22 @@ Complete guide to using crazy-coverage.nvim for viewing and navigating code cove
 
 The `:CoverageToggle` command provides a complete coverage management solution:
 
+### Automatic Coverage File Discovery
+
+When you run `:CoverageToggle`, the plugin automatically:
+
+1. **Finds project root** - Searches upward for `.git`, `CMakeLists.txt`, `Makefile`, etc.
+2. **Searches standard directories** - Looks in `build/coverage/`, `coverage/`, `build/`, and project root
+3. **Detects format by content** - Identifies LCOV, JSON, XML files regardless of name
+4. **Returns first match** - Uses the first valid coverage file found
+
+**You don't need to specify a file!** Unless your coverage file is in a non-standard location, it will be found automatically.
+
+See [File Discovery](file-discovery.md) for details on configuration and custom search paths.
+
 ### When Enabled
 
-1. **Auto-detects** coverage file in project root
+1. **Auto-detects** coverage file in standard directories
 2. **Loads** coverage data automatically  
 3. **Displays** overlay with line highlighting
 4. **Shows** hit counts (if `default_show_hit_count = true`)
@@ -62,7 +75,7 @@ The `:CoverageToggle` command provides a complete coverage management solution:
 " Open a source file
 :e src/math_utils.c
 
-" Enable coverage (auto-loads, watches file)
+" Enable coverage (auto-finds and loads file!)
 :CoverageToggle
 
 " Work on your code, run tests in another terminal:

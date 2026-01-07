@@ -298,15 +298,32 @@ These colors are automatically re-applied when the colorscheme changes.
 }
 ```
 
-Directories to search for coverage files, relative to the project root. The plugin searches each directory in order and uses the first coverage file found.
+Directories to search for coverage files, relative to the project root. The plugin searches each directory in order and uses the first valid coverage file found.
+
+**Intelligent File Detection**: The plugin doesn't just search for filenames - it verifies files by reading their content to confirm they're valid coverage files. This means coverage files can have any name and any extension, as long as the file contains valid coverage data.
 
 **Search order example:**
-1. `project_root/build/coverage/coverage.lcov`
-2. `project_root/build/coverage/coverage.json`
-3. `project_root/coverage/coverage.lcov`
-4. `project_root/coverage/coverage.json`
-5. `project_root/build/coverage.lcov`
-6. ... and so on
+1. Check `project_root/build/coverage/` - for any coverage file
+2. Check `project_root/coverage/` - for any coverage file
+3. Check `project_root/build/` - for any coverage file
+4. Check `project_root/` - for any coverage file
+
+**Supported Coverage Formats** (auto-detected by content):
+- **LCOV**: Files containing `TN:`, `FN:`, `DA:`, or `end_of_record` markers
+- **LLVM JSON**: Files containing `"version"` and `"data"` fields
+- **Cobertura XML**: Files containing `<coverage>`, `<package>`, or `<class>` tags
+- **GCOV**: `.gcda`, `.gcno` binary files
+- **LLVM Profdata**: `.profdata` binary files
+
+Filename doesn't matter - the plugin verifies coverage by actual content!
+
+**Examples of auto-detected files:**
+```
+project_root/build/my_coverage_report         ← No extension
+project_root/coverage_2025_01_09.json         ← Custom name
+project_root/results.xml                       ← Non-standard name
+project_root/build/cov_data                   ← No extension
+```
 
 Custom directories:
 
@@ -332,9 +349,9 @@ coverage_dirs = {
 }
 ```
 
-File patterns to search for when auto-detecting coverage files. The plugin will search for these patterns in the configured directories.
+**(Deprecated)** This option is kept for compatibility but is no longer strictly required. The plugin now uses intelligent content-based detection to identify coverage files, regardless of filename or extension.
 
-You can add support for other languages:
+The plugin will search for these patterns in the configured directories, but if a file doesn't match the pattern, it will still be checked by content inspection.
 
 ```lua
 coverage_patterns = {

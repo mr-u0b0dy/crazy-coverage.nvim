@@ -61,6 +61,45 @@ See [Installation Guide](doc/installation.md) for other plugin managers and Astr
 - Shows notifications on updates
 - Cleans up everything when disabled
 
+## Automatic Coverage File Discovery
+
+The plugin intelligently finds your coverage file automatically. It:
+
+1. **Searches Standard Directories** in order:
+   - `build/coverage/` - CMake build output
+   - `coverage/` - Standard coverage directory
+   - `build/` - Build directory root
+   - `.` - Project root
+
+2. **Detects by Content** - Not just filenames:
+   - Finds LCOV files (even if not named `*.lcov`)
+   - Finds JSON coverage reports (even with custom names)
+   - Finds Cobertura XML files (regardless of filename)
+   - Finds GCOV/LLVM Profdata binary files
+
+3. **Supports Any Filename**:
+   ```
+   ✓ build/coverage_report              (no extension)
+   ✓ coverage_2025_01_09.json           (custom name)
+   ✓ results.xml                        (non-standard name)
+   ✓ my_coverage_data                   (any name works)
+   ```
+
+You can customize the search directories in config:
+
+```lua
+require("crazy-coverage").setup({
+  coverage_dirs = {
+    "build/coverage",      -- Search here first
+    ".coverage",           -- Custom location
+    "coverage",
+    ".",
+  }
+})
+```
+
+See [Configuration Reference](doc/configuration.md#file-detection) for more details.
+
 ## Configuration
 
 ### Basic Setup

@@ -5,7 +5,9 @@
 - [Usage Guide](usage.md) - Commands, configuration, and examples
 
 ## Reference
+- [Configuration](configuration.md) - All configuration options
 - [Supported Formats](formats.md) - Coverage formats and generation instructions
+- [File Discovery](file-discovery.md) - How coverage files are automatically found
 - [Architecture](architecture.md) - Plugin design and extension guide
 
 ## Development
@@ -16,6 +18,8 @@
 ### For Users
 - **Installation** → [README#Installation](../README.md#installation)
 - **Basic usage** → [usage.md#Commands](usage.md#commands)
+- **Auto file discovery** → [file-discovery.md](file-discovery.md)
+- **Configuration options** → [configuration.md](configuration.md)
 - **Format help** → [formats.md](formats.md)
 
 ### For Developers
