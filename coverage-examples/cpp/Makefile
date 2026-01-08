@@ -102,6 +102,7 @@ cobertura: lcov
 		(echo "Note: python3-lcov-cobertura not installed"; \
 		 echo "Install with: pip install lcov-cobertura"; \
 		 exit 1)
+	@rm -f $(BUILD_DIR)/coverage.lcov
 	@echo "✓ Cobertura XML report generated: $(BUILD_DIR)/coverage.xml"
 	@echo ""
 	@echo "Load in crazy-coverage.nvim:"
