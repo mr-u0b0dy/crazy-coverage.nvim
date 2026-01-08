@@ -62,14 +62,12 @@ gcov: $(BUILD_DIR)/$(TARGET)
 lcov: gcov run
 	@echo ""
 	@echo "Generating LCOV report..."
-	@mkdir -p $(COVERAGE_DIR)
 	cd $(BUILD_DIR) && lcov --capture --directory . --output-file coverage.lcov
-	cd $(BUILD_DIR) && lcov --remove coverage.lcov '/usr/*' --output-file coverage.lcov
-	cp $(BUILD_DIR)/coverage.lcov $(COVERAGE_DIR)/
-	@echo "✓ LCOV report generated: $(COVERAGE_DIR)/coverage.lcov"
+	cd $(BUILD_DIR) && lcov --remove coverage.lcov '/usr/*' --ignore-errors unused --output-file coverage.lcov
+	@echo "✓ LCOV report generated: $(BUILD_DIR)/coverage.lcov"
 	@echo ""
 	@echo "Load in crazy-coverage.nvim:"
-	@echo "  :CoverageLoad $(COVERAGE_DIR)/coverage.lcov"
+	@echo "  :CoverageLoad $(BUILD_DIR)/coverage.lcov"
 
 # ===== LLVM/clang Coverage =====
 llvm: CXX = clang++
@@ -89,29 +87,25 @@ llvm: clean $(BUILD_DIR)/$(TARGET)
 llvm-report: llvm run-llvm
 	@echo ""
 	@echo "Converting LLVM profile to JSON..."
-	@mkdir -p $(COVERAGE_DIR)
 	cd $(BUILD_DIR) && llvm-profdata merge -o $(TARGET).profdata $(TARGET).profraw
 	cd $(BUILD_DIR) && llvm-cov export ./$(TARGET) -instr-profile=$(TARGET).profdata > coverage.json
-	cp $(BUILD_DIR)/coverage.json $(COVERAGE_DIR)/
-	@echo "✓ LLVM JSON report generated: $(COVERAGE_DIR)/coverage.json"
+	@echo "✓ LLVM JSON report generated: $(BUILD_DIR)/coverage.json"
 	@echo ""
 	@echo "Load in crazy-coverage.nvim:"
-	@echo "  :CoverageLoad $(COVERAGE_DIR)/coverage.json"
+	@echo "  :CoverageLoad $(BUILD_DIR)/coverage.json"
 
 # ===== Cobertura XML Report =====
 cobertura: lcov
 	@echo ""
 	@echo "Converting LCOV to Cobertura XML..."
-	@mkdir -p $(COVERAGE_DIR)
 	cd $(BUILD_DIR) && python3 -m lcov_cobertura coverage.lcov -o coverage.xml 2>/dev/null || \
 		(echo "Note: python3-lcov-cobertura not installed"; \
 		 echo "Install with: pip install lcov-cobertura"; \
 		 exit 1)
-	cp $(BUILD_DIR)/coverage.xml $(COVERAGE_DIR)/
-	@echo "✓ Cobertura XML report generated: $(COVERAGE_DIR)/coverage.xml"
+	@echo "✓ Cobertura XML report generated: $(BUILD_DIR)/coverage.xml"
 	@echo ""
 	@echo "Load in crazy-coverage.nvim:"
-	@echo "  :CoverageLoad $(COVERAGE_DIR)/coverage.xml"
+	@echo "  :CoverageLoad $(BUILD_DIR)/coverage.xml"
 
 # ===== Build Rules =====
 $(BUILD_DIR):

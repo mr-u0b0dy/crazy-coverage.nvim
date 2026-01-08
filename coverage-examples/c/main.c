@@ -8,6 +8,7 @@ int main() {
     add(a, b);
     subtract(a, b);
     multiply(a, b);
+    multiply(4, 5);
     divide(20, 4);
 
     /* Power and factorial with edge cases */

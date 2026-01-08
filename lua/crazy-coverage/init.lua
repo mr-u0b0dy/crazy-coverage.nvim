@@ -83,13 +83,17 @@ function M.load_coverage(file_path)
   state.coverage_file = file_path
   state.is_enabled = true
 
+  -- Debug: Log file paths in coverage data
+  vim.notify(string.format("Coverage loaded: %d file(s) from %s", #coverage_data.files, file_path), vim.log.levels.INFO)
+  for i, file_entry in ipairs(coverage_data.files) do
+    vim.notify(string.format("  [%d] %s (%d lines)", i, file_entry.path or "unknown", #(file_entry.lines or {})), vim.log.levels.DEBUG)
+  end
+
   local ok, render_err = pcall(renderer.render, coverage_data)
   if not ok then
     vim.notify("Coverage Error: Failed to render: " .. tostring(render_err), vim.log.levels.ERROR)
     return false
   end
-
-  vim.notify(string.format("Coverage loaded: %d file(s) from %s", #coverage_data.files, file_path), vim.log.levels.INFO)
 
   return true
 end
@@ -199,14 +203,21 @@ local function get_current_file_coverage()
 
   -- Normalize path for comparison
   file_path = vim.fn.fnamemodify(file_path, ":p")
+  
+  -- Debug: Log what we're looking for
+  vim.notify(string.format("DEBUG: Looking for coverage of: %s", file_path), vim.log.levels.INFO)
+  vim.notify(string.format("DEBUG: Coverage data has %d files", #state.coverage_data.files), vim.log.levels.INFO)
 
-  for _, file_entry in ipairs(state.coverage_data.files) do
+  for i, file_entry in ipairs(state.coverage_data.files) do
     local entry_path = vim.fn.fnamemodify(file_entry.path, ":p")
+    vim.notify(string.format("DEBUG: [%d] Comparing with: %s", i, entry_path), vim.log.levels.INFO)
     if entry_path == file_path then
+      vim.notify(string.format("DEBUG: ✓ Match found! Lines: %d", #(file_entry.lines or {})), vim.log.levels.INFO)
       return file_entry
     end
   end
 
+  vim.notify("DEBUG: ✗ No match found in coverage data", vim.log.levels.WARN)
   return nil
 end
 
