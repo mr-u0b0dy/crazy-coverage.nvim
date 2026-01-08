@@ -97,6 +97,9 @@ function M.parse(file_path)
 
   local content = table.concat(lines, "\n")
 
+  -- Get the directory of the coverage file for resolving relative paths
+  local coverage_dir = vim.fn.fnamemodify(file_path, ":p:h")
+
   local coverage_data = {
     files = {},
   }
@@ -109,8 +112,15 @@ function M.parse(file_path)
     for _, file_node in ipairs(file_nodes) do
       local filename = get_attr(file_node.attrs, "filename")
       if filename then
+        -- Resolve relative paths to absolute paths
+        local file_path = filename
+        if file_path and not vim.startswith(file_path, "/") then
+          file_path = vim.fn.simplify(coverage_dir .. "/" .. file_path)
+        end
+        file_path = vim.fn.fnamemodify(file_path, ":p")
+        
         local file_entry = {
-          path = filename,
+          path = file_path,
           lines = {},
           branches = {},
         }
@@ -138,8 +148,15 @@ function M.parse(file_path)
     for _, file_node in ipairs(class_nodes) do
       local filename = file_node.filename
       if filename then
+      -- Resolve relative paths to absolute paths
+      local file_path = filename
+      if file_path and not vim.startswith(file_path, "/") then
+        file_path = vim.fn.simplify(coverage_dir .. "/" .. file_path)
+      end
+      file_path = vim.fn.fnamemodify(file_path, ":p")
+      
       local file_entry = {
-        path = filename,
+        path = file_path,
         lines = {},
         branches = {},
       }

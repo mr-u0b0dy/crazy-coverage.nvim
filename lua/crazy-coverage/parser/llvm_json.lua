@@ -22,6 +22,9 @@ function M.parse(file_path)
     return nil
   end
 
+  -- Get the directory of the coverage file for resolving relative paths
+  local coverage_dir = vim.fn.fnamemodify(file_path, ":p:h")
+
   local coverage_data = {
     files = {},
   }
@@ -30,32 +33,61 @@ function M.parse(file_path)
   for _, record in ipairs(json_data.data) do
     if record.files then
       for _, file_data in ipairs(record.files) do
+        -- Resolve relative paths to absolute paths
+        local file_path = file_data.filename
+        if file_path and not vim.startswith(file_path, "/") then
+          file_path = vim.fn.simplify(coverage_dir .. "/" .. file_path)
+        end
+        file_path = vim.fn.fnamemodify(file_path, ":p")
+        
         local file_entry = {
-          path = file_data.filename,
+          path = file_path,
           lines = {},
           branches = {},
         }
 
-        -- Parse line coverage
-        if file_data.lines then
-          for _, line_info in ipairs(file_data.lines) do
-            local hit_count = line_info.count or 0
+        -- Parse segments to extract line coverage
+        -- Segments format: [line, col, count, hasCount, isRegionEntry, isGapRegion]
+        if file_data.segments then
+          local line_coverage = {}  -- Map line_num -> max hit count
+          
+          for _, segment in ipairs(file_data.segments) do
+            local line_num = segment[1]
+            local count = segment[3] or 0
+            local has_count = segment[4]
+            
+            -- Only process segments that have execution counts
+            if has_count and line_num then
+              if not line_coverage[line_num] or line_coverage[line_num] < count then
+                line_coverage[line_num] = count
+              end
+            end
+          end
+          
+          -- Convert map to sorted array
+          for line_num, hit_count in pairs(line_coverage) do
             table.insert(file_entry.lines, {
-              line_num = line_info.line_number,
+              line_num = line_num,
               hit_count = hit_count,
               covered = hit_count > 0,
             })
+          end
+          
+          -- Sort by line number
+          table.sort(file_entry.lines, function(a, b)
+            return a.line_num < b.line_num
+          end)
+        end
 
-            -- Parse branch coverage from regions if present
-            if line_info.regions then
-              for idx, region in ipairs(line_info.regions) do
-                table.insert(file_entry.branches, {
-                  line = line_info.line_number,
-                  id = idx,
-                  hit_count = region.count or 0,
-                })
-              end
-            end
+        -- Parse branches
+        if file_data.branches then
+          for idx, branch in ipairs(file_data.branches) do
+            -- Branch format: [line, col, endLine, endCol, folded, count, ...]
+            table.insert(file_entry.branches, {
+              line = branch[1],
+              id = idx,
+              hit_count = branch[6] or 0,
+            })
           end
         end
 
