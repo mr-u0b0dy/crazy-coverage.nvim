@@ -98,35 +98,35 @@ Navigate through coverage using Vim-style motions: `{` or `}` for direction, the
 
 | Keys | Command | Description |
 |------|---------|-------------|
-| `}cc` | `:CoverageNextCovered` | Next covered line |
-| `{cc` | `:CoveragePrevCovered` | Previous covered line |
-| `}cp` | `:CoverageNextPartial` | Next partial line |
-| `{cp` | `:CoveragePrevPartial` | Previous partial line |
-| `}cu` | `:CoverageNextUncovered` | Next uncovered line |
-| `{cu` | `:CoveragePrevUncovered` | Previous uncovered line |
+| `]cc` | `:CoverageNextCovered` | Next covered line |
+| `[cc` | `:CoveragePrevCovered` | Previous covered line |
+| `]cp` | `:CoverageNextPartial` | Next partial line |
+| `[cp` | `:CoveragePrevPartial` | Previous partial line |
+| `]cu` | `:CoverageNextUncovered` | Next uncovered line |
+| `[cu` | `:CoveragePrevUncovered` | Previous uncovered line |
 
 ### Navigation Tips
 
 **Find Untested Code**
 ```vim
 " Jump through all uncovered lines
-}cu   " Next uncovered
-}cu   " Next uncovered again
-{cu   " Go back to previous uncovered
+]cu   " Next uncovered
+]cu   " Next uncovered again
+[cu   " Go back to previous uncovered
 ```
 
 **Review Branch Coverage**
 ```vim
 " Jump through partially covered lines (missed branches)
-}cp   " Next partial
-}cp   " Next partial again
+]cp   " Next partial
+]cp   " Next partial again
 ```
 
 **Quick Coverage Check**
 ```vim
 " Jump to first uncovered line
 gg    " Go to top of file
-}cu   " Jump to first uncovered line
+]cu   " Jump to first uncovered line
 ```
 
 ---
@@ -142,16 +142,16 @@ keys = {
   { "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
   
   -- Navigate covered lines
-  { "}cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered" },
-  { "{cc", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev Covered" },
+  { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered" },
+  { "[cc", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev Covered" },
   
   -- Navigate partial lines
-  { "}cp", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next Partial" },
-  { "{cp", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev Partial" },
+  { "]cp", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next Partial" },
+  { "[cp", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev Partial" },
   
   -- Navigate uncovered lines
-  { "}cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
-  { "{cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
+  { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
+  { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
 }
 ```
 
@@ -160,8 +160,8 @@ keys = {
 ```lua
 keys = {
   { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
-  { "}cu", "<cmd>CoverageNextUncovered<cr>", desc = "Next Uncovered" },
-  { "{cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Prev Uncovered" },
+  { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Next Uncovered" },
+  { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Prev Uncovered" },
 }
 ```
 
@@ -174,12 +174,12 @@ end
 
 map("n", "<leader>ct", "<cmd>CoverageToggle<cr>", "Coverage: Toggle")
 map("n", "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", "Coverage: Toggle Hit Count")
-map("n", "}cu", "<cmd>CoverageNextUncovered<cr>", "Coverage: Next Uncovered")
-map("n", "{cu", "<cmd>CoveragePrevUncovered<cr>", "Coverage: Prev Uncovered")
-map("n", "}cp", "<cmd>CoverageNextPartial<cr>", "Coverage: Next Partial")
-map("n", "{cp", "<cmd>CoveragePrevPartial<cr>", "Coverage: Prev Partial")
-map("n", "}cc", "<cmd>CoverageNextCovered<cr>", "Coverage: Next Covered")
-map("n", "{cc", "<cmd>CoveragePrevCovered<cr>", "Coverage: Prev Covered")
+map("n", "]cu", "<cmd>CoverageNextUncovered<cr>", "Coverage: Next Uncovered")
+map("n", "[cu", "<cmd>CoveragePrevUncovered<cr>", "Coverage: Prev Uncovered")
+map("n", "]cp", "<cmd>CoverageNextPartial<cr>", "Coverage: Next Partial")
+map("n", "[cp", "<cmd>CoveragePrevPartial<cr>", "Coverage: Prev Partial")
+map("n", "]cc", "<cmd>CoverageNextCovered<cr>", "Coverage: Next Covered")
+map("n", "[cc", "<cmd>CoveragePrevCovered<cr>", "Coverage: Prev Covered")
 ```
 
 ---

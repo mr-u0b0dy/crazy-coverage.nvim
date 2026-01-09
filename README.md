@@ -50,8 +50,8 @@ See [Installation Guide](doc/installation.md) for other plugin managers and Astr
 :CoverageToggle
 
 -- Navigate uncovered code
-}cu  " Next uncovered line
-{cu  " Previous uncovered line
+]cu  " Next uncovered line
+[cu  " Previous uncovered line
 ```
 
 **What the toggle does:**

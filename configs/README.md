@@ -46,9 +46,9 @@ The example configuration includes the following keybindings:
 - `<leader>la` - Auto-load coverage
 
 ### Navigation
-- `}cc` / `{cc` - Next/Previous covered line
-- `}cp` / `{cp` - Next/Previous partially covered line
-- `}cu` / `{cu` - Next/Previous uncovered line
+- `]cc` / `[cc` - Next/Previous covered line
+- `]cp` / `[cp` - Next/Previous partially covered line
+- `]cu` / `[cu` - Next/Previous uncovered line
 
 ## Customization
 
@@ -71,7 +71,7 @@ After restarting Neovim or running `:Lazy sync`:
 1. Generate coverage data for your project
 2. Open a source file
 3. Load coverage: `<leader>ll` and enter the coverage file path
-4. Navigate uncovered code: `}cu` to find lines that need tests
+5. Navigate uncovered code: `]cu` to find lines that need tests
 5. Toggle overlay: `<leader>lt` to hide/show coverage
 
 ## Supported Coverage Formats
