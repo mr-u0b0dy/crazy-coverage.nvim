@@ -10,6 +10,8 @@ local utils = require("crazy-coverage.utils")
 local state = {
   coverage_data = nil,
   coverage_file = nil,
+  coverage_file_info = nil,  -- Cached file info from config
+  project_root = nil,        -- Cached project root
   is_enabled = false,
   is_initialized = false,
   file_watcher = nil,
@@ -54,8 +56,9 @@ end
 
 --- Load coverage from file
 ---@param file_path string
+---@param project_root string|nil -- Project root for parser path resolution
 ---@return boolean -- true if successful
-function M.load_coverage(file_path)
+function M.load_coverage(file_path, project_root)
   if not file_path or file_path == "" then
     vim.notify("Coverage Error: No file path provided", vim.log.levels.ERROR)
     return false
@@ -66,7 +69,12 @@ function M.load_coverage(file_path)
     return false
   end
 
-  local coverage_data, err = parser_dispatcher.parse(file_path)
+  -- Auto-detect project root if not provided
+  if not project_root then
+    project_root = config.find_project_root(file_path)
+  end
+
+  local coverage_data, err = parser_dispatcher.parse(file_path, project_root)
 
   if not coverage_data then
     vim.notify("Coverage Error: " .. (err or "Unknown error"), vim.log.levels.ERROR)
@@ -81,6 +89,12 @@ function M.load_coverage(file_path)
 
   state.coverage_data = coverage_data
   state.coverage_file = file_path
+  state.project_root = project_root  -- Cache project root
+  state.coverage_file_info = {        -- Cache file info
+    path = file_path,
+    project_root = project_root,
+    format = utils.detect_format(file_path),
+  }
   state.is_enabled = true
 
   -- Debug: Log file paths in coverage data
@@ -89,7 +103,7 @@ function M.load_coverage(file_path)
     vim.notify(string.format("  [%d] %s (%d lines)", i, file_entry.path or "unknown", #(file_entry.lines or {})), vim.log.levels.DEBUG)
   end
 
-  local ok, render_err = pcall(renderer.render, coverage_data)
+  local ok, render_err = pcall(renderer.render, coverage_data, state.project_root)
   if not ok then
     vim.notify("Coverage Error: Failed to render: " .. tostring(render_err), vim.log.levels.ERROR)
     return false
@@ -150,17 +164,30 @@ function M.toggle()
     stop_file_watcher()
     state.coverage_data = nil
     state.coverage_file = nil
+    state.coverage_file_info = nil
+    state.project_root = nil
     state.is_enabled = false
     vim.notify("Coverage disabled", vim.log.levels.INFO)
   else
-    -- Enable: find and load coverage file, start watching
-    local coverage_file = config.get_coverage_file()
-    if not coverage_file then
-      vim.notify("No coverage file found in project", vim.log.levels.WARN)
-      return
+    -- Enable: reuse cached file info or find new coverage file
+    local coverage_file, project_root
+    
+    if state.coverage_file_info then
+      -- Reuse previously identified file
+      coverage_file = state.coverage_file_info.path
+      project_root = state.coverage_file_info.project_root
+      vim.notify("Reusing previously loaded coverage file", vim.log.levels.INFO)
+    else
+      -- Find new coverage file
+      coverage_file = config.get_coverage_file()
+      if not coverage_file then
+        vim.notify("No coverage file found in project", vim.log.levels.WARN)
+        return
+      end
+      project_root = config.find_project_root(coverage_file)
     end
     
-    if M.load_coverage(coverage_file) then
+    if M.load_coverage(coverage_file, project_root) then
       start_file_watcher()
     end
   end
@@ -407,7 +434,8 @@ function M.create_commands()
         return
       end
     end
-    M.load_coverage(file)
+    local project_root = config.find_project_root(file)
+    M.load_coverage(file, project_root)
     if state.is_enabled then
       start_file_watcher()
     end

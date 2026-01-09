@@ -1,6 +1,7 @@
 -- Parser dispatcher - detects format and routes to appropriate parser
 local M = {}
 local utils = require("crazy-coverage.utils")
+local config = require("crazy-coverage.config")
 
 --- Load and cache parser modules
 M.parsers = {
@@ -13,14 +14,20 @@ M.parsers = {
 
 --- Parse coverage file - auto-detect format
 ---@param file_path string
+---@param project_root string|nil -- Optional project root for better path resolution
 ---@return table|nil, string|nil -- CoverageData or nil, error message
-function M.parse(file_path)
+function M.parse(file_path, project_root)
   if not file_path or file_path == "" then
     return nil, "File path is required"
   end
   
   if not utils.file_exists(file_path) then
     return nil, "File does not exist: " .. file_path
+  end
+
+  -- Auto-detect project root if not provided
+  if not project_root then
+    project_root = config.find_project_root(file_path)
   end
 
   local format = utils.detect_format(file_path)
@@ -38,7 +45,7 @@ function M.parse(file_path)
     return nil, "Invalid parser for format: " .. format
   end
 
-  local ok, result = pcall(parser.parse, file_path)
+  local ok, result = pcall(parser.parse, file_path, project_root)
   if not ok then
     return nil, "Failed to parse coverage file: " .. tostring(result)
   end

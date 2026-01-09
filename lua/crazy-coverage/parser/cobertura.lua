@@ -2,6 +2,26 @@
 local M = {}
 local utils = require("crazy-coverage.utils")
 
+--- Normalize path by resolving .. and . segments
+---@param path string
+---@return string
+local function normalize_path(path)
+  -- Try vim.fn.fnamemodify first
+  local normalized = vim.fn.fnamemodify(path, ":p")
+  
+  -- If the path doesn't exist, manually resolve .. segments
+  local parts = {}
+  for part in normalized:gmatch("[^/]+") do
+    if part == ".." then
+      table.remove(parts)
+    elseif part ~= "." then
+      table.insert(parts, part)
+    end
+  end
+  
+  return "/" .. table.concat(parts, "/")
+end
+
 --- Simple XML tag extractor (not a full XML parser)
 ---@param content string
 ---@param tag_name string
@@ -84,8 +104,9 @@ end
 
 --- Parse Cobertura XML format
 ---@param file_path string
+---@param project_root string|nil -- Project root for better path resolution
 ---@return table|nil -- CoverageData model or nil on error
-function M.parse(file_path)
+function M.parse(file_path, project_root)
   if not utils.file_exists(file_path) then
     return nil
   end
@@ -97,8 +118,14 @@ function M.parse(file_path)
 
   local content = table.concat(lines, "\n")
 
-  -- Get the directory of the coverage file for resolving relative paths
+  -- Use coverage file directory as base for relative path resolution
+  -- Relative paths in coverage files are relative to the coverage file location
   local coverage_dir = vim.fn.fnamemodify(file_path, ":p:h")
+  
+  -- Project root can be used for context, but coverage file directory is the base
+  if not project_root then
+    project_root = vim.fn.fnamemodify(file_path, ":p:h:h")
+  end
 
   local coverage_data = {
     files = {},
@@ -114,10 +141,12 @@ function M.parse(file_path)
       if filename then
         -- Resolve relative paths to absolute paths
         local file_path = filename
-        if file_path and not vim.startswith(file_path, "/") then
-          file_path = vim.fn.simplify(coverage_dir .. "/" .. file_path)
+        -- If path is relative, make it absolute relative to coverage file directory
+        if file_path:sub(1, 1) ~= "/" then
+          file_path = coverage_dir .. "/" .. file_path
         end
-        file_path = vim.fn.fnamemodify(file_path, ":p")
+        -- Normalize to absolute path (resolve .. and .)
+        file_path = normalize_path(file_path)
         
         local file_entry = {
           path = file_path,
@@ -150,10 +179,12 @@ function M.parse(file_path)
       if filename then
       -- Resolve relative paths to absolute paths
       local file_path = filename
-      if file_path and not vim.startswith(file_path, "/") then
-        file_path = vim.fn.simplify(coverage_dir .. "/" .. file_path)
+      -- If path is relative, make it absolute relative to coverage file directory
+      if file_path:sub(1, 1) ~= "/" then
+        file_path = coverage_dir .. "/" .. file_path
       end
-      file_path = vim.fn.fnamemodify(file_path, ":p")
+      -- Normalize to absolute path (resolve .. and .)
+      file_path = normalize_path(file_path)
       
       local file_entry = {
         path = file_path,

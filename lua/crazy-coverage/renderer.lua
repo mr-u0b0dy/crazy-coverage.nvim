@@ -26,7 +26,8 @@ end
 
 --- Render coverage data to buffers
 ---@param coverage_data table -- CoverageData model
-function M.render(coverage_data)
+---@param project_root string|nil -- Project root for context (from cache)
+function M.render(coverage_data, project_root)
   if not coverage_data then
     error("coverage_data is required")
   end
@@ -35,17 +36,27 @@ function M.render(coverage_data)
     error("coverage_data.files must be a table")
   end
 
+  if project_root then
+    vim.notify(string.format("RENDER: Using project root: %s", project_root), vim.log.levels.DEBUG)
+  end
+
   local rendered_count = 0
+  vim.notify(string.format("RENDER: Starting render for %d files", #coverage_data.files), vim.log.levels.DEBUG)
+  
   for _, file_entry in ipairs(coverage_data.files) do
     if file_entry and file_entry.path then
+      vim.notify(string.format("RENDER: File entry path: %s (lines: %d)", file_entry.path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
       local buf = utils.get_buffer_by_path(file_entry.path)
       if buf then
+        vim.notify(string.format("RENDER: Found buffer %d, rendering %d lines", buf, #(file_entry.lines or {})), vim.log.levels.DEBUG)
         local ok, err = pcall(M.render_file, buf, file_entry)
         if ok then
           rendered_count = rendered_count + 1
         else
           vim.notify("Failed to render " .. file_entry.path .. ": " .. tostring(err), vim.log.levels.WARN)
         end
+      else
+        vim.notify(string.format("RENDER: No buffer found for %s", file_entry.path), vim.log.levels.DEBUG)
       end
     end
   end

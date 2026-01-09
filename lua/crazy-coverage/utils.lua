@@ -1,7 +1,7 @@
 -- Utility functions for the coverage plugin
 local M = {}
 
---- Normalize file path to absolute path
+--- Normalize file path to absolute path, resolving .. and . segments
 ---@param path string
 ---@return string|nil
 function M.normalize_path(path)
@@ -9,12 +9,23 @@ function M.normalize_path(path)
     return nil
   end
   
-  if path:sub(1, 1) == "/" then
-    return path
+  -- Use vim.fn.fnamemodify to get absolute path
+  local normalized = vim.fn.fnamemodify(path, ":p")
+  if normalized == "" then
+    return nil
   end
   
-  local normalized = vim.fn.fnamemodify(path, ":p")
-  return normalized ~= "" and normalized or nil
+  -- Manually resolve .. and . segments (important for non-existent files)
+  local parts = {}
+  for part in normalized:gmatch("[^/]+") do
+    if part == ".." then
+      table.remove(parts)
+    elseif part ~= "." then
+      table.insert(parts, part)
+    end
+  end
+  
+  return "/" .. table.concat(parts, "/")
 end
 
 --- Read file contents
@@ -90,20 +101,27 @@ function M.get_buffer_by_path(file_path)
   
   local normalized_path = M.normalize_path(file_path)
   if not normalized_path then
+    vim.notify(string.format("GET_BUF: Failed to normalize: %s", file_path), vim.log.levels.DEBUG)
     return nil
   end
+  
+  vim.notify(string.format("GET_BUF: Looking for normalized: %s", normalized_path), vim.log.levels.DEBUG)
   
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
       local buf_path = vim.api.nvim_buf_get_name(buf)
       if buf_path and buf_path ~= "" then
         local buf_normalized = M.normalize_path(buf_path)
+        vim.notify(string.format("GET_BUF:   [buf %d] checking: %s", buf, buf_normalized or "(failed to normalize)"), vim.log.levels.DEBUG)
         if buf_normalized == normalized_path then
+          vim.notify(string.format("GET_BUF: ✓ MATCH! buf=%d", buf), vim.log.levels.DEBUG)
           return buf
         end
       end
     end
   end
+  
+  vim.notify(string.format("GET_BUF: ✗ No matching buffer found"), vim.log.levels.DEBUG)
   return nil
 end
 
