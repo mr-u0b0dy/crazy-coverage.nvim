@@ -49,8 +49,8 @@ Complete installation instructions for crazy-coverage.nvim across different plug
 {
   "mr-u0b0dy/crazy-coverage.nvim",
   keys = {
-    { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
-    { "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
+    { "<leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
+    { "<leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
     { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
     { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
   },
@@ -148,8 +148,8 @@ return {
   
   keys = {
     -- Main commands
-    { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle (Auto-load + Watch)" },
-    { "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
+    { "<leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle (Auto-load + Watch)" },
+    { "<leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
     
     -- Navigation: Covered lines
     { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered Line" },
@@ -181,7 +181,7 @@ return {
 return {
   "mr-u0b0dy/crazy-coverage.nvim",
   keys = {
-    { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
+    { "<leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
     { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
     { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
   },

@@ -47,7 +47,7 @@ virt_text_pos = "eol"
 **Type:** `boolean`  
 **Default:** `true`
 
-Controls whether hit counts are shown by default when the coverage overlay is enabled via `:CoverageToggle`. Set to `false` if you prefer to manually toggle hit counts each time using `<leader>ch`.
+Controls whether hit counts are shown by default when the coverage overlay is enabled via `:CoverageToggle`. Set to `false` if you prefer to manually toggle hit counts each time using `<leader>lh`.
 
 ```lua
 default_show_hit_count = true  -- Hit counts visible when overlay enabled

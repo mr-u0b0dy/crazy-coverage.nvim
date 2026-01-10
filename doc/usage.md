@@ -138,8 +138,8 @@ gg    " Go to top of file
 ```lua
 keys = {
   -- Main commands
-  { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
-  { "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
+  { "<leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
+  { "<leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
   
   -- Navigate covered lines
   { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered" },
@@ -159,7 +159,7 @@ keys = {
 
 ```lua
 keys = {
-  { "<leader>ct", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
+  { "<leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
   { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Next Uncovered" },
   { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Prev Uncovered" },
 }
@@ -172,8 +172,8 @@ local function map(mode, lhs, rhs, desc)
   vim.keymap.set(mode, lhs, rhs, { desc = desc, silent = true })
 end
 
-map("n", "<leader>ct", "<cmd>CoverageToggle<cr>", "Coverage: Toggle")
-map("n", "<leader>ch", "<cmd>CoverageToggleHitCount<cr>", "Coverage: Toggle Hit Count")
+map("n", "<leader>lt", "<cmd>CoverageToggle<cr>", "Coverage: Toggle")
+map("n", "<leader>lh", "<cmd>CoverageToggleHitCount<cr>", "Coverage: Toggle Hit Count")
 map("n", "]cu", "<cmd>CoverageNextUncovered<cr>", "Coverage: Next Uncovered")
 map("n", "[cu", "<cmd>CoveragePrevUncovered<cr>", "Coverage: Prev Uncovered")
 map("n", "]cp", "<cmd>CoverageNextPartial<cr>", "Coverage: Next Partial")
@@ -371,8 +371,8 @@ require("crazy-coverage").setup({
     })
     
     -- Set custom keymaps
-    vim.keymap.set("n", "<leader>cl", "<cmd>CoverageLoad<CR>")
-    vim.keymap.set("n", "<leader>ct", "<cmd>CoverageToggle<CR>")
+    vim.keymap.set("n", "<leader>ll", "<cmd>CoverageLoad<CR>")
+    vim.keymap.set("n", "<leader>lt", "<cmd>CoverageToggle<CR>")
   end,
 }
 ```
