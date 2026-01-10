@@ -24,5 +24,5 @@ jobs:
       - name: Run tests
         run: |
           cd ${{ github.workspace }}
-          nvim --headless --noplugin -u NONE \
-            +"lua dofile('test/run_tests.lua')" +qa!
+          nvim --headless -u NONE \
+            +"lua dofile('test/run_all.lua')" +qa!

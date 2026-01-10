@@ -50,7 +50,7 @@ end
 function M.detect_format(file_path)
   local ext = file_path:match("%.([^.]+)$")
 
-  if ext == "info" then
+  if ext == "info" or ext == "lcov" then
     return "lcov"
   elseif ext == "json" then
     -- Check if it's LLVM JSON format
