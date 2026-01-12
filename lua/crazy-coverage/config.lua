@@ -30,7 +30,7 @@ local M = {
   show_percentage = false,
 
   -- Show branch summary per line (taken/total)
-  show_branch_summary = false,
+  show_branch_summary = true,
   
   -- Enable line highlighting
   enable_line_hl = true,
@@ -253,12 +253,12 @@ local function generate_adaptive_colors(theme_colors)
     -- Dark theme: use lighter, saturated colors
     colors.covered = { bg = "#003300", fg = "#00FF00" }
     colors.uncovered = { bg = "#330000", fg = "#FF4444" }
-    colors.partial = { bg = "#332200", fg = "#FFAA00" }
+    colors.partial = { bg = "#664400", fg = "#FFFF00" }  -- More orange/yellow with bright yellow text
   else
     -- Light theme: use darker, muted colors
     colors.covered = { bg = "#CCFFCC", fg = "#006600" }
     colors.uncovered = { bg = "#FFCCCC", fg = "#CC0000" }
-    colors.partial = { bg = "#FFEECC", fg = "#CC6600" }
+    colors.partial = { bg = "#FFDD99", fg = "#FF8800" }  -- Bright yellow/orange background
   end
   
   return colors
@@ -288,7 +288,7 @@ function M.setup_highlights()
     colors = {
       covered = M.colors.covered or { bg = "#00AA00", fg = "NONE" },
       uncovered = M.colors.uncovered or { bg = "#FF0000", fg = "NONE" },
-      partial = M.colors.partial or { bg = "#FFAA00", fg = "NONE" },
+      partial = M.colors.partial or { bg = "#FFAA00", fg = "#000000" },
     }
   end
   
