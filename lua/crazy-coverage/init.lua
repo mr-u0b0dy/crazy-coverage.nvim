@@ -505,70 +505,90 @@ local function navigate_to_coverage(direction, filter)
 
   if found_line then
     vim.api.nvim_win_set_cursor(0, { found_line, 0 })
-    vim.cmd("normal! zz") -- Center the screen
+    if config.center_on_navigate then
+      vim.cmd("normal! zz") -- Center the screen
+    end
   end
 end
 
 --- Navigate to next covered line
 function M.next_covered()
-  navigate_to_coverage(1, function(line_info, _)
-    return line_info.covered and line_info.hit_count > 0
-  end)
+  local count = vim.v.count1
+  for _ = 1, count do
+    navigate_to_coverage(1, function(line_info, _)
+      return line_info.covered and line_info.hit_count > 0
+    end)
+  end
 end
 
 --- Navigate to previous covered line
 function M.prev_covered()
-  navigate_to_coverage(-1, function(line_info, _)
-    return line_info.covered and line_info.hit_count > 0
-  end)
+  local count = vim.v.count1
+  for _ = 1, count do
+    navigate_to_coverage(-1, function(line_info, _)
+      return line_info.covered and line_info.hit_count > 0
+    end)
+  end
 end
 
 --- Navigate to next uncovered line
 function M.next_uncovered()
-  navigate_to_coverage(1, function(line_info, _)
-    return not line_info.covered or line_info.hit_count == 0
-  end)
+  local count = vim.v.count1
+  for _ = 1, count do
+    navigate_to_coverage(1, function(line_info, _)
+      return not line_info.covered or line_info.hit_count == 0
+    end)
+  end
 end
 
 --- Navigate to previous uncovered line
 function M.prev_uncovered()
-  navigate_to_coverage(-1, function(line_info, _)
-    return not line_info.covered or line_info.hit_count == 0
-  end)
+  local count = vim.v.count1
+  for _ = 1, count do
+    navigate_to_coverage(-1, function(line_info, _)
+      return not line_info.covered or line_info.hit_count == 0
+    end)
+  end
 end
 
 --- Navigate to next partially covered line (has branches with mixed coverage)
 function M.next_partial()
-  navigate_to_coverage(1, function(line_info, branches)
-    if not branches or #branches == 0 then
-      return false
-    end
-    local taken = 0
-    local total = #branches
-    for _, br in ipairs(branches) do
-      if (br.hit_count or 0) > 0 then
-        taken = taken + 1
+  local count = vim.v.count1
+  for _ = 1, count do
+    navigate_to_coverage(1, function(line_info, branches)
+      if not branches or #branches == 0 then
+        return false
       end
-    end
-    return taken > 0 and taken < total
-  end)
+      local taken = 0
+      local total = #branches
+      for _, br in ipairs(branches) do
+        if (br.hit_count or 0) > 0 then
+          taken = taken + 1
+        end
+      end
+      return taken > 0 and taken < total
+    end)
+  end
 end
 
 --- Navigate to previous partially covered line (has branches with mixed coverage)
 function M.prev_partial()
-  navigate_to_coverage(-1, function(line_info, branches)
-    if not branches or #branches == 0 then
-      return false
-    end
-    local taken = 0
-    local total = #branches
-    for _, br in ipairs(branches) do
-      if (br.hit_count or 0) > 0 then
-        taken = taken + 1
+  local count = vim.v.count1
+  for _ = 1, count do
+    navigate_to_coverage(-1, function(line_info, branches)
+      if not branches or #branches == 0 then
+        return false
       end
-    end
-    return taken > 0 and taken < total
-  end)
+      local taken = 0
+      local total = #branches
+      for _, br in ipairs(branches) do
+        if (br.hit_count or 0) > 0 then
+          taken = taken + 1
+        end
+      end
+      return taken > 0 and taken < total
+    end)
+  end
 end
 
 --- Toggle hit count display

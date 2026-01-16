@@ -35,6 +35,9 @@ local M = {
   -- Enable line highlighting
   enable_line_hl = true,
 
+  -- Center screen when navigating to coverage lines
+  center_on_navigate = false,
+
   -- Auto load coverage when opening file
   auto_load = true,
 
