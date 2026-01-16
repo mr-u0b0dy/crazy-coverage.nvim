@@ -5,6 +5,22 @@ local parser_dispatcher = require("crazy-coverage.parser")
 local renderer = require("crazy-coverage.renderer")
 local config = require("crazy-coverage.config")
 local utils = require("crazy-coverage.utils")
+local notify_once = vim.notify_once or vim.notify
+
+-- Centralized notification helper that gates debug logs and dedupes INFO popups
+local function notify(msg, level)
+  level = level or vim.log.levels.INFO
+  if level == vim.log.levels.DEBUG and not config.debug_notifications then
+    return
+  end
+
+  if level == vim.log.levels.INFO then
+    notify_once(msg, level)
+    return
+  end
+
+  vim.notify(msg, level)
+end
 
 -- State management
 local state = {
@@ -17,6 +33,7 @@ local state = {
   file_watcher = nil,
   last_modified = nil,
   last_size = nil,           -- Track file size for change detection
+  coverage_file_missing_notified = false, -- Prevent duplicate deletion warnings
 }
 
 --- Get current state (read-only access)
@@ -61,12 +78,12 @@ end
 ---@return boolean -- true if successful
 function M.load_coverage(file_path, project_root)
   if not file_path or file_path == "" then
-    vim.notify("Coverage Error: No file path provided", vim.log.levels.ERROR)
+    notify("Coverage Error: No file path provided", vim.log.levels.ERROR)
     return false
   end
 
   if not utils.file_exists(file_path) then
-    vim.notify("Coverage Error: File not found: " .. file_path, vim.log.levels.ERROR)
+    notify("Coverage Error: File not found: " .. file_path, vim.log.levels.ERROR)
     return false
   end
 
@@ -78,13 +95,13 @@ function M.load_coverage(file_path, project_root)
   local coverage_data, err = parser_dispatcher.parse(file_path, project_root)
 
   if not coverage_data then
-    vim.notify("Coverage Error: " .. (err or "Unknown error"), vim.log.levels.ERROR)
+    notify("Coverage Error: " .. (err or "Unknown error"), vim.log.levels.ERROR)
     return false
   end
 
   -- Validate coverage data structure (should be {file_path: {lines: [...], branches: [...]}})
   if type(coverage_data) ~= "table" then
-    vim.notify("Coverage Error: Invalid coverage data structure", vim.log.levels.ERROR)
+    notify("Coverage Error: Invalid coverage data structure", vim.log.levels.ERROR)
     return false
   end
 
@@ -97,22 +114,23 @@ function M.load_coverage(file_path, project_root)
     format = utils.detect_format(file_path),
   }
   state.is_enabled = true
+  state.coverage_file_missing_notified = false
 
   -- Debug: Log file paths in coverage data
   local file_count = 0
   for _ in pairs(coverage_data) do
     file_count = file_count + 1
   end
-  vim.notify(string.format("Coverage loaded: %d file(s) from %s", file_count, file_path), vim.log.levels.INFO)
+  notify(string.format("Coverage loaded: %d file(s) from %s", file_count, file_path), vim.log.levels.INFO)
   if config.debug_notifications then
     for file_path, file_entry in pairs(coverage_data) do
-      vim.notify(string.format("  %s (%d lines)", file_path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
+      notify(string.format("  %s (%d lines)", file_path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
     end
   end
 
   local ok, render_err = pcall(renderer.render, coverage_data, state.project_root)
   if not ok then
-    vim.notify("Coverage Error: Failed to render: " .. tostring(render_err), vim.log.levels.ERROR)
+    notify("Coverage Error: Failed to render: " .. tostring(render_err), vim.log.levels.ERROR)
     return false
   end
 
@@ -148,7 +166,7 @@ start_file_watcher = function()
   local function on_change(err, filename, events)
     if err then
       vim.schedule(function()
-        vim.notify("File watch error: " .. err, vim.log.levels.WARN)
+        notify("File watch error: " .. err, vim.log.levels.WARN)
         stop_file_watcher()
       end)
       return
@@ -158,11 +176,15 @@ start_file_watcher = function()
     if events and events.rename then
       vim.schedule(function()
         if not utils.file_exists(state.coverage_file) then
-          vim.notify("Coverage file was deleted or moved", vim.log.levels.WARN)
+          if not state.coverage_file_missing_notified then
+            state.coverage_file_missing_notified = true
+            notify("Coverage file was deleted or moved", vim.log.levels.WARN)
+          end
           stop_file_watcher()
           return
         end
       end)
+      return
     end
     
     -- Debounce rapid changes (file being written)
@@ -187,7 +209,10 @@ start_file_watcher = function()
       -- Check if file actually changed (mtime + size)
       local new_stat = vim.loop.fs_stat(state.coverage_file)
       if not new_stat then
-        vim.notify("Coverage file no longer exists", vim.log.levels.WARN)
+        if not state.coverage_file_missing_notified then
+          state.coverage_file_missing_notified = true
+          notify("Coverage file no longer exists", vim.log.levels.WARN)
+        end
         stop_file_watcher()
         return
       end
@@ -197,7 +222,7 @@ start_file_watcher = function()
       
       -- Only reload if file actually changed
       if new_mtime > state.last_modified or new_size ~= state.last_size then
-        vim.notify("Coverage file updated, reloading...", vim.log.levels.INFO)
+        notify("Coverage file updated, reloading...", vim.log.levels.INFO)
         
         -- Clear old coverage data before reload to avoid confusion
         local old_data = state.coverage_data
@@ -208,7 +233,7 @@ start_file_watcher = function()
           state.last_modified = new_mtime
           state.last_size = new_size
         else
-          vim.notify("Coverage reload failed, keeping old data", vim.log.levels.ERROR)
+          notify("Coverage reload failed, keeping old data", vim.log.levels.ERROR)
           -- Restore old data on failure
           state.coverage_data = old_data
         end
@@ -226,7 +251,7 @@ start_file_watcher = function()
   end)
   
   if not ok then
-    vim.notify("Failed to start file watcher: " .. tostring(watch_err), vim.log.levels.WARN)
+    notify("Failed to start file watcher: " .. tostring(watch_err), vim.log.levels.WARN)
     state.file_watcher = nil
   end
 end
@@ -323,23 +348,23 @@ local function get_current_file_coverage()
   file_path = vim.fn.fnamemodify(file_path, ":p")
   
   -- Debug: Log what we're looking for
-  vim.notify(string.format("DEBUG: Looking for coverage of: %s", file_path), vim.log.levels.INFO)
+  notify(string.format("DEBUG: Looking for coverage of: %s", file_path), vim.log.levels.DEBUG)
   local file_count = 0
   for _ in pairs(state.coverage_data) do
     file_count = file_count + 1
   end
-  vim.notify(string.format("DEBUG: Coverage data has %d files", file_count), vim.log.levels.INFO)
+  notify(string.format("DEBUG: Coverage data has %d files", file_count), vim.log.levels.DEBUG)
 
   for entry_path, file_entry in pairs(state.coverage_data) do
     local normalized_entry_path = vim.fn.fnamemodify(entry_path, ":p")
-    vim.notify(string.format("DEBUG: Comparing with: %s", normalized_entry_path), vim.log.levels.INFO)
+    notify(string.format("DEBUG: Comparing with: %s", normalized_entry_path), vim.log.levels.DEBUG)
     if normalized_entry_path == file_path then
-      vim.notify(string.format("DEBUG: ✓ Match found! Lines: %d", #(file_entry.lines or {})), vim.log.levels.INFO)
+      notify(string.format("DEBUG: ✓ Match found! Lines: %d", #(file_entry.lines or {})), vim.log.levels.DEBUG)
       return file_entry
     end
   end
 
-  vim.notify("DEBUG: ✗ No match found in coverage data", vim.log.levels.WARN)
+  notify("DEBUG: ✗ No match found in coverage data", vim.log.levels.DEBUG)
   return nil
 end
 
@@ -348,18 +373,18 @@ end
 ---@param filter function -- function(line_info, branches) -> boolean
 local function navigate_to_coverage(direction, filter)
   if not state.coverage_data then
-    vim.notify("No coverage data loaded. Use :CoverageLoad first", vim.log.levels.WARN)
+    notify("No coverage data loaded. Use :CoverageLoad first", vim.log.levels.WARN)
     return
   end
 
   local file_entry = get_current_file_coverage()
   if not file_entry then
-    vim.notify("No coverage data for current file", vim.log.levels.WARN)
+    notify("No coverage data for current file", vim.log.levels.WARN)
     return
   end
 
   if not file_entry.lines or #file_entry.lines == 0 then
-    vim.notify("No line coverage data for current file", vim.log.levels.WARN)
+    notify("No line coverage data for current file", vim.log.levels.WARN)
     return
   end
 

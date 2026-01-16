@@ -2,6 +2,22 @@
 local M = {}
 local config = require("crazy-coverage.config")
 local utils = require("crazy-coverage.utils")
+local notify_once = vim.notify_once or vim.notify
+
+-- Thin wrapper to centralize logging and avoid duplicate INFO popups
+local function notify(msg, level)
+  level = level or vim.log.levels.INFO
+  if level == vim.log.levels.DEBUG and not config.debug_notifications then
+    return
+  end
+
+  if level == vim.log.levels.INFO then
+    notify_once(msg, level)
+    return
+  end
+
+  vim.notify(msg, level)
+end
 
 --- Calculate branch coverage statistics for a line
 -- @param branches table Array of branch data for a line
@@ -76,8 +92,8 @@ function M.render(coverage_data, project_root)
     error("coverage_data must be a table")
   end
 
-  if project_root and config.debug_notifications then
-    vim.notify(string.format("RENDER: Using project root: %s", project_root), vim.log.levels.DEBUG)
+  if project_root then
+    notify(string.format("RENDER: Using project root: %s", project_root), vim.log.levels.DEBUG)
   end
 
   local rendered_count = 0
@@ -86,28 +102,22 @@ function M.render(coverage_data, project_root)
     file_count = file_count + 1
   end
   
-  if config.debug_notifications then
-    vim.notify(string.format("RENDER: Starting render for %d files", file_count), vim.log.levels.DEBUG)
-  end
+  notify(string.format("RENDER: Starting render for %d files", file_count), vim.log.levels.DEBUG)
   
   for file_path, file_entry in pairs(coverage_data) do
     if file_entry then
-      if config.debug_notifications then
-        vim.notify(string.format("RENDER: File path: %s (lines: %d)", file_path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
-      end
+      notify(string.format("RENDER: File path: %s (lines: %d)", file_path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
       local buf = utils.get_buffer_by_path(file_path)
       if buf then
-        if config.debug_notifications then
-          vim.notify(string.format("RENDER: Found buffer %d, rendering %d lines", buf, #(file_entry.lines or {})), vim.log.levels.DEBUG)
-        end
+        notify(string.format("RENDER: Found buffer %d, rendering %d lines", buf, #(file_entry.lines or {})), vim.log.levels.DEBUG)
         local ok, err = pcall(M.render_file, buf, file_entry)
         if ok then
           rendered_count = rendered_count + 1
         else
-          vim.notify("Failed to render " .. file_path .. ": " .. tostring(err), vim.log.levels.WARN)
+          notify("Failed to render " .. file_path .. ": " .. tostring(err), vim.log.levels.WARN)
         end
-      elseif config.debug_notifications then
-        vim.notify(string.format("RENDER: No buffer found for %s", file_path), vim.log.levels.DEBUG)
+      else
+        notify(string.format("RENDER: No buffer found for %s", file_path), vim.log.levels.DEBUG)
       end
     end
   end
@@ -130,7 +140,7 @@ function M.render_file(buf, file_entry)
   -- Require at least line data or branch data
   if (not file_entry.lines or type(file_entry.lines) ~= "table" or #file_entry.lines == 0) and
      (not file_entry.branches or type(file_entry.branches) ~= "table" or #file_entry.branches == 0) then
-    vim.notify("No line or branch data for " .. (file_entry.path or "unknown"), vim.log.levels.WARN)
+    notify("No line or branch data for " .. (file_entry.path or "unknown"), vim.log.levels.WARN)
     return -- No data at all, skip silently
   end
 
@@ -196,13 +206,11 @@ function M.render_file(buf, file_entry)
     -- Track partial coverage for summary
     if branches and branch_total > 0 and branch_taken > 0 and branch_taken < branch_total then
       table.insert(partial_lines, { line = line_num, taken = branch_taken, total = branch_total })
-      if config.debug_notifications then
-        vim.notify(
-          string.format("PARTIAL: Line %d in %s has partial branch coverage (%d/%d branches taken)", 
-            line_num, file_entry.path or "unknown", branch_taken, branch_total),
-          vim.log.levels.DEBUG
-        )
-      end
+      notify(
+        string.format("PARTIAL: Line %d in %s has partial branch coverage (%d/%d branches taken)", 
+          line_num, file_entry.path or "unknown", branch_taken, branch_total),
+        vim.log.levels.DEBUG
+      )
     end
 
     -- Build virtual text
@@ -242,7 +250,7 @@ function M.render_file(buf, file_entry)
       
       local ok, err = pcall(vim.api.nvim_buf_set_extmark, buf, M.namespace, line_num - 1, 0, extmark_opts)
       if not ok then
-        vim.notify("Failed to set extmark on line " .. line_num .. ": " .. tostring(err), vim.log.levels.ERROR)
+        notify("Failed to set extmark on line " .. line_num .. ": " .. tostring(err), vim.log.levels.ERROR)
       end
     elseif config.enable_line_hl then
       -- If no virtual text but line highlighting is enabled
@@ -252,7 +260,7 @@ function M.render_file(buf, file_entry)
         strict = false,
       })
       if not ok2 then
-        vim.notify("Failed to set extmark (line_hl) on line " .. line_num .. ": " .. tostring(err2), vim.log.levels.ERROR)
+        notify("Failed to set extmark (line_hl) on line " .. line_num .. ": " .. tostring(err2), vim.log.levels.ERROR)
       end
     end
   end
@@ -263,8 +271,8 @@ function M.render_file(buf, file_entry)
     for _, info in ipairs(partial_lines) do
       table.insert(lines_str, string.format("%d(%d/%d)", info.line, info.taken, info.total))
     end
-    vim.notify(string.format("PARTIAL COVERAGE: %s has %d lines with partial branch coverage: %s", 
-      file_entry.path or "unknown", #partial_lines, table.concat(lines_str, ", ")), vim.log.levels.INFO)
+    notify(string.format("PARTIAL COVERAGE: %s has %d lines with partial branch coverage: %s", 
+      file_entry.path or "unknown", #partial_lines, table.concat(lines_str, ", ")), vim.log.levels.DEBUG)
   end
 end
 
