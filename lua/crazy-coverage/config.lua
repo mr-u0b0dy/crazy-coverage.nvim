@@ -250,15 +250,15 @@ local function generate_adaptive_colors(theme_colors)
   local colors = {}
   
   if is_dark_theme then
-    -- Dark theme: use lighter, saturated colors
-    colors.covered = { bg = "#003300", fg = "#00FF00" }
-    colors.uncovered = { bg = "#330000", fg = "#FF4444" }
-    colors.partial = { bg = "#664400", fg = "#FFFF00" }  -- More orange/yellow with bright yellow text
+    -- Dark theme: use lighter, pastel colors
+    colors.covered = { bg = "#1a4d1a", fg = "NONE" }
+    colors.uncovered = { bg = "#4d1a1a", fg = "NONE" }
+    colors.partial = { bg = "#4d3d1a", fg = "NONE" }
   else
-    -- Light theme: use darker, muted colors
-    colors.covered = { bg = "#CCFFCC", fg = "#006600" }
-    colors.uncovered = { bg = "#FFCCCC", fg = "#CC0000" }
-    colors.partial = { bg = "#FFDD99", fg = "#FF8800" }  -- Bright yellow/orange background
+    -- Light theme: use lighter, pastel colors (slightly darker)
+    colors.covered = { bg = "#d4f0d4", fg = "NONE" }
+    colors.uncovered = { bg = "#f0d4d4", fg = "NONE" }
+    colors.partial = { bg = "#f5e6cc", fg = "NONE" }
   end
   
   return colors
