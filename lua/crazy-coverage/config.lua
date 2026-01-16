@@ -41,6 +41,14 @@ local M = {
   -- Show debug notifications
   debug_notifications = false,
 
+  -- LLVM profdata: path to instrumented binary (if not auto-detected)
+  -- Example: "build/my_test" or "cmake-build-debug/my_app"
+  llvm_binary_file = nil,
+  
+  -- File watch debounce in milliseconds (wait after file change before reloading)
+  -- Prevents multiple reloads when file is being written
+  watch_debounce_ms = 200,
+
   -- Coverage file patterns per language
   coverage_patterns = {
     c = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },

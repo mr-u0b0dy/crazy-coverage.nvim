@@ -16,6 +16,7 @@ local state = {
   is_initialized = false,
   file_watcher = nil,
   last_modified = nil,
+  last_size = nil,           -- Track file size for change detection
 }
 
 --- Get current state (read-only access)
@@ -81,8 +82,8 @@ function M.load_coverage(file_path, project_root)
     return false
   end
 
-  -- Validate coverage data structure
-  if not coverage_data.files or type(coverage_data.files) ~= "table" then
+  -- Validate coverage data structure (should be {file_path: {lines: [...], branches: [...]}})
+  if type(coverage_data) ~= "table" then
     vim.notify("Coverage Error: Invalid coverage data structure", vim.log.levels.ERROR)
     return false
   end
@@ -98,10 +99,14 @@ function M.load_coverage(file_path, project_root)
   state.is_enabled = true
 
   -- Debug: Log file paths in coverage data
-  vim.notify(string.format("Coverage loaded: %d file(s) from %s", #coverage_data.files, file_path), vim.log.levels.INFO)
+  local file_count = 0
+  for _ in pairs(coverage_data) do
+    file_count = file_count + 1
+  end
+  vim.notify(string.format("Coverage loaded: %d file(s) from %s", file_count, file_path), vim.log.levels.INFO)
   if config.debug_notifications then
-    for i, file_entry in ipairs(coverage_data.files) do
-      vim.notify(string.format("  [%d] %s (%d lines)", i, file_entry.path or "unknown", #(file_entry.lines or {})), vim.log.levels.DEBUG)
+    for file_path, file_entry in pairs(coverage_data) do
+      vim.notify(string.format("  %s (%d lines)", file_path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
     end
   end
 
@@ -114,8 +119,12 @@ function M.load_coverage(file_path, project_root)
   return true
 end
 
+--- Forward declaration for file watcher functions
+local start_file_watcher
+local stop_file_watcher
+
 --- Start watching coverage file for changes
-local function start_file_watcher()
+start_file_watcher = function()
   if state.file_watcher then
     return -- Already watching
   end
@@ -124,37 +133,117 @@ local function start_file_watcher()
     return
   end
   
-  -- Check file modification time
-  local function check_file_modified()
-    local stat = vim.loop.fs_stat(state.coverage_file)
-    if stat then
-      local current_mtime = stat.mtime.sec
-      if state.last_modified and current_mtime > state.last_modified then
-        vim.notify("Coverage file updated, reloading...", vim.log.levels.INFO)
-        M.load_coverage(state.coverage_file)
-      end
-      state.last_modified = current_mtime
-    end
-  end
-  
-  -- Initial modification time
+  -- Get initial file stats
   local stat = vim.loop.fs_stat(state.coverage_file)
   if stat then
-    state.last_modified = stat.mtime.sec
+    state.last_modified = stat.mtime.sec * 1e9 + stat.mtime.nsec  -- Use nanosecond precision
+    state.last_size = stat.size
   end
   
-  -- Create timer to check every 2 seconds
-  state.file_watcher = vim.loop.new_timer()
-  state.file_watcher:start(2000, 2000, vim.schedule_wrap(check_file_modified))
+  local config = require("crazy-coverage.config")
+  local debounce_timer = nil
+  local pending_reload = false
+  
+  -- Handle file change events
+  local function on_change(err, filename, events)
+    if err then
+      vim.schedule(function()
+        vim.notify("File watch error: " .. err, vim.log.levels.WARN)
+        stop_file_watcher()
+      end)
+      return
+    end
+    
+    -- File was deleted or renamed
+    if events and events.rename then
+      vim.schedule(function()
+        if not utils.file_exists(state.coverage_file) then
+          vim.notify("Coverage file was deleted or moved", vim.log.levels.WARN)
+          stop_file_watcher()
+          return
+        end
+      end)
+    end
+    
+    -- Debounce rapid changes (file being written)
+    if debounce_timer then
+      debounce_timer:stop()
+    end
+    
+    if not debounce_timer then
+      debounce_timer = vim.loop.new_timer()
+    end
+    
+    pending_reload = true
+    
+    -- Wait for file to stabilize before reloading
+    local debounce_ms = config.watch_debounce_ms or 200
+    debounce_timer:start(debounce_ms, 0, vim.schedule_wrap(function()
+      if not pending_reload then
+        return
+      end
+      pending_reload = false
+      
+      -- Check if file actually changed (mtime + size)
+      local new_stat = vim.loop.fs_stat(state.coverage_file)
+      if not new_stat then
+        vim.notify("Coverage file no longer exists", vim.log.levels.WARN)
+        stop_file_watcher()
+        return
+      end
+      
+      local new_mtime = new_stat.mtime.sec * 1e9 + new_stat.mtime.nsec
+      local new_size = new_stat.size
+      
+      -- Only reload if file actually changed
+      if new_mtime > state.last_modified or new_size ~= state.last_size then
+        vim.notify("Coverage file updated, reloading...", vim.log.levels.INFO)
+        
+        -- Clear old coverage data before reload to avoid confusion
+        local old_data = state.coverage_data
+        state.coverage_data = nil
+        
+        -- Pass cached project_root to maintain path resolution consistency
+        if M.load_coverage(state.coverage_file, state.project_root) then
+          state.last_modified = new_mtime
+          state.last_size = new_size
+        else
+          vim.notify("Coverage reload failed, keeping old data", vim.log.levels.ERROR)
+          -- Restore old data on failure
+          state.coverage_data = old_data
+        end
+      end
+    end))
+  end
+  
+  -- Create fs_event watcher for the file
+  state.file_watcher = vim.loop.new_fs_event()
+  local watch_flags = { recursive = false }
+  
+  -- Watch the file directly
+  local ok, watch_err = pcall(function()
+    state.file_watcher:start(state.coverage_file, watch_flags, on_change)
+  end)
+  
+  if not ok then
+    vim.notify("Failed to start file watcher: " .. tostring(watch_err), vim.log.levels.WARN)
+    state.file_watcher = nil
+  end
 end
 
 --- Stop watching coverage file
-local function stop_file_watcher()
+stop_file_watcher = function()
   if state.file_watcher then
-    state.file_watcher:stop()
-    state.file_watcher:close()
+    -- Use pcall in case watcher is already closed
+    pcall(function()
+      state.file_watcher:stop()
+    end)
+    pcall(function()
+      state.file_watcher:close()
+    end)
     state.file_watcher = nil
     state.last_modified = nil
+    state.last_size = nil
   end
 end
 
@@ -219,7 +308,7 @@ end
 --- Get coverage info for the current buffer
 ---@return table|nil -- file_entry with coverage data, or nil
 local function get_current_file_coverage()
-  if not state.coverage_data or not state.coverage_data.files then
+  if not state.coverage_data or type(state.coverage_data) ~= "table" then
     return nil
   end
 
@@ -235,12 +324,16 @@ local function get_current_file_coverage()
   
   -- Debug: Log what we're looking for
   vim.notify(string.format("DEBUG: Looking for coverage of: %s", file_path), vim.log.levels.INFO)
-  vim.notify(string.format("DEBUG: Coverage data has %d files", #state.coverage_data.files), vim.log.levels.INFO)
+  local file_count = 0
+  for _ in pairs(state.coverage_data) do
+    file_count = file_count + 1
+  end
+  vim.notify(string.format("DEBUG: Coverage data has %d files", file_count), vim.log.levels.INFO)
 
-  for i, file_entry in ipairs(state.coverage_data.files) do
-    local entry_path = vim.fn.fnamemodify(file_entry.path, ":p")
-    vim.notify(string.format("DEBUG: [%d] Comparing with: %s", i, entry_path), vim.log.levels.INFO)
-    if entry_path == file_path then
+  for entry_path, file_entry in pairs(state.coverage_data) do
+    local normalized_entry_path = vim.fn.fnamemodify(entry_path, ":p")
+    vim.notify(string.format("DEBUG: Comparing with: %s", normalized_entry_path), vim.log.levels.INFO)
+    if normalized_entry_path == file_path then
       vim.notify(string.format("DEBUG: ✓ Match found! Lines: %d", #(file_entry.lines or {})), vim.log.levels.INFO)
       return file_entry
     end

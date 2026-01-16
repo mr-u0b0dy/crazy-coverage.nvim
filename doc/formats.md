@@ -25,15 +25,15 @@ LN:10
 DA:10,5
 LN:11
 DA:11,0
-BA:11,0,1
-BA:11,1,0
+BRDA:11,0,0,1
+BRDA:11,0,1,0
 end_of_record
 ```
 
 **Features**:
 - Line coverage (DA: lines)
 - Function coverage (FN/FNDA)
-- Branch coverage (BA: branches)
+- Branch coverage (BRDA: branch data records)
 
 ## LLVM JSON
 
@@ -80,7 +80,10 @@ end_of_record
       <classes>
         <class filename="src/main.c">
           <lines>
-            <line number="10" hits="5"/>
+            <line number="10" hits="5">
+              <branch number="0" taken="1"/>
+              <branch number="1" taken="4"/>
+            </line>
             <line number="11" hits="0"/>
           </lines>
         </class>
@@ -92,6 +95,7 @@ end_of_record
 
 **Features**:
 - Line coverage
+- Branch coverage (optional `<branch>` elements within `<line>`)
 - Works with both self-closing and paired XML tags
 
 ## GCOV (.gcda, .gcno)

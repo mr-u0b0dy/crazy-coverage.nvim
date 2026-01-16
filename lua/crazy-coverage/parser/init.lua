@@ -54,9 +54,9 @@ function M.parse(file_path, project_root)
     return nil, "Parser returned nil for file: " .. file_path
   end
   
-  -- Validate result structure
-  if type(result) ~= "table" or not result.files then
-    return nil, "Parser returned invalid data structure"
+  -- Validate result structure: should be {file_path: {lines: [...], branches: [...]}}
+  if type(result) ~= "table" then
+    return nil, "Parser returned invalid data structure (not a table)"
   end
 
   return result, nil

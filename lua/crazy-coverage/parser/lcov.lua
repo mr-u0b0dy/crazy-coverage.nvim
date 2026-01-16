@@ -48,28 +48,29 @@ local function parse_line_coverage(line, current_file)
     local hit_count = tonumber(parts[2])
     if line_num and hit_count ~= nil then
       table.insert(current_file.lines, {
-        line_num = line_num,
-        hit_count = hit_count,
-        covered = hit_count > 0,
+        line = line_num,
+        hits = hit_count,
       })
     end
   end
 end
 
---- Parse a branch coverage entry (BA line)
+--- Parse a branch coverage entry (BRDA line)
+--- Format: BRDA:line,block,branch,taken
 ---@param line string
 ---@param current_file table
 local function parse_branch_coverage(line, current_file)
-  local parts = split_string(line:sub(4), ",")
-  if #parts >= 3 then
+  local parts = split_string(line:sub(6), ",")
+  if #parts >= 4 then
     local line_num = tonumber(parts[1])
-    local branch_id = tonumber(parts[2])
-    local hit_count = tonumber(parts[3])
-    if line_num and branch_id and hit_count ~= nil then
+    local block_id = tonumber(parts[2])
+    local branch_id = tonumber(parts[3])
+    local taken = tonumber(parts[4])
+    if line_num and block_id ~= nil and branch_id ~= nil and taken ~= nil then
       table.insert(current_file.branches, {
         line = line_num,
-        id = branch_id,
-        hit_count = hit_count,
+        id = block_id * 100 + branch_id,
+        hits = taken,
       })
     end
   end
@@ -98,11 +99,11 @@ function M.parse(file_path, project_root)
     project_root = vim.fn.fnamemodify(file_path, ":p:h:h")
   end
 
-  local coverage_data = {
-    files = {},
-  }
+  -- Return format: {file_path: {lines: [...], branches: [...]}}
+  local coverage_data = {}
 
   local current_file = nil
+  local current_file_path = nil
   local files_map = {}
   local functions_map = nil
 
@@ -118,15 +119,15 @@ function M.parse(file_path, project_root)
       -- Normalize to absolute path (resolve .. and .)
       file_path = normalize_path(file_path)
       
+      current_file_path = file_path
       current_file = {
-        path = file_path,
         lines = {},
         branches = {},
         functions = {},
       }
       files_map[file_name] = current_file
+      coverage_data[file_path] = current_file
       functions_map = {}
-      table.insert(coverage_data.files, current_file)
     end
 
     -- Parse line coverage
@@ -135,7 +136,7 @@ function M.parse(file_path, project_root)
     end
 
     -- Parse branch coverage
-    if line:match("^BA:") and current_file then
+    if line:match("^BRDA:") and current_file then
       parse_branch_coverage(line, current_file)
     end
 

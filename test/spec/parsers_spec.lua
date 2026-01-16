@@ -146,6 +146,139 @@ describe("LLVM JSON Parser", function()
       assert.is_true(covered_count > 0)
     end)
   end)
+
+  describe("Format A (lines array) parsing", function()
+    it("should parse lines array format (standard llvm-cov output)", function()
+      local content = [[{
+  "version": "2.0.1",
+  "data": [{
+    "files": [{
+      "filename": "../test.c",
+      "lines": [
+        {"line_number": 5, "count": 10},
+        {"line_number": 6, "count": 0},
+        {"line_number": 7, "count": 5}
+      ]
+    }]
+  }]
+}]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
+      
+      local result = llvm_parser.parse(temp_file, temp_dir)
+      
+      assert.is_not_nil(result)
+      local file_data = next(result)
+      assert.is_not_nil(file_data)
+      assert.equals(3, #file_data.lines)
+      
+      -- Check line 5 is covered
+      assert.equals(10, file_data.lines[1].hit_count)
+      assert.is_true(file_data.lines[1].covered)
+      
+      -- Check line 6 is uncovered
+      assert.equals(0, file_data.lines[2].hit_count)
+      assert.is_false(file_data.lines[2].covered)
+      
+      -- Check line 7 is covered
+      assert.equals(5, file_data.lines[3].hit_count)
+      assert.is_true(file_data.lines[3].covered)
+    end)
+
+    it("should parse regions as branch coverage", function()
+      local content = [[{
+  "version": "2.0.1",
+  "data": [{
+    "files": [{
+      "filename": "../test.c",
+      "lines": [
+        {
+          "line_number": 10,
+          "count": 5,
+          "regions": [
+            {"count": 5, "covered": true},
+            {"count": 2, "covered": true}
+          ]
+        }
+      ]
+    }]
+  }]
+}]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
+      
+      local result = llvm_parser.parse(temp_file, temp_dir)
+      
+      assert.is_not_nil(result)
+      local file_data = next(result)
+      assert.equals(1, #file_data.lines)
+      assert.equals(2, #file_data.branches)
+      
+      -- Check line coverage
+      assert.equals(5, file_data.lines[1].hit_count)
+      assert.is_true(file_data.lines[1].covered)
+      
+      -- Check branch coverage from regions
+      assert.equals(5, file_data.branches[1].hit_count)
+      assert.is_true(file_data.branches[1].covered)
+      assert.equals(2, file_data.branches[2].hit_count)
+      assert.is_true(file_data.branches[2].covered)
+    end)
+
+    it("should handle uncovered regions correctly", function()
+      local content = [[{
+  "version": "2.0.1",
+  "data": [{
+    "files": [{
+      "filename": "../test.c",
+      "lines": [
+        {
+          "line_number": 15,
+          "count": 0,
+          "regions": [
+            {"count": 0, "covered": false}
+          ]
+        }
+      ]
+    }]
+  }]
+}]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
+      
+      local result = llvm_parser.parse(temp_file, temp_dir)
+      
+      assert.is_not_nil(result)
+      local file_data = next(result)
+      assert.equals(1, #file_data.lines)
+      assert.is_false(file_data.lines[1].covered)
+      assert.equals(1, #file_data.branches)
+      assert.is_false(file_data.branches[1].covered)
+    end)
+
+    it("should preserve line numbers in order", function()
+      local content = [[{
+  "version": "2.0.1",
+  "data": [{
+    "files": [{
+      "filename": "../test.c",
+      "lines": [
+        {"line_number": 100, "count": 1},
+        {"line_number": 50, "count": 2},
+        {"line_number": 75, "count": 3}
+      ]
+    }]
+  }]
+}]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
+      
+      local result = llvm_parser.parse(temp_file, temp_dir)
+      
+      assert.is_not_nil(result)
+      local file_data = next(result)
+      -- Should be sorted by line number
+      assert.equals(50, file_data.lines[1].line_num)
+      assert.equals(75, file_data.lines[2].line_num)
+      assert.equals(100, file_data.lines[3].line_num)
+    end)
+  end)
 end)
 
 describe("Cobertura Parser", function()

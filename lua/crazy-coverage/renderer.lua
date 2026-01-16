@@ -13,7 +13,7 @@ local function calculate_branch_stats(branches)
   local total = #branches
   local taken = 0
   for _, br in ipairs(branches) do
-    if (br.hit_count or 0) > 0 then
+    if (br.hits or 0) > 0 then
       taken = taken + 1
     end
   end
@@ -21,7 +21,7 @@ local function calculate_branch_stats(branches)
 end
 
 --- Determine highlight group based on coverage state
--- @param line_info table Line coverage information
+-- @param line_info table Line coverage information with 'hits' field
 -- @param branches table Array of branch data for the line
 -- @param branch_total number Total branches on line
 -- @param branch_taken number Taken branches on line
@@ -38,8 +38,9 @@ local function get_highlight_group(line_info, branches, branch_total, branch_tak
     end
   end
   
-  -- Fall back to line coverage
-  return line_info.covered and config.covered_hl or config.uncovered_hl
+  -- Fall back to line coverage (hits > 0 means covered)
+  local is_covered = (line_info.hits or 0) > 0
+  return is_covered and config.covered_hl or config.uncovered_hl
 end
 
 M.namespace = vim.api.nvim_create_namespace("coverage_plugin")
@@ -64,15 +65,15 @@ function M.clear_all()
 end
 
 --- Render coverage data to buffers
----@param coverage_data table -- CoverageData model
+---@param coverage_data table -- Coverage data keyed by file path
 ---@param project_root string|nil -- Project root for context (from cache)
 function M.render(coverage_data, project_root)
   if not coverage_data then
     error("coverage_data is required")
   end
   
-  if not coverage_data.files or type(coverage_data.files) ~= "table" then
-    error("coverage_data.files must be a table")
+  if type(coverage_data) ~= "table" then
+    error("coverage_data must be a table")
   end
 
   if project_root and config.debug_notifications then
@@ -80,16 +81,21 @@ function M.render(coverage_data, project_root)
   end
 
   local rendered_count = 0
-  if config.debug_notifications then
-    vim.notify(string.format("RENDER: Starting render for %d files", #coverage_data.files), vim.log.levels.DEBUG)
+  local file_count = 0
+  for _ in pairs(coverage_data) do
+    file_count = file_count + 1
   end
   
-  for _, file_entry in ipairs(coverage_data.files) do
-    if file_entry and file_entry.path then
+  if config.debug_notifications then
+    vim.notify(string.format("RENDER: Starting render for %d files", file_count), vim.log.levels.DEBUG)
+  end
+  
+  for file_path, file_entry in pairs(coverage_data) do
+    if file_entry then
       if config.debug_notifications then
-        vim.notify(string.format("RENDER: File entry path: %s (lines: %d)", file_entry.path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
+        vim.notify(string.format("RENDER: File path: %s (lines: %d)", file_path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
       end
-      local buf = utils.get_buffer_by_path(file_entry.path)
+      local buf = utils.get_buffer_by_path(file_path)
       if buf then
         if config.debug_notifications then
           vim.notify(string.format("RENDER: Found buffer %d, rendering %d lines", buf, #(file_entry.lines or {})), vim.log.levels.DEBUG)
@@ -98,10 +104,10 @@ function M.render(coverage_data, project_root)
         if ok then
           rendered_count = rendered_count + 1
         else
-          vim.notify("Failed to render " .. file_entry.path .. ": " .. tostring(err), vim.log.levels.WARN)
+          vim.notify("Failed to render " .. file_path .. ": " .. tostring(err), vim.log.levels.WARN)
         end
       elseif config.debug_notifications then
-        vim.notify(string.format("RENDER: No buffer found for %s", file_entry.path), vim.log.levels.DEBUG)
+        vim.notify(string.format("RENDER: No buffer found for %s", file_path), vim.log.levels.DEBUG)
       end
     end
   end
@@ -137,7 +143,7 @@ function M.render_file(buf, file_entry)
   -- Create a map of line coverage for fast lookup
   local line_map = {}
   for _, line_info in ipairs(file_entry.lines or {}) do
-    line_map[line_info.line_num] = line_info
+    line_map[line_info.line] = line_info
   end
 
   -- Create a map of branch coverage per line
@@ -158,7 +164,7 @@ function M.render_file(buf, file_entry)
   -- Add lines from line coverage data
   for _, line_info in ipairs(file_entry.lines or {}) do
     table.insert(lines_to_render, line_info)
-    rendered_lines[line_info.line_num] = true
+    rendered_lines[line_info.line] = true
   end
   
   -- Add lines from branch coverage that don't have line data
@@ -169,17 +175,16 @@ function M.render_file(buf, file_entry)
       local total, taken = calculate_branch_stats(branches)
       
       table.insert(lines_to_render, {
-        line_num = line_num,
-        hit_count = nil,  -- No line hit count, only branch info
-        covered = taken == total and taken > 0,  -- Only marked as covered if ALL branches are taken
+        line = line_num,
+        hits = nil,  -- No line hit count, only branch info
       })
     end
   end
 
   -- Render each line
   for _, line_info in ipairs(lines_to_render) do
-    local line_num = line_info.line_num
-    local hit_count = line_info.hit_count
+    local line_num = line_info.line
+    local hit_count = line_info.hits
     local branches = branch_map[line_num]
     
     -- Calculate branch statistics

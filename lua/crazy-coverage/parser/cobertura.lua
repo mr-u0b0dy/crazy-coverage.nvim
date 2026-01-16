@@ -127,9 +127,8 @@ function M.parse(file_path, project_root)
     project_root = vim.fn.fnamemodify(file_path, ":p:h:h")
   end
 
-  local coverage_data = {
-    files = {},
-  }
+  -- Return format: {file_path: {lines: [...], branches: [...]}}
+  local coverage_data = {}
 
   -- Extract file/class nodes
   local class_nodes = extract_xml_classes_with_filename(content)
@@ -149,7 +148,6 @@ function M.parse(file_path, project_root)
         file_path = normalize_path(file_path)
         
         local file_entry = {
-          path = file_path,
           lines = {},
           branches = {},
         }
@@ -163,14 +161,25 @@ function M.parse(file_path, project_root)
           local hit_count = tonumber(get_attr(line_node.attrs, "hits")) or 0
           if line_num then
             table.insert(file_entry.lines, {
-              line_num = line_num,
-              hit_count = hit_count,
-              covered = hit_count > 0,
+              line = line_num,
+              hits = hit_count,
             })
+            
+            -- Parse branch information if present
+            local branch_nodes = extract_xml_nodes(line_node.inner, "branch")
+            for branch_idx, branch_node in ipairs(branch_nodes) do
+              local branch_number = tonumber(get_attr(branch_node.attrs, "number")) or branch_idx
+              local branch_taken = tonumber(get_attr(branch_node.attrs, "taken")) or 0
+              table.insert(file_entry.branches, {
+                line = line_num,
+                id = branch_number,
+                hits = branch_taken,
+              })
+            end
           end
         end
 
-        table.insert(coverage_data.files, file_entry)
+        coverage_data[file_path] = file_entry
       end
     end
   else
@@ -187,7 +196,6 @@ function M.parse(file_path, project_root)
       file_path = normalize_path(file_path)
       
       local file_entry = {
-        path = file_path,
         lines = {},
         branches = {},
       }
@@ -201,14 +209,25 @@ function M.parse(file_path, project_root)
         local hit_count = tonumber(get_attr(line_node.attrs, "hits")) or 0
         if line_num then
           table.insert(file_entry.lines, {
-            line_num = line_num,
-            hit_count = hit_count,
-            covered = hit_count > 0,
+            line = line_num,
+            hits = hit_count,
           })
+          
+          -- Parse branch information if present
+          local branch_nodes = extract_xml_nodes(line_node.inner, "branch")
+          for branch_idx, branch_node in ipairs(branch_nodes) do
+            local branch_number = tonumber(get_attr(branch_node.attrs, "number")) or branch_idx
+            local branch_taken = tonumber(get_attr(branch_node.attrs, "taken")) or 0
+            table.insert(file_entry.branches, {
+              line = line_num,
+              id = branch_number,
+              hits = branch_taken,
+            })
+          end
         end
       end
 
-      table.insert(coverage_data.files, file_entry)
+      coverage_data[file_path] = file_entry
       end
     end
   end
