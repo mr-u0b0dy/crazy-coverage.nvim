@@ -38,6 +38,9 @@ local M = {
   -- Auto load coverage when opening file
   auto_load = true,
 
+  -- Show debug notifications
+  debug_notifications = false,
+
   -- Coverage file patterns per language
   coverage_patterns = {
     c = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
@@ -360,6 +363,7 @@ function M.set_config(user_config)
     show_branch_summary = true,
     enable_line_hl = true,
     auto_load = true,
+    debug_notifications = true,
     coverage_patterns = true,
     coverage_dirs = true,
     project_markers = true,

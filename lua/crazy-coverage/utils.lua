@@ -99,29 +99,40 @@ function M.get_buffer_by_path(file_path)
     return nil
   end
   
+  local config = require("crazy-coverage.config")
   local normalized_path = M.normalize_path(file_path)
   if not normalized_path then
-    vim.notify(string.format("GET_BUF: Failed to normalize: %s", file_path), vim.log.levels.DEBUG)
+    if config.debug_notifications then
+      vim.notify(string.format("GET_BUF: Failed to normalize: %s", file_path), vim.log.levels.DEBUG)
+    end
     return nil
   end
   
-  vim.notify(string.format("GET_BUF: Looking for normalized: %s", normalized_path), vim.log.levels.DEBUG)
+  if config.debug_notifications then
+    vim.notify(string.format("GET_BUF: Looking for normalized: %s", normalized_path), vim.log.levels.DEBUG)
+  end
   
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
       local buf_path = vim.api.nvim_buf_get_name(buf)
       if buf_path and buf_path ~= "" then
         local buf_normalized = M.normalize_path(buf_path)
-        vim.notify(string.format("GET_BUF:   [buf %d] checking: %s", buf, buf_normalized or "(failed to normalize)"), vim.log.levels.DEBUG)
+        if config.debug_notifications then
+          vim.notify(string.format("GET_BUF:   [buf %d] checking: %s", buf, buf_normalized or "(failed to normalize)"), vim.log.levels.DEBUG)
+        end
         if buf_normalized == normalized_path then
-          vim.notify(string.format("GET_BUF: ✓ MATCH! buf=%d", buf), vim.log.levels.DEBUG)
+          if config.debug_notifications then
+            vim.notify(string.format("GET_BUF: ✓ MATCH! buf=%d", buf), vim.log.levels.DEBUG)
+          end
           return buf
         end
       end
     end
   end
   
-  vim.notify(string.format("GET_BUF: ✗ No matching buffer found"), vim.log.levels.DEBUG)
+  if config.debug_notifications then
+    vim.notify(string.format("GET_BUF: ✗ No matching buffer found"), vim.log.levels.DEBUG)
+  end
   return nil
 end
 

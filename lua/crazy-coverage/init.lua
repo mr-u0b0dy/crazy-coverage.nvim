@@ -99,8 +99,10 @@ function M.load_coverage(file_path, project_root)
 
   -- Debug: Log file paths in coverage data
   vim.notify(string.format("Coverage loaded: %d file(s) from %s", #coverage_data.files, file_path), vim.log.levels.INFO)
-  for i, file_entry in ipairs(coverage_data.files) do
-    vim.notify(string.format("  [%d] %s (%d lines)", i, file_entry.path or "unknown", #(file_entry.lines or {})), vim.log.levels.DEBUG)
+  if config.debug_notifications then
+    for i, file_entry in ipairs(coverage_data.files) do
+      vim.notify(string.format("  [%d] %s (%d lines)", i, file_entry.path or "unknown", #(file_entry.lines or {})), vim.log.levels.DEBUG)
+    end
   end
 
   local ok, render_err = pcall(renderer.render, coverage_data, state.project_root)
