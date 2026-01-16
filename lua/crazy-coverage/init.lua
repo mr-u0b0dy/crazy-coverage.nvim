@@ -388,17 +388,69 @@ local function navigate_to_coverage(direction, filter)
     return
   end
 
-  -- Build branch map
+  -- Normalize line info to a consistent shape so we can accept multiple parser outputs
+  local normalized_lines = {}
+  for _, line_info in ipairs(file_entry.lines or {}) do
+    local line_num = line_info.line_num or line_info.line
+    if type(line_num) == "number" then
+      local hit_count = line_info.hit_count
+      if hit_count == nil then
+        hit_count = line_info.hits
+      end
+      hit_count = hit_count or 0
+
+      local covered = line_info.covered
+      if covered == nil then
+        covered = hit_count > 0
+      end
+
+      table.insert(normalized_lines, {
+        line_num = line_num,
+        hit_count = hit_count,
+        covered = covered,
+      })
+    end
+  end
+
+  if #normalized_lines == 0 then
+    notify("No line coverage data for current file", vim.log.levels.WARN)
+    return
+  end
+
+  table.sort(normalized_lines, function(a, b)
+    return a.line_num < b.line_num
+  end)
+
+  -- Build branch map with normalized entries
   local branch_map = {}
   for _, br in ipairs(file_entry.branches or {}) do
-    if not branch_map[br.line] then
-      branch_map[br.line] = {}
+    local line_num = br.line_num or br.line
+    if type(line_num) == "number" then
+      local hit_count = br.hit_count
+      if hit_count == nil then
+        hit_count = br.hits
+      end
+      hit_count = hit_count or 0
+
+      local covered = br.covered
+      if covered == nil then
+        covered = hit_count > 0
+      end
+
+      if not branch_map[line_num] then
+        branch_map[line_num] = {}
+      end
+
+      table.insert(branch_map[line_num], vim.tbl_extend("force", br, {
+        line_num = line_num,
+        hit_count = hit_count,
+        covered = covered,
+      }))
     end
-    table.insert(branch_map[br.line], br)
   end
 
   local current_line = vim.api.nvim_win_get_cursor(0)[1]
-  local lines = file_entry.lines
+  local lines = normalized_lines
   local found_line = nil
 
   if direction == 1 then
