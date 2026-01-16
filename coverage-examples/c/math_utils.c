@@ -1,170 +1,156 @@
 #include "math_utils.h"
 
-int add(int a, int b) {
-    return a + b;
+int add(int a, int b) { return a + b; } // COVERED
+
+int subtract(int a, int b) { return a - b; } // COVERED
+
+int multiply(int a, int b) { return a * b; } // COVERED
+
+int divide(int a, int b) { // COVERED
+  if (b == 0) {            // PARTIALLY COVERED
+    return -1;             // UNCOVERED: Division by zero error
+  } // COVERED
+  return a / b; // COVERED: Normal division
 }
 
-int subtract(int a, int b) {
-    return a - b;
+long long power(int base, int exp) { // COVERED
+  if (exp < 0) {                     // PARTIALLY COVERED
+    return -1;                       // UNCOVERED: Negative exponent error
+  } // COVERED
+  if (exp == 0) { // COVERED
+    return 1;     // COVERED: Zero exponent case
+  } // COVERED
+  long long result = 1;           // COVERED
+  for (int i = 0; i < exp; i++) { // COVERED
+    result *= base;
+  } // COVERED
+  return result; // COVERED: Positive exponent
 }
 
-int multiply(int a, int b) {
-    return a * b;
+int factorial(int n) { // COVERED
+  if (n < 0) {         // PARTIALLY COVERED
+    return -1;         // UNCOVERED: Negative factorial error
+  } // COVERED
+  if (n == 0 || n == 1) { // COVERED
+    return 1;             // COVERED: Base cases
+  } // COVERED
+  return n * factorial(n - 1); // COVERED: Recursive case
 }
 
-int divide(int a, int b) {
-    if (b == 0) {
-        return -1; // Error case - UNCOVERED
-    }
-    return a / b;   // Covered
+int is_prime(int n) {            // COVERED
+  if (n < 0) {                   // PARTIALLY COVERED
+    return 0;                    // UNCOVERED: Negative input
+  } else if (n <= 1) {           // COVERED
+    return 0;                    // COVERED: 0 and 1 are not prime
+  } else if (n == 2 || n == 3) { // PARTIALLY COVERED
+    return 1;                    // COVERED: 2 and 3 are prime
+  } else if (n % 2 == 0) {       // PARTIALLY COVERED
+    return 0;                    // COVERED: Even numbers > 2 not prime
+  } else if (n % 3 == 0) {       // COVERED
+    return 0;                    // COVERED: Divisible by 3
+  } // COVERED
+
+  // COVERED: Loop checks i and i+2 divisibility
+  for (int i = 5; i * i <= n; i += 6) { // PARTIALLY COVERED
+    if (n % i == 0) {                   // UNCOVERED
+      return 0;                         // UNCOVERED: Divisible by i
+    } else if (n % (i + 2) == 0) {      // UNCOVERED
+      return 0;                         // UNCOVERED: Divisible by i+2
+    } // UNCOVERED
+  } // COVERED
+  return 1; // COVERED: Number is prime
 }
 
-long long power(int base, int exp) {
-    if (exp < 0) {
-        return -1; // Error case - UNCOVERED
-    }
-    if (exp == 0) {
-        return 1;  // Covered
-    }
-    long long result = 1;
-    for (int i = 0; i < exp; i++) {
-        result *= base;
-    }
-    return result;  // Covered
+int absolute_value(int n) { // COVERED
+  if (n < 0) {              // COVERED
+    return -n;              // COVERED: Negative input
+  } // COVERED
+  return n; // COVERED: Non-negative input
 }
 
-int factorial(int n) {
-    if (n < 0) {
-        return -1; // Error case - UNCOVERED
-    }
-    if (n == 0 || n == 1) {
-        return 1;  // Covered
-    }
-    return n * factorial(n - 1);  // Covered
+int max(int a, int b) {            // COVERED
+  if (a >= b) {                    // COVERED
+    if (a > 0 && b > 0) {          // PARTIALLY COVERED
+      return (a > b) ? a : b;      // COVERED: Both positive
+    } else if (a <= 0 && b <= 0) { // PARTIALLY COVERED
+      return (a > b) ? a : b;      // UNCOVERED: Both non-positive
+    } else if (a > 0) {            // PARTIALLY COVERED
+      return a;                    // COVERED
+    } else {                       // UNCOVERED
+      return b;                    // UNCOVERED: Mixed signs, a negative
+    } // COVERED
+  } // COVERED
+  return b; // COVERED: b >= a case
 }
 
-int is_prime(int n) {
-    /* Complex validation with multiple branches */
-    if (n < 0) {
-        return 0;  /* UNCOVERED */
-    } else if (n <= 1) {
-        return 0;  /* Covered */
-    } else if (n == 2 || n == 3) {
-        return 1;  /* Covered */
-    } else if (n % 2 == 0) {
-        return 0;  /* Covered */
-    } else if (n % 3 == 0) {
-        return 0;  /* Partially covered */
-    }
-    
-    /* Complex loop with nested conditions */
-    for (int i = 5; i * i <= n; i += 6) {
-        if (n % i == 0) {
-            return 0;  /* Covered */
-        } else if (n % (i + 2) == 0) {
-            return 0;  /* Partially covered */
-        }
-    }
-    return 1;  /* Covered */
+int min(int a, int b) {                               // COVERED
+  if ((a < b && a >= 0) || (a < b && b < 0)) {        // PARTIALLY COVERED
+    return a;                                         // COVERED
+  } else if ((b < a && b >= 0) || (b < a && a < 0)) { // PARTIALLY COVERED
+    return b;                                         // COVERED
+  } else if (a == b) {                                // COVERED
+    return (a > 0) ? a : b; // PARTIALLY COVERED: Equal values
+  }
+  return (a < b) ? a : b; // PARTIALLY COVERED: Fallback
 }
 
-int absolute_value(int n) {
-    if (n < 0) {
-        return -n;  // Covered
-    }
-    return n;      // Covered
+int gcd(int a, int b) {      // COVERED
+  if (a == 0 && b == 0) {    // PARTIALLY COVERED
+    return 0;                // UNCOVERED: Both zero
+  } else if (a == 0) {       // PARTIALLY COVERED
+    return (b > 0) ? b : -b; // UNCOVERED: a is zero
+  } else if (b == 0) {       // PARTIALLY COVERED
+    return (a > 0) ? a : -a; // UNCOVERED: b is zero
+  } // COVERED
+
+  // COVERED: Handle negative values
+  if (a < 0 || b < 0) {   // PARTIALLY COVERED
+    if (a < 0 && b < 0) { // UNCOVERED
+      a = -a;             // UNCOVERED: Both negative
+      b = -b;
+    } else if (a < 0) { // UNCOVERED
+      a = -a;           // UNCOVERED: Only a negative
+    } else if (b < 0) { // UNCOVERED
+      b = -b;           // UNCOVERED: Only b negative
+    } // UNCOVERED
+  } // COVERED
+
+  // COVERED: Main GCD algorithm (Euclidean)
+  while (b != 0) { // PARTIALLY COVERED
+    int remainder = a % b;
+    if (remainder == 0) { // COVERED
+      return b;           // COVERED: Found GCD
+    } // COVERED
+    int temp = b; // COVERED
+    b = remainder;
+    a = temp;
+  } // UNCOVERED
+  return a; // COVERED: Fallback
 }
 
-int max(int a, int b) {
-    /* Complex conditional with nested branches */
-    if (a >= b) {
-        if (a > 0 && b > 0) {  /* Both positive - Covered */
-            return (a > b) ? a : b;
-        } else if (a <= 0 && b <= 0) {  /* Both non-positive - Partially covered */
-            return (a > b) ? a : b;
-        } else if (a > 0) {  /* Mixed signs - Uncovered */
-            return a;
-        } else {
-            return b;  /* UNCOVERED */
-        }
-    }
-    return b;  /* Covered */
-}
+int fibonacci(int n) { // COVERED
+  if (n < 0) {         // PARTIALLY COVERED
+    return -1;         // UNCOVERED: Negative input
+  } else if (n == 0) { // COVERED
+    return 0;          // COVERED: Base case F(0)=0
+  } else if (n == 1) { // COVERED
+    return 1;          // COVERED: Base case F(1)=1
+  } else if (n == 2) { // PARTIALLY COVERED
+    return 1;          // UNCOVERED
+  } // COVERED
 
-int min(int a, int b) {
-    /* Multiple conditions with logical operators */
-    if ((a < b && a >= 0) || (a < b && b < 0)) {
-        return a;  /* Partially covered */
-    } else if ((b < a && b >= 0) || (b < a && a < 0)) {
-        return b;  /* Partially covered */
-    } else if (a == b) {
-        return (a > 0) ? a : b;  /* Covered */
-    }
-    return (a < b) ? a : b;  /* Covered */
-}
-
-int gcd(int a, int b) {
-    /* Complex handling with nested conditions */
-    if (a == 0 && b == 0) {
-        return 0;  /* UNCOVERED */
-    } else if (a == 0) {
-        return (b > 0) ? b : -b;  /* UNCOVERED branch */
-    } else if (b == 0) {
-        return (a > 0) ? a : -a;  /* UNCOVERED branch */
-    }
-    
-    /* Handle negative values with nested logic */
-    if (a < 0 || b < 0) {
-        if (a < 0 && b < 0) {  /* Both negative - UNCOVERED */
-            a = -a;
-            b = -b;
-        } else if (a < 0) {  /* Only a negative - UNCOVERED */
-            a = -a;
-        } else if (b < 0) {  /* Only b negative - UNCOVERED */
-            b = -b;
-        }
-    }
-    
-    /* Main GCD algorithm with condition checking */
-    while (b != 0) {
-        int remainder = a % b;
-        if (remainder == 0) {  /* Covered */
-            return b;
-        }
-        int temp = b;
-        b = remainder;
-        a = temp;
-    }
-    return a;  /* Covered */
-}
-
-int fibonacci(int n) {
-    /* Complex validation with nested conditions */
-    if (n < 0) {
-        return -1;  /* UNCOVERED */
-    } else if (n == 0) {
-        return 0;  /* Covered */
-    } else if (n == 1) {
-        return 1;  /* Covered */
-    } else if (n == 2) {
-        return 1;  /* Partially covered */
-    }
-    
-    /* Iterative computation with branch conditions */
-    int prev = 0, curr = 1;
-    for (int i = 2; i <= n; i++) {
-        int next = prev + curr;
-        /* Nested condition for verification */
-        if (prev < curr && curr < next) {
-            prev = curr;  /* Covered */
-            curr = next;  /* Covered */
-        } else if (prev >= curr) {  /* UNCOVERED initially */
-            prev = curr;
-            curr = next;
-        } else {
-            prev = curr;
-            curr = next;
-        }
-    }
-    return curr;  /* Covered */
+  // COVERED: Iterative computation for n > 2
+  int prev = 0, curr = 1;        // COVERED
+  for (int i = 2; i <= n; i++) { // COVERED
+    int next = prev + curr;
+    // COVERED: Branch handling in loop
+    if (prev < curr && curr < next) { // COVERED
+      prev = curr;                    // COVERED: Normal progression
+      curr = next;
+    } else if (prev >= curr) { // COVERED
+      prev = curr;             // COVERED
+      curr = next;
+    } // COVERED
+  } // COVERED
+  return curr; // COVERED: Final result
 }

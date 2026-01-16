@@ -1,0 +1,52 @@
+---
+# clangd configuration for consistent C/C++ code formatting
+# This configuration is used with clang-format for the sample code examples
+
+# Style configuration for C/C++ source files
+Style: |
+  BasedOnStyle: LLVM
+  IndentWidth: 4
+  TabWidth: 4
+  UseTab: Never
+  ColumnLimit: 100
+  
+  # Comment formatting
+  SpaceBeforeCtorInitializerColon: true
+  SpaceBeforeRangeBasedForLoopColon: true
+  
+  # Function and block formatting
+  AllowShortFunctionsOnASingleLine: InlineOnly
+  AllowShortBlocksOnASingleLine: Never
+  AllowShortCaseLabelsOnASingleLine: false
+  AllowShortIfStatementsOnASingleLine: false
+  AllowShortLoopsOnASingleLine: false
+  
+  # Pointer and reference alignment
+  PointerAlignment: Right
+  ReferenceAlignment: Right
+  
+  # Operator spacing
+  SpaceAroundPointerQualifiers: Default
+  
+  # Line breaks
+  BreakBeforeBraces: Allman
+  BreakBeforeBinaryOperators: NonAssignment
+  
+  # Comment preservation
+  ReflowComments: true
+  CommentPragmas: '^ NOLINT|^ IWYU pragma'
+
+# Clangd diagnostics and behavior
+Diagnostics:
+  Suppress:
+    - unused-variable
+    - unused-parameter
+
+# File patterns for this configuration
+If:
+  PathMatch: .*\.(c|cpp|h|hpp)$
+
+CompileFlags:
+  Add:
+    - "-std=c11"  # C standard for .c files
+    - "-Wno-unknown-attributes"

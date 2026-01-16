@@ -1,251 +1,233 @@
 // C++ Math Utilities Implementation
 #include "math_utils.hpp"
 #include <cmath>
-#include <stdexcept>
 #include <cstring>
+#include <stdexcept>
 
 namespace MathUtils {
-    int add(int a, int b) {
-        return a + b;
-    }
+int add(int a, int b) { return a + b; } // COVERED
 
-    int subtract(int a, int b) {
-        return a - b;
-    }
+int subtract(int a, int b) { return a - b; } // COVERED
 
-    int multiply(int a, int b) {
-        return a * b;
-    }
+int multiply(int a, int b) { return a * b; } // COVERED
 
-    double divide(double a, double b) {
-        if (b == 0) {
-            throw std::invalid_argument("Division by zero"); // UNCOVERED
-        }
-        return a / b;  // Covered
-    }
-
-    long long power(int base, int exp) {
-        if (exp < 0) {
-            throw std::invalid_argument("Negative exponent"); // UNCOVERED
-        }
-        if (exp == 0) {
-            return 1;  // Covered
-        }
-        long long result = 1;
-        for (int i = 0; i < exp; ++i) {
-            result *= base;
-        }
-        return result;  // Covered
-    }
-
-    int factorial(int n) {
-        if (n < 0) {
-            throw std::invalid_argument("Negative factorial"); // UNCOVERED
-        }
-        if (n == 0 || n == 1) {
-            return 1;  // Covered
-        }
-        return n * factorial(n - 1);  // Covered
-    }
-
-    bool is_prime(int n) {
-        if (n <= 1) {
-            return false;  // Covered
-        }
-        if (n == 2) {
-            return true;   // Covered
-        }
-        if (n % 2 == 0) {
-            return false;  // Covered
-        }
-        for (int i = 3; i * i <= n; i += 2) {
-            if (n % i == 0) {
-                return false;  // Covered
-            }
-        }
-        return true;  // Covered
-    }
-
-    int absolute_value(int n) {
-        if (n < 0) {
-            return -n;  // Covered
-        }
-        return n;      // Covered
-    }
-
-    int max(int a, int b) {
-        // Complex conditional with nested branches
-        if (a >= b) {
-            if (a > 0 && b > 0) {  // Both positive - Covered
-                return a > b ? a : b;
-            } else if (a <= 0 && b <= 0) {  // Both non-positive - Partially covered
-                return a > b ? a : b;
-            } else if (a > 0)  {  // Mixed signs - Uncovered
-                return a;
-            } else {
-                return b;  // UNCOVERED
-            }
-        }
-        return b;  // Covered
-    }
-
-    int min(int a, int b) {
-        // Multiple conditions with logical operators
-        if ((a < b && a >= 0) || (a < b && b < 0)) {
-            return a;  // Partially covered
-        } else if ((b < a && b >= 0) || (b < a && a < 0)) {
-            return b;  // Partially covered
-        } else if (a == b) {
-            return (a > 0) ? a : b;  // Covered
-        }
-        return (a < b) ? a : b;  // Covered
-    }
-
-    int gcd(int a, int b) {
-        // Complex handling with nested conditions
-        if ((a == 0 && b == 0)) {
-            return 0;  // UNCOVERED
-        } else if (a == 0) {
-            return (b > 0) ? b : -b;  // UNCOVERED branch
-        } else if (b == 0) {
-            return (a > 0) ? a : -a;  // UNCOVERED branch
-        }
-        
-        // Handle negative values with nested logic
-        if (a < 0 || b < 0) {
-            if (a < 0 && b < 0) {  // Both negative - UNCOVERED
-                a = -a;
-                b = -b;
-            } else if (a < 0) {  // Only a negative - UNCOVERED
-                a = -a;
-            } else if (b < 0) {  // Only b negative - UNCOVERED
-                b = -b;
-            }
-        }
-        
-        // Main GCD algorithm with condition checking
-        while (b != 0) {
-            int remainder = a % b;
-            if (remainder == 0) {  // Covered
-                return b;
-            }
-            int temp = b;
-            b = remainder;
-            a = temp;
-        }
-        return a;  // Covered
-    }
-
-    int fibonacci(int n) {
-        // Complex validation with nested conditions
-        if (n < 0) {
-            return -1;  // UNCOVERED
-        } else if (n == 0) {
-            return 0;  // Covered
-        } else if (n == 1) {
-            return 1;  // Covered
-        } else if (n == 2) {
-            return 1;  // Partially covered
-        }
-        
-        // Iterative computation with branch conditions
-        int prev = 0, curr = 1;
-        for (int i = 2; i <= n; ++i) {
-            int next = prev + curr;
-            // Nested condition for verification (all covered in loop)
-            if (prev < curr && curr < next) {
-                prev = curr;  // Covered
-                curr = next;  // Covered
-            } else if (prev >= curr) {  // UNCOVERED initially
-                prev = curr;
-                curr = next;
-            } else {
-                prev = curr;
-                curr = next;
-            }
-        }
-        return curr;  // Covered
-    }
-
-    double average(int *values, int count) {
-        if (count <= 0) {
-            return 0.0;  // UNCOVERED
-        }
-        
-        int total = sum(values, count);  // Covered
-        return static_cast<double>(total) / count;  // Covered
-    }
-
-    int sum(int *values, int count) {
-        // Nested validation with multiple conditions
-        if (values == nullptr) {
-            return 0;  // UNCOVERED
-        }
-        if (count <= 0) {
-            return 0;  // Partially covered
-        }
-        if (count == 1) {
-            return values[0];  // Partially covered
-        }
-        
-        int result = 0;
-        // Loop with conditional branch logic
-        for (int i = 0; i < count; ++i) {
-            if (values[i] > 0) {
-                result += values[i];  // Covered
-            } else if (values[i] < 0) {
-                result += values[i];  // Covered (handles negative)
-            } else {
-                // values[i] == 0, still add it (covered implicitly)
-                result += values[i];
-            }
-        }
-        return result;  // Covered
-    }
-
-    bool is_palindrome(const char *str) {
-        // Multi-level validation
-        if (str == nullptr) {
-            return false;  // UNCOVERED
-        }
-        
-        int len = string_length(str);
-        
-        // Handle edge cases with nested conditions
-        if (len <= 0) {
-            return false;  // UNCOVERED
-        } else if (len == 1) {
-            return true;  // Partially covered
-        }
-        
-        // Complex palindrome checking with conditions
-        for (int i = 0; i < len / 2; ++i) {
-            char left = str[i];
-            char right = str[len - 1 - i];
-            
-            // Check with multiple comparisons
-            if (left != right) {
-                return false;  // Covered
-            } else if (left >= 'a' && left <= 'z' && right >= 'a' && right <= 'z') {
-                // Both lowercase - continue (Partially covered)
-                continue;
-            } else if ((left >= 'A' && left <= 'Z') && (right >= 'A' && right <= 'Z')) {
-                // Both uppercase - continue (Partially covered)
-                continue;
-            }
-        }
-        return true;  // Covered
-    }
-
-    int string_length(const char *str) {
-        if (str == nullptr) {
-            return 0;  // UNCOVERED
-        }
-        
-        int len = 0;
-        while (str[len] != '\0') {
-            len++;
-        }
-        return len;  // Covered
-    }
+double divide(double a, double b) {                  // COVERED
+  if (b == 0) {                                      // PARTIALLY COVERED
+    throw std::invalid_argument("Division by zero"); // UNCOVERED
+  } // COVERED
+  return a / b; // COVERED: Normal division
 }
+
+long long power(int base, int exp) {                  // COVERED
+  if (exp < 0) {                                      // PARTIALLY COVERED
+    throw std::invalid_argument("Negative exponent"); // UNCOVERED
+  } // COVERED
+  if (exp == 0) { // COVERED
+    return 1;     // COVERED: Zero exponent case
+  } // COVERED
+  long long result = 1;           // COVERED
+  for (int i = 0; i < exp; ++i) { // COVERED
+    result *= base;
+  } // COVERED
+  return result; // COVERED: Positive exponent
+}
+
+int factorial(int n) {                                 // COVERED
+  if (n < 0) {                                         // PARTIALLY COVERED
+    throw std::invalid_argument("Negative factorial"); // UNCOVERED
+  } // COVERED
+  if (n == 0 || n == 1) { // COVERED
+    return 1;             // COVERED: Base cases
+  } // COVERED
+  return n * factorial(n - 1); // COVERED: Recursive case
+}
+
+bool is_prime(int n) { // COVERED
+  if (n <= 1) {        // COVERED
+    return false;      // COVERED: Not prime
+  } // COVERED
+  if (n == 2) {  // COVERED
+    return true; // COVERED: 2 is prime
+  } // COVERED
+  if (n % 2 == 0) { // PARTIALLY COVERED
+    return false;   // UNCOVERED: Even numbers not prime
+  } // COVERED
+  for (int i = 3; i * i <= n; i += 2) { // COVERED
+    if (n % i == 0) {                   // COVERED
+      return false;                     // COVERED: Divisible by i
+    } // COVERED
+  }
+  return true; // COVERED: Number is prime
+}
+
+int absolute_value(int n) { // COVERED
+  if (n < 0) {              // COVERED
+    return -n;              // COVERED: Negative input
+  } // COVERED
+  return n; // COVERED: Non-negative input
+}
+
+int max(int a, int b) {            // COVERED
+  if (a >= b) {                    // COVERED
+    if (a > 0 && b > 0) {          // PARTIALLY COVERED
+      return a > b ? a : b;        // COVERED: Both positive
+    } else if (a <= 0 && b <= 0) { // PARTIALLY COVERED
+      return a > b ? a : b;        // UNCOVERED: Both non-positive
+    } else if (a > 0) {            // PARTIALLY COVERED
+      return a;                    // PARTIALLY COVERED: Mixed signs
+    } else {                       // UNCOVERED
+      return b;                    // UNCOVERED: Mixed signs, a negative
+    } // COVERED
+  } // COVERED
+  return b; // COVERED: b >= a case
+}
+
+int min(int a, int b) {                               // COVERED
+  if ((a < b && a >= 0) || (a < b && b < 0)) {        // PARTIALLY COVERED
+    return a;                                         // COVERED
+  } else if ((b < a && b >= 0) || (b < a && a < 0)) { // PARTIALLY COVERED
+    return b;                                         // COVERED
+  } else if (a == b) {                                // COVERED
+    return (a > 0) ? a : b; // PARTIALLY COVERED: Equal values
+  }
+  return (a < b) ? a : b; // PARTIALLY COVERED: Fallback
+}
+
+int gcd(int a, int b) {      // COVERED
+  if (a == 0 && b == 0) {    // PARTIALLY COVERED
+    return 0;                // UNCOVERED: Both zero
+  } else if (a == 0) {       // PARTIALLY COVERED
+    return (b > 0) ? b : -b; // UNCOVERED: a is zero
+  } else if (b == 0) {       // PARTIALLY COVERED
+    return (a > 0) ? a : -a; // UNCOVERED: b is zero
+  } // COVERED
+
+  // COVERED: Handle negative values
+  if (a < 0 || b < 0) {   // PARTIALLY COVERED
+    if (a < 0 && b < 0) { // UNCOVERED
+      a = -a;
+      b = -b;
+    } else if (a < 0) { // UNCOVERED
+      a = -a;
+    } else if (b < 0) { // UNCOVERED
+      b = -b;
+    } // UNCOVERED
+  } // COVERED
+
+  // COVERED: Main GCD algorithm (Euclidean)
+  while (b != 0) { // PARTIALLY COVERED
+    int remainder = a % b;
+    if (remainder == 0) { // COVERED
+      return b;
+    } // COVERED
+    int temp = b; // COVERED
+    b = remainder;
+    a = temp;
+  } // UNCOVERED
+  return a; // UNCOVERED: Final result
+}
+
+int fibonacci(int n) { // COVERED
+  if (n < 0) {         // PARTIALLY COVERED
+    return -1;         // UNCOVERED: Negative input
+  } else if (n == 0) { // COVERED
+    return 0;          // COVERED: Base case F(0)=0
+  } else if (n == 1) { // COVERED
+    return 1;          // COVERED: Base case F(1)=1
+  } else if (n == 2) { // PARTIALLY COVERED
+    return 1;          // UNCOVERED
+  } // COVERED
+
+  // COVERED: Iterative computation for n > 2
+  int prev = 0, curr = 1;        // COVERED
+  for (int i = 2; i <= n; ++i) { // COVERED
+    int next = prev + curr;
+    // COVERED: Branch handling in loop
+    if (prev < curr && curr < next) { // COVERED
+      prev = curr;                    // COVERED: Normal progression
+      curr = next;
+    } else if (prev >= curr) { // COVERED
+      prev = curr;
+      curr = next;
+    } else { // COVERED
+      prev = curr;
+      curr = next;
+    } // COVERED
+  } // COVERED
+  return curr; // Covered
+}
+
+double average(int *values, int count) { // COVERED
+  if (count <= 0) {                      // PARTIALLY COVERED
+    return 0.0;                          // UNCOVERED: Invalid count
+  } // COVERED
+  // COVERED
+  int total = sum(values, count);            // Covered
+  return static_cast<double>(total) / count; // Covered
+}
+
+int sum(int *values, int count) { // COVERED
+  if (values == nullptr) {        // PARTIALLY COVERED
+    return 0;                     // UNCOVERED: Null pointer
+  } // COVERED
+  if (count <= 0) { // PARTIALLY COVERED
+    return 0;       // UNCOVERED
+  } // COVERED
+  if (count == 1) {   // COVERED
+    return values[0]; // COVERED
+  } // COVERED
+  // COVERED
+  int result = 0;                   // COVERED
+  for (int i = 0; i < count; ++i) { // COVERED
+    if (values[i] > 0) {            // PARTIALLY COVERED
+      result += values[i];          // COVERED: Positive value
+    } else if (values[i] < 0) {     // UNCOVERED
+      result += values[i];          // UNCOVERED
+    } else {                        // UNCOVERED
+      result += values[i];          // UNCOVERED: Zero value
+    } // COVERED
+  } // COVERED
+  return result; // COVERED: Final sum
+}
+
+bool is_palindrome(const char *str) { // COVERED
+  if (str == nullptr) {               // PARTIALLY COVERED
+    return false;                     // UNCOVERED: Null pointer
+  } // COVERED
+  // COVERED
+  int len = string_length(str); // COVERED
+  // COVERED
+  if (len <= 0) {        // PARTIALLY COVERED
+    return false;        // UNCOVERED: Empty string
+  } else if (len == 1) { // COVERED
+    return true;         // COVERED: Single char is palindrome
+  } // COVERED
+  // COVERED
+  for (int i = 0; i < len / 2; ++i) { // COVERED
+    char left = str[i];
+    char right = str[len - 1 - i];
+    if (left != right) { // COVERED
+      return false;      // COVERED: Characters don't match
+    } else if (left >= 'a' && left <= 'z' && right >= 'a' &&
+               right <= 'z') { // PARTIALLY COVERED
+      continue;
+    } else if ((left >= 'A' && left <= 'Z') &&
+               (right >= 'A' && right <= 'Z')) { // UNCOVERED
+      continue;
+    } // COVERED
+  } // COVERED
+  return true; // COVERED: String is palindrome
+}
+
+int string_length(const char *str) { // COVERED
+  if (str == nullptr) {              // PARTIALLY COVERED
+    return 0;                        // UNCOVERED: Null pointer
+  } // COVERED
+  // COVERED
+  int len = 0;               // COVERED
+  while (str[len] != '\0') { // COVERED
+    len++;
+  } // COVERED
+  return len; // COVERED: Final length
+}
+} // namespace MathUtils

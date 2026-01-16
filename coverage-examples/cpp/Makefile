@@ -23,7 +23,7 @@ HEADERS = math_utils.hpp
 OBJECTS = $(SOURCES:.cpp=.o)
 TARGET = math_test
 
-# GCC Coverage flags (gcov, lcov)
+# GCC Coverage flags (gcov, lcov) - includes branch coverage
 GCC_COVERAGE_FLAGS = --coverage -fprofile-arcs -ftest-coverage
 
 # LLVM Coverage flags
@@ -61,9 +61,9 @@ gcov: $(BUILD_DIR)/$(TARGET)
 # ===== GCC/LCOV Report =====
 lcov: gcov run
 	@echo ""
-	@echo "Generating LCOV report..."
-	cd $(BUILD_DIR) && lcov --capture --directory . --output-file coverage.lcov
-	cd $(BUILD_DIR) && lcov --remove coverage.lcov '/usr/*' --ignore-errors unused --output-file coverage.lcov
+	@echo "Generating LCOV report with branch coverage..."
+	cd $(BUILD_DIR) && lcov --capture --directory . --rc branch_coverage=1 --output-file coverage.lcov
+	cd $(BUILD_DIR) && lcov --remove coverage.lcov '/usr/*' --rc branch_coverage=1 --ignore-errors unused --output-file coverage.lcov
 	@echo "✓ LCOV report generated: $(BUILD_DIR)/coverage.lcov"
 	@echo ""
 	@echo "Load in crazy-coverage.nvim:"
