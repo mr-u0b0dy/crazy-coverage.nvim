@@ -64,8 +64,8 @@ end
 
 -- NeoVim sign text must be at most 2 display cells; abbreviate safely
 local function format_sign_text(sign_text)
-  if sign_text == nil then
-    return ""
+  if sign_text == nil or sign_text == "" then
+    return nil
   end
 
   local function display_width(str)
@@ -73,6 +73,10 @@ local function format_sign_text(sign_text)
   end
 
   local text = tostring(sign_text)
+  if text == "" then
+    return nil
+  end
+  
   if display_width(text) <= 2 then
     return text
   end
@@ -100,7 +104,8 @@ local function format_sign_text(sign_text)
     end
     truncated = next_text
   end
-  return truncated
+  
+  return truncated ~= "" and truncated or nil
 end
 
 M.namespace = vim.api.nvim_create_namespace("coverage_plugin")
@@ -307,8 +312,8 @@ function M.render_file(buf, file_entry)
           sign_text = tostring(hit_count)
         end
         sign_text = format_sign_text(sign_text)
-        -- Only set sign_text if it's a non-empty string (Neovim requirement)
-        if sign_text and sign_text ~= "" then
+        -- Only set sign_text if it's a valid non-empty string (Neovim requirement)
+        if sign_text and type(sign_text) == "string" and sign_text ~= "" then
           extmark_opts.sign_text = sign_text
           extmark_opts.sign_hl_group = hl_group
         end
