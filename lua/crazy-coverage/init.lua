@@ -37,6 +37,13 @@ local state = {
   last_enabled_display = "sign", -- Track the last enabled display mode for toggle
 }
 
+local autocmd_group = vim.api.nvim_create_augroup("CrazyCoverageAutoRender", { clear = true })
+
+-- Forward declarations (used before definition)
+local start_file_watcher
+local stop_file_watcher
+local setup_autocmds
+
 --- Get current state (read-only access)
 ---@return table
 function M.get_state()
@@ -69,6 +76,9 @@ function M.setup(user_config)
 
   -- Create user commands
   M.create_commands()
+
+  -- Auto-render coverage when switching/opening buffers
+  setup_autocmds()
   
   state.is_initialized = true
 end
@@ -137,10 +147,6 @@ function M.load_coverage(file_path, project_root)
 
   return true
 end
-
---- Forward declaration for file watcher functions
-local start_file_watcher
-local stop_file_watcher
 
 --- Start watching coverage file for changes
 start_file_watcher = function()
@@ -332,15 +338,19 @@ function M.clear()
 end
 
 --- Get coverage info for the current buffer
+---@param buf number|nil -- buffer handle (defaults to current buffer)
 ---@return table|nil -- file_entry with coverage data, or nil
-local function get_current_file_coverage()
+local function get_buffer_coverage(buf)
   if not state.coverage_data or type(state.coverage_data) ~= "table" then
     return nil
   end
 
-  local buf = vim.api.nvim_get_current_buf()
+  buf = buf or vim.api.nvim_get_current_buf()
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    return nil
+  end
+
   local file_path = vim.api.nvim_buf_get_name(buf)
-  
   if file_path == "" then
     return nil
   end
@@ -369,6 +379,52 @@ local function get_current_file_coverage()
   return nil
 end
 
+--- Render coverage in a specific buffer if data is available
+---@param buf number|nil
+local function render_buffer_coverage(buf)
+  if not state.is_enabled or not state.coverage_data then
+    return
+  end
+
+  buf = buf or vim.api.nvim_get_current_buf()
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+
+  local file_entry = get_buffer_coverage(buf)
+  if not file_entry then
+    return
+  end
+
+  local ok, err = pcall(renderer.render_file, buf, file_entry)
+  if not ok then
+    notify("Coverage render failed: " .. tostring(err), vim.log.levels.WARN)
+  end
+end
+
+setup_autocmds = function()
+  vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+    group = autocmd_group,
+    callback = function(args)
+      if not state.is_enabled or not state.coverage_data then
+        return
+      end
+
+      local buf = args.buf
+      if not buf or not vim.api.nvim_buf_is_loaded(buf) then
+        return
+      end
+
+      local name = vim.api.nvim_buf_get_name(buf)
+      if name == "" then
+        return
+      end
+
+      render_buffer_coverage(buf)
+    end,
+  })
+end
+
 --- Navigate to next/previous line matching a coverage filter
 ---@param direction number -- 1 for next, -1 for previous
 ---@param filter function -- function(line_info, branches) -> boolean
@@ -378,7 +434,7 @@ local function navigate_to_coverage(direction, filter)
     return
   end
 
-  local file_entry = get_current_file_coverage()
+  local file_entry = get_buffer_coverage()
   if not file_entry then
     notify("No coverage data for current file", vim.log.levels.WARN)
     return
