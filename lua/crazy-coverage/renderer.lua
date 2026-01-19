@@ -307,8 +307,11 @@ function M.render_file(buf, file_entry)
           sign_text = tostring(hit_count)
         end
         sign_text = format_sign_text(sign_text)
-        extmark_opts.sign_text = sign_text
-        extmark_opts.sign_hl_group = hl_group
+        -- Only set sign_text if it's a non-empty string (Neovim requirement)
+        if sign_text and sign_text ~= "" then
+          extmark_opts.sign_text = sign_text
+          extmark_opts.sign_hl_group = hl_group
+        end
       end
       
       local ok, err = pcall(vim.api.nvim_buf_set_extmark, buf, M.namespace, line_num - 1, 0, extmark_opts)
