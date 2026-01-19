@@ -22,23 +22,23 @@ return {
     end,
     keys = {
       -- Coverage overlay toggle (auto-loads and watches for file changes)
-      { "<Leader>lt", "<cmd>CoverageToggle<cr>", desc = "Toggle coverage overlay" },
+      { "<Leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle overlay" },
       
       -- Hit count display toggle (enable/disable)
-      { "<Leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Toggle hit count display (enable/disable)" },
+      { "<Leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle hit count display" },
 
       -- Branch overlay toggle (floating window above code)
-      { "<Leader>lb", "<cmd>CoverageToggleBranchOverlay<cr>", desc = "Toggle branch coverage soverlay" },
+      { "<Leader>lb", "<cmd>CoverageToggleBranchOverlay<cr>", desc = "Coverage: Toggle branch overlay" },
 
       -- Navigation: coverage lines
-      { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Next covered line" },
-      { "[cc", "<cmd>CoveragePrevCovered<cr>", desc = "Prev covered line" },
+      { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next covered line" },
+      { "[cc", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev covered line" },
       
-      { "]cp", "<cmd>CoverageNextPartial<cr>", desc = "Next partial line" },
-      { "[cp", "<cmd>CoveragePrevPartial<cr>", desc = "Prev partial line" },
+      { "]cp", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next partial line" },
+      { "[cp", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev partial line" },
       
-      { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Next uncovered line" },
-      { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Prev uncovered line" },
+      { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next uncovered line" },
+      { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev uncovered line" },
     },
   },
 }
