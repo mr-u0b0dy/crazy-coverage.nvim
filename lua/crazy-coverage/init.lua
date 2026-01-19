@@ -34,6 +34,7 @@ local state = {
   last_modified = nil,
   last_size = nil,           -- Track file size for change detection
   coverage_file_missing_notified = false, -- Prevent duplicate deletion warnings
+  last_enabled_display = "sign", -- Track the last enabled display mode for toggle
 }
 
 --- Get current state (read-only access)
@@ -592,18 +593,29 @@ function M.prev_partial()
 end
 
 --- Toggle hit count display
+--- Toggle hit count display (enable/disable)
 function M.toggle_hitcount()
   local current_config = config.get_config()
-  current_config.show_hit_count = not current_config.show_hit_count
+  local current_display = current_config.hit_count.display
+  
+  if current_display == "" then
+    -- Enable: restore the last enabled display mode
+    current_config.hit_count.display = state.last_enabled_display
+  else
+    -- Disable: save the current display mode and set to empty
+    state.last_enabled_display = current_display
+    current_config.hit_count.display = ""
+  end
+  
   config.set_config(current_config)
   
   -- Re-render if coverage is enabled
   if state.is_enabled and state.coverage_data then
-    renderer.render(state.coverage_data)
+    renderer.render(state.coverage_data, state.project_root)
   end
   
-  local status = current_config.show_hit_count and "enabled" or "disabled"
-  vim.notify("Hit count display " .. status, vim.log.levels.INFO)
+  local status = current_config.hit_count.display ~= "" and "enabled (" .. current_config.hit_count.display .. ")" or "disabled"
+  vim.notify("Hit count display: " .. status, vim.log.levels.INFO)
 end
 
 --- Create user commands

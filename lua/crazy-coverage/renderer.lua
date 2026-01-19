@@ -213,9 +213,10 @@ function M.render_file(buf, file_entry)
       )
     end
 
-    -- Build virtual text
+    -- Build virtual text (only for non-sign display modes)
     local virt_text = {}
-    if config.show_hit_count and hit_count then
+    local hit_count_display = config.hit_count and config.hit_count.display or "eol"
+    if hit_count_display ~= "sign" and hit_count_display ~= "" and hit_count then
       table.insert(virt_text, { " " .. hit_count, hl_group })
     end
 
@@ -223,44 +224,61 @@ function M.render_file(buf, file_entry)
       table.insert(virt_text, { " (hit)", hl_group })
     end
 
-    -- Optional branch summary: b:taken/total
-    if config.show_branch_summary and branches and branch_total > 0 then
+    -- Optional branch summary: b:taken/total (only show in sign mode)
+    if config.show_branch_summary and branches and branch_total > 0 and hit_count_display == "sign" then
       table.insert(virt_text, { " b:" .. branch_taken .. "/" .. branch_total, hl_group })
     end
 
-    -- If no virtual text but we have branch data, show a summary anyway
-    if #virt_text == 0 and branches and branch_total > 0 then
+    -- If no virtual text but we have branch data, show a summary anyway (only in sign mode)
+    if #virt_text == 0 and branches and branch_total > 0 and hit_count_display == "sign" then
       table.insert(virt_text, { " b:" .. branch_taken .. "/" .. branch_total, hl_group })
     end
 
-    -- Place extmark on line with both virtual text and line highlighting
-    if #virt_text > 0 then
+    -- Place extmark on line with virtual text, line highlighting, and sign text
+    local should_render = #virt_text > 0 or config.enable_line_hl or (hit_count_display == "sign" and hit_count)
+    
+    if should_render then
       local extmark_opts = {
-        virt_text = virt_text,
-        virt_text_pos = config.virt_text_pos,
         priority = 200,
         hl_eol = false,
         strict = false,
       }
+      
+      -- Add virtual text if present
+      if #virt_text > 0 then
+        extmark_opts.virt_text = virt_text
+        -- Only set virt_text_pos if it's a valid position (not "sign" or empty)
+        if hit_count_display == "eol" or hit_count_display == "inline" or hit_count_display == "overlay" or hit_count_display == "right_align" then
+          extmark_opts.virt_text_pos = hit_count_display
+        else
+          -- Default to eol for branch info when not in a valid display mode
+          extmark_opts.virt_text_pos = "eol"
+        end
+      end
       
       -- Add line highlighting if enabled
       if config.enable_line_hl then
         extmark_opts.line_hl_group = hl_group
       end
       
+      -- Add sign text with hit count in sign column (left gutter)
+      if hit_count_display == "sign" and hit_count then
+        local sign_text
+        if type(config.hit_count.sign_text_format) == "function" then
+          sign_text = config.hit_count.sign_text_format(hit_count)
+        elseif type(config.hit_count.sign_text_format) == "string" then
+          sign_text = string.format(config.hit_count.sign_text_format, hit_count)
+        else
+          -- Fallback: show exact hit count
+          sign_text = tostring(hit_count)
+        end
+        extmark_opts.sign_text = sign_text
+        extmark_opts.sign_hl_group = hl_group
+      end
+      
       local ok, err = pcall(vim.api.nvim_buf_set_extmark, buf, M.namespace, line_num - 1, 0, extmark_opts)
       if not ok then
         notify("Failed to set extmark on line " .. line_num .. ": " .. tostring(err), vim.log.levels.ERROR)
-      end
-    elseif config.enable_line_hl then
-      -- If no virtual text but line highlighting is enabled
-      local ok2, err2 = pcall(vim.api.nvim_buf_set_extmark, buf, M.namespace, line_num - 1, 0, {
-        line_hl_group = hl_group,
-        priority = 200,
-        strict = false,
-      })
-      if not ok2 then
-        notify("Failed to set extmark (line_hl) on line " .. line_num .. ": " .. tostring(err2), vim.log.levels.ERROR)
       end
     end
   end

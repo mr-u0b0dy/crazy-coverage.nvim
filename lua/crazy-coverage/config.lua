@@ -17,15 +17,25 @@ local M = {
     partial = nil,     -- e.g., "#FFAA00" or { bg = "#FFAA00", fg = "#FFFFFF" }
   },
 
-  -- Virtual text position: 'eol', 'inline', 'overlay', 'right_align'
-  virt_text_pos = "eol",
-
-  -- Show hit count in virtual text by default when overlay is enabled
-  show_hit_count = true,
+  -- Hit count display configuration
+  hit_count = {
+    -- Display mode: 'eol', 'inline', 'overlay', 'right_align', or 'sign'
+    -- 'sign' displays hit count in the sign column (left gutter)
+    -- Other values display as virtual text at the specified position
+    display = "sign",
+    
+    -- Show hit count by default when toggling overlay on
+    show_by_default = true,
+    
+    -- Format function for sign text (hit count display in sign column)
+    -- Only used when display = 'sign'
+    -- Takes hit_count (number) and returns string
+    -- Default: shows exact hit count without abbreviation
+    sign_text_format = function(hit_count)
+      return tostring(hit_count)
+    end,
+  },
   
-  -- Show hit count by default when toggling overlay on
-  default_show_hit_count = true,
-
   -- Show percentage for lines
   show_percentage = false,
 
@@ -367,14 +377,15 @@ function M.set_config(user_config)
     partial_hl = true,
     auto_adapt_colors = true,
     colors = true,
-    virt_text_pos = true,
-    show_hit_count = true,
-    default_show_hit_count = true,
+    hit_count = true,
     show_percentage = true,
     show_branch_summary = true,
     enable_line_hl = true,
+    center_on_navigate = true,
     auto_load = true,
     debug_notifications = true,
+    llvm_binary_file = true,
+    watch_debounce_ms = true,
     coverage_patterns = true,
     coverage_dirs = true,
     project_markers = true,
@@ -385,7 +396,8 @@ function M.set_config(user_config)
   for key, value in pairs(user_config) do
     if valid_keys[key] then
       M[key] = value
-    else
+    elseif type(value) ~= "function" then
+      -- Only warn about non-function keys (skip function references)
       vim.notify("Unknown config key: " .. tostring(key), vim.log.levels.WARN)
     end
   end
