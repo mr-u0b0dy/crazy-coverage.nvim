@@ -27,6 +27,9 @@ return {
       -- Hit count display toggle (enable/disable)
       { "<Leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Toggle hit count display (enable/disable)" },
 
+      -- Branch overlay toggle (floating window above code)
+      { "<Leader>lb", "<cmd>CoverageToggleBranchOverlay<cr>", desc = "Toggle branch coverage soverlay" },
+
       -- Navigation: coverage lines
       { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Next covered line" },
       { "[cc", "<cmd>CoveragePrevCovered<cr>", desc = "Prev covered line" },

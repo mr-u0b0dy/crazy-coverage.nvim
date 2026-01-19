@@ -302,4 +302,207 @@ function M.setup()
   config.setup_highlights()
 end
 
+-- Branch overlay state (per window)
+local _branch_overlay = {
+  wins = {}, -- [win] = { win = win_id, buf = buf_id }
+}
+
+--- Build lines for branch overlay
+--- @param file_entry table
+--- @param current_line number|nil Current cursor line (only show this line if provided)
+--- @return table lines, table highlights -- lines of text, and per-line highlight groups
+local function build_branch_overlay_lines(file_entry, current_line)
+  local branch_map = {}
+  for _, br in ipairs(file_entry.branches or {}) do
+    local line = br.line or br.line_num
+    if type(line) == "number" then
+      if not branch_map[line] then
+        branch_map[line] = {}
+      end
+      local hits = br.hits
+      if hits == nil then
+        hits = br.hit_count
+      end
+      hits = hits or 0
+      local id = br.id or br.branch_id or br.col or #branch_map[line] + 1
+      table.insert(branch_map[line], { id = id, hits = hits })
+    end
+  end
+
+  local lines, hls = {}, {}
+
+  -- Title line (will be updated with summary, default neutral color)
+  local title = (config.branch_overlay and config.branch_overlay.title) or "Branch Coverage"
+  table.insert(lines, title)
+  table.insert(hls, "Normal") -- use Normal highlight for uncolored title
+
+  -- Filter to current line if specified
+  local sorted = {}
+  if current_line and branch_map[current_line] then
+    table.insert(sorted, current_line)
+  elseif not current_line then
+    -- Show all lines if no current line specified
+    for ln, _ in pairs(branch_map) do
+      table.insert(sorted, ln)
+    end
+    table.sort(sorted)
+  end
+
+  for _, ln in ipairs(sorted) do
+    local branches = branch_map[ln]
+    local total, taken = 0, 0
+    total = #branches
+    for _, b in ipairs(branches) do
+      if (b.hits or 0) > 0 then
+        taken = taken + 1
+      end
+    end
+
+    -- Update title to show summary with percentage
+    local percentage = total > 0 and math.floor((taken / total) * 100) or 0
+    lines[1] = string.format("Branch Coverage: %d/%d taken (%d%%)", taken, total, percentage)
+
+    -- Add individual branch lines
+    for _, b in ipairs(branches) do
+      local branch_line = string.format("Branch %s : %d", tostring(b.id), b.hits or 0)
+      table.insert(lines, branch_line)
+      
+      -- Color based on hit count: green if > 0, red if 0
+      local hl = (b.hits or 0) > 0 and config.covered_hl or config.uncovered_hl
+      table.insert(hls, hl)
+    end
+  end
+
+  if #sorted == 0 then
+    if current_line then
+      table.insert(lines, string.format("No branch data for line %d", current_line))
+    else
+      table.insert(lines, "No branch data for this file")
+    end
+    table.insert(hls, config.uncovered_hl)
+  end
+
+  return lines, hls
+end
+
+--- Render branch overlay for the current window
+--- @param buf number
+--- @param file_entry table
+function M.render_branch_overlay(buf, file_entry)
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+  if not file_entry then
+    return
+  end
+
+  local cur_win = vim.api.nvim_get_current_win()
+  -- Get current cursor line
+  local cursor_line = vim.api.nvim_win_get_cursor(cur_win)[1]
+  local lines, hls = build_branch_overlay_lines(file_entry, cursor_line)
+
+  -- Create scratch buffer
+  local overlay_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_option(overlay_buf, "bufhidden", "wipe")
+  vim.api.nvim_buf_set_option(overlay_buf, "modifiable", true)
+  vim.api.nvim_buf_set_lines(overlay_buf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(overlay_buf, "modifiable", false)
+
+  -- Apply per-line highlights
+  for i, hl in ipairs(hls) do
+    pcall(vim.api.nvim_buf_add_highlight, overlay_buf, 0, hl, i - 1, 0, -1)
+  end
+
+  local cfg = config.branch_overlay or {}
+  local win_width = vim.api.nvim_win_get_width(cur_win)
+  local height = math.min(cfg.max_height or 12, #lines)
+
+  -- Position overlay above or below the cursor line based on available space
+  local win_height = vim.api.nvim_win_get_height(cur_win)
+  local win_top_line = vim.fn.line("w0")
+  local cursor_screen_row = cursor_line - win_top_line
+  
+  -- Calculate space above and below cursor
+  local space_above = cursor_screen_row  -- rows from top to cursor
+  local space_below = win_height - cursor_screen_row - 1  -- rows from cursor+1 to bottom
+  
+  local row
+  if space_below >= height then
+    -- Place below the cursor line (cursor_screen_row + 1)
+    row = cursor_screen_row + 1
+  else
+    -- No space below, place above the cursor line
+    -- Overlay should end at cursor_screen_row - 1, so row = cursor_screen_row - height
+    row = cursor_screen_row - height
+  end
+
+  local opts = {
+    relative = "win",
+    win = cur_win,
+    anchor = "NW",
+    row = row,
+    col = 0,
+    width = win_width,
+    height = height,
+    style = "minimal",
+    border = cfg.border or "rounded",
+    zindex = cfg.zindex or 200,
+    noautocmd = true,
+    focusable = false,
+  }
+
+  local overlay_win = vim.api.nvim_open_win(overlay_buf, false, opts)
+  local augroup_name = "CoverageBranchOverlay_" .. cur_win
+  _branch_overlay.wins[cur_win] = { win = overlay_win, buf = overlay_buf, cursor_line = cursor_line, augroup = augroup_name }
+  
+  -- Auto-close overlay when cursor moves to a different line
+  vim.api.nvim_create_augroup(augroup_name, { clear = true })
+  vim.api.nvim_create_autocmd("CursorMoved", {
+    group = augroup_name,
+    buffer = buf,
+    callback = function()
+      local new_line = vim.api.nvim_win_get_cursor(cur_win)[1]
+      if new_line ~= cursor_line then
+        M.close_branch_overlay(cur_win)
+      end
+    end,
+  })
+end
+
+--- Close branch overlay for a specific window (current if nil)
+--- @param win number|nil
+function M.close_branch_overlay(win)
+  win = win or vim.api.nvim_get_current_win()
+  local entry = _branch_overlay.wins[win]
+  if entry then
+    if entry.win and vim.api.nvim_win_is_valid(entry.win) then
+      pcall(vim.api.nvim_win_close, entry.win, true)
+    end
+    if entry.buf and vim.api.nvim_buf_is_valid(entry.buf) then
+      pcall(vim.api.nvim_buf_delete, entry.buf, { force = true })
+    end
+    -- Clean up autocmd group safely
+    if entry.augroup then
+      pcall(vim.api.nvim_del_augroup_by_name, entry.augroup)
+    end
+    _branch_overlay.wins[win] = nil
+  end
+end
+
+--- Close all branch overlays
+function M.close_all_branch_overlays()
+  for win, _ in pairs(_branch_overlay.wins) do
+    M.close_branch_overlay(win)
+  end
+end
+
+--- Check if branch overlay is open for a window
+--- @param win number|nil
+--- @return boolean
+function M.is_branch_overlay_open(win)
+  win = win or vim.api.nvim_get_current_win()
+  local entry = _branch_overlay.wins[win]
+  return entry ~= nil and entry.win and vim.api.nvim_win_is_valid(entry.win)
+end
+
 return M

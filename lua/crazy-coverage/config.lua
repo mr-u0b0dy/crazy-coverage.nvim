@@ -86,6 +86,16 @@ local M = {
   
   -- Development convenience flag: when true, enables debug notifications
   dev = false,
+
+  -- Branch overlay configuration (floating window)
+  branch_overlay = {
+    enabled_by_default = false,
+    border = "rounded",
+    max_height = 12,
+    zindex = 200,
+    show_ids = true,
+    title = "Branch Coverage",
+  },
 }
 
 --- Check if file is a valid coverage file by detecting its format
@@ -433,6 +443,7 @@ function M.set_config(user_config)
     cache_enabled = true,
     cache_dir = true,
     dev = true,
+    branch_overlay = true,
   }
   
   for key, value in pairs(user_config) do

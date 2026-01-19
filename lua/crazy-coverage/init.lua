@@ -38,6 +38,7 @@ local state = {
   last_size = nil,           -- Track file size for change detection
   coverage_file_missing_notified = false, -- Prevent duplicate deletion warnings
   last_enabled_display = "sign", -- Track the last enabled display mode for toggle
+  branch_overlay_enabled = false,
 }
 
 local autocmd_group = vim.api.nvim_create_augroup("CrazyCoverageAutoRender", { clear = true })
@@ -405,6 +406,30 @@ local function render_buffer_coverage(buf)
   end
 end
 
+--- Render branch overlay in a buffer if enabled and data is available
+---@param buf number|nil
+local function render_branch_overlay_in_buf(buf)
+  if not state.branch_overlay_enabled or not state.coverage_data then
+    return
+  end
+  buf = buf or vim.api.nvim_get_current_buf()
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+  local file_entry = get_buffer_coverage(buf)
+  if not file_entry then
+    return
+  end
+  -- If already open, close before re-render to refresh content
+  if renderer.is_branch_overlay_open() then
+    renderer.close_branch_overlay()
+  end
+  local ok, err = pcall(renderer.render_branch_overlay, buf, file_entry)
+  if not ok then
+    notify("Branch overlay render failed: " .. tostring(err), vim.log.levels.WARN)
+  end
+end
+
 setup_autocmds = function()
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
     group = autocmd_group,
@@ -424,6 +449,10 @@ setup_autocmds = function()
       end
 
       render_buffer_coverage(buf)
+      -- Also update branch overlay if enabled
+      if state.branch_overlay_enabled then
+        render_branch_overlay_in_buf(buf)
+      end
     end,
   })
 end
@@ -764,6 +793,36 @@ function M.create_commands()
   vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
     M.toggle_hitcount()
   end, {})
+
+  -- Toggle branch overlay floating window
+  vim.api.nvim_create_user_command("CoverageToggleBranchOverlay", function()
+    M.toggle_branch_overlay()
+  end, {})
+end
+
+--- Toggle branch coverage overlay (floating window)
+function M.toggle_branch_overlay()
+  if not state.is_enabled or not state.coverage_data then
+    vim.notify("No coverage data loaded. Use :CoverageToggle or :CoverageLoad first", vim.log.levels.WARN)
+    return
+  end
+
+  -- Sync state: if overlay was auto-closed on cursor movement, update state
+  if state.branch_overlay_enabled and not renderer.is_branch_overlay_open() then
+    state.branch_overlay_enabled = false
+  end
+
+  if state.branch_overlay_enabled then
+    state.branch_overlay_enabled = false
+    renderer.close_all_branch_overlays()
+    vim.notify("Branch overlay: disabled", vim.log.levels.INFO)
+    return
+  end
+
+  state.branch_overlay_enabled = true
+  -- Render for current buffer
+  render_branch_overlay_in_buf(vim.api.nvim_get_current_buf())
+  vim.notify("Branch overlay: enabled", vim.log.levels.INFO)
 end
 
 return M
