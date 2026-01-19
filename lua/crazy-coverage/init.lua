@@ -575,8 +575,24 @@ end
 function M.next_covered()
   local count = vim.v.count1
   for _ = 1, count do
-    navigate_to_coverage(1, function(line_info, _)
-      return line_info.covered and line_info.hit_count > 0
+    navigate_to_coverage(1, function(line_info, branches)
+      -- Covered means: executed AND all branches taken (or no branches)
+      if line_info.hit_count == 0 then
+        return false  -- Not executed
+      end
+      
+      -- If branches exist, all must be taken
+      if branches and #branches > 0 then
+        local taken = 0
+        for _, br in ipairs(branches) do
+          if (br.hit_count or 0) > 0 then
+            taken = taken + 1
+          end
+        end
+        return taken == #branches  -- All branches must be taken
+      end
+      
+      return true  -- Executed with no branches = covered
     end)
   end
 end
@@ -585,8 +601,24 @@ end
 function M.prev_covered()
   local count = vim.v.count1
   for _ = 1, count do
-    navigate_to_coverage(-1, function(line_info, _)
-      return line_info.covered and line_info.hit_count > 0
+    navigate_to_coverage(-1, function(line_info, branches)
+      -- Covered means: executed AND all branches taken (or no branches)
+      if line_info.hit_count == 0 then
+        return false  -- Not executed
+      end
+      
+      -- If branches exist, all must be taken
+      if branches and #branches > 0 then
+        local taken = 0
+        for _, br in ipairs(branches) do
+          if (br.hit_count or 0) > 0 then
+            taken = taken + 1
+          end
+        end
+        return taken == #branches  -- All branches must be taken
+      end
+      
+      return true  -- Executed with no branches = covered
     end)
   end
 end
@@ -596,7 +628,7 @@ function M.next_uncovered()
   local count = vim.v.count1
   for _ = 1, count do
     navigate_to_coverage(1, function(line_info, _)
-      return not line_info.covered or line_info.hit_count == 0
+      return line_info.hit_count == 0
     end)
   end
 end
@@ -606,7 +638,7 @@ function M.prev_uncovered()
   local count = vim.v.count1
   for _ = 1, count do
     navigate_to_coverage(-1, function(line_info, _)
-      return not line_info.covered or line_info.hit_count == 0
+      return line_info.hit_count == 0
     end)
   end
 end
