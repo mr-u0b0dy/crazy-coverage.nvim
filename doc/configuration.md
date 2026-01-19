@@ -344,8 +344,8 @@ coverage_dirs = {
 **Default:**
 ```lua
 {
-  c = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
-  cpp = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
+  c = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
+  cpp = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
 }
 ```
 
@@ -456,8 +456,8 @@ require("crazy-coverage").setup({
     ".",
   },
   coverage_patterns = {
-    c = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
-    cpp = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
+    c = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
+    cpp = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
   },
   project_markers = { ".git", "CMakeLists.txt", "Makefile", "compile_commands.json" },
   

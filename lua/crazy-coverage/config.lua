@@ -64,8 +64,8 @@ local M = {
 
   -- Coverage file patterns per language
   coverage_patterns = {
-    c = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
-    cpp = { "*.lcov", "coverage.json", "coverage.xml", "*.profdata" },
+    c = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
+    cpp = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
   },
 
   -- Directories to search for coverage files (relative to project root)
@@ -123,6 +123,29 @@ local function is_coverage_file(file_path)
   return valid_exts[ext] or false
 end
 
+--- Find the first valid coverage file from a candidate list
+---@param files string[]
+---@param warn_on_invalid boolean
+---@return string|nil
+local function find_first_valid_coverage_file(files, warn_on_invalid)
+  table.sort(files)
+
+  local warned = false
+  for _, file in ipairs(files) do
+    if is_coverage_file(file) then
+      return file
+    elseif warn_on_invalid and not warned then
+      vim.notify(
+        string.format("Found '%s' but it's not a valid coverage file", vim.fn.fnamemodify(file, ":t")),
+        vim.log.levels.WARN
+      )
+      warned = true
+    end
+  end
+
+  return nil
+end
+
 --- Get coverage file for current buffer
 ---@param buf number|nil
 ---@return string|nil
@@ -153,22 +176,37 @@ function M.get_coverage_file(buf)
     local search_dir = project_root .. "/" .. dir
     
     if vim.fn.isdirectory(search_dir) == 1 then
+      local candidates, seen = {}, {}
+
+      -- Pattern-based discovery
       for _, pattern in ipairs(patterns) do
         local files = vim.fn.glob(search_dir .. "/" .. pattern, false, true)
-        if files and #files > 0 then
-          table.sort(files)
-          local file = files[1]
-          
-          -- Verify file is valid coverage format
-          if is_coverage_file(file) then
-            return file
-          else
-            vim.notify(
-              string.format("Found '%s' but it's not a valid coverage file", vim.fn.fnamemodify(file, ":t")),
-              vim.log.levels.WARN
-            )
+        for _, file in ipairs(files or {}) do
+          if vim.fn.filereadable(file) == 1 and not seen[file] then
+            table.insert(candidates, file)
+            seen[file] = true
           end
         end
+      end
+
+      local file = find_first_valid_coverage_file(candidates, true)
+      if file then
+        return file
+      end
+
+      -- Fallback: scan all files in the directory once patterns didn't match
+      local entries = vim.fn.readdir(search_dir)
+      local fallback_candidates = {}
+      for _, name in ipairs(entries or {}) do
+        local file_path = search_dir .. "/" .. name
+        if vim.fn.filereadable(file_path) == 1 and not seen[file_path] then
+          table.insert(fallback_candidates, file_path)
+        end
+      end
+
+      file = find_first_valid_coverage_file(fallback_candidates, false)
+      if file then
+        return file
       end
     end
   end
