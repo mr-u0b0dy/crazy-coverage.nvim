@@ -62,6 +62,47 @@ local function get_highlight_group(line_info, branches, branch_total, branch_tak
   return is_covered and config.covered_hl or config.uncovered_hl
 end
 
+-- NeoVim sign text must be at most 2 display cells; abbreviate safely
+local function format_sign_text(sign_text)
+  if sign_text == nil then
+    return ""
+  end
+
+  local function display_width(str)
+    return vim.fn.strdisplaywidth(str)
+  end
+
+  local text = tostring(sign_text)
+  if display_width(text) <= 2 then
+    return text
+  end
+
+  -- Try to abbreviate numeric values
+  local num = tonumber(text)
+  if num then
+    if num >= 1000000 then
+      return "9+" -- cap large numbers
+    elseif num >= 1000 then
+      return "1k"
+    elseif num >= 100 then
+      return tostring(math.floor(num / 10)) .. "0" -- e.g., 123 -> "120"
+    else
+      return tostring(math.floor(num))
+    end
+  end
+
+  -- Fallback: truncate to first two display cells
+  local truncated = ""
+  for ch in text:gmatch(".") do
+    local next_text = truncated .. ch
+    if display_width(next_text) > 2 then
+      break
+    end
+    truncated = next_text
+  end
+  return truncated
+end
+
 M.namespace = vim.api.nvim_create_namespace("coverage_plugin")
 
 --- Clear all coverage marks from a buffer
@@ -227,16 +268,6 @@ function M.render_file(buf, file_entry)
       table.insert(virt_text, { " (hit)", hl_group })
     end
 
-    -- Optional branch summary: b:taken/total (only show in sign mode)
-    if config.show_branch_summary and branches and branch_total > 0 and hit_count_display == "sign" then
-      table.insert(virt_text, { " b:" .. branch_taken .. "/" .. branch_total, hl_group })
-    end
-
-    -- If no virtual text but we have branch data, show a summary anyway (only in sign mode)
-    if #virt_text == 0 and branches and branch_total > 0 and hit_count_display == "sign" then
-      table.insert(virt_text, { " b:" .. branch_taken .. "/" .. branch_total, hl_group })
-    end
-
     -- Place extmark on line with virtual text, line highlighting, and sign text
     local should_render = #virt_text > 0 or config.enable_line_hl or (hit_count_display == "sign" and hit_count)
     
@@ -275,6 +306,7 @@ function M.render_file(buf, file_entry)
           -- Fallback: show exact hit count
           sign_text = tostring(hit_count)
         end
+        sign_text = format_sign_text(sign_text)
         extmark_opts.sign_text = sign_text
         extmark_opts.sign_hl_group = hl_group
       end
