@@ -7,8 +7,11 @@ local notify_once = vim.notify_once or vim.notify
 -- Thin wrapper to centralize logging and avoid duplicate INFO popups
 local function notify(msg, level)
   level = level or vim.log.levels.INFO
-  if level == vim.log.levels.DEBUG and not config.debug_notifications then
-    return
+  -- Always check current config state, not cached value
+  if level == vim.log.levels.DEBUG then
+    if not (config.debug_notifications or config.dev) then
+      return
+    end
   end
 
   if level == vim.log.levels.INFO then

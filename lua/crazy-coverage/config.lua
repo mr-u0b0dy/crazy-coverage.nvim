@@ -83,6 +83,9 @@ local M = {
   -- Cache settings
   cache_enabled = true,
   cache_dir = vim.fn.stdpath("cache") .. "/crazy-coverage.nvim",
+  
+  -- Development convenience flag: when true, enables debug notifications
+  dev = false,
 }
 
 --- Check if file is a valid coverage file by detecting its format
@@ -429,11 +432,20 @@ function M.set_config(user_config)
     project_markers = true,
     cache_enabled = true,
     cache_dir = true,
+    dev = true,
   }
   
   for key, value in pairs(user_config) do
     if valid_keys[key] then
-      M[key] = value
+      -- Special handling: dev implies enabling debug notifications
+      if key == "dev" then
+        M.dev = value and true or false
+        if M.dev then
+          M.debug_notifications = true
+        end
+      else
+        M[key] = value
+      end
     elseif type(value) ~= "function" then
       -- Only warn about non-function keys (skip function references)
       vim.notify("Unknown config key: " .. tostring(key), vim.log.levels.WARN)
