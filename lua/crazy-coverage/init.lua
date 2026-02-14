@@ -455,9 +455,10 @@ setup_autocmds = function()
       end
 
       render_buffer_coverage(buf)
-      -- Also update branch overlay if enabled
-      if state.branch_overlay_enabled then
-        render_branch_overlay_in_buf(buf)
+      -- Do not auto-open branch overlays on buffer change
+      local cur_win = vim.api.nvim_get_current_win()
+      if renderer.is_branch_overlay_open(cur_win) then
+        renderer.close_branch_overlay(cur_win)
       end
     end,
   })
