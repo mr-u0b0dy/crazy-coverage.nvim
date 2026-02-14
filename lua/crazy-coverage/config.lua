@@ -420,6 +420,26 @@ function M.set_config(user_config)
   if not user_config or type(user_config) ~= "table" then
     return
   end
+
+  local has_hit_count_config = user_config.hit_count ~= nil
+
+  -- Legacy config compatibility (ignored when hit_count is explicitly set)
+  if not has_hit_count_config then
+    if user_config.default_show_hit_count ~= nil then
+      M.hit_count = M.hit_count or {}
+      M.hit_count.show_by_default = user_config.default_show_hit_count and true or false
+    end
+    if user_config.show_hit_count ~= nil then
+      M.hit_count = M.hit_count or {}
+      if user_config.show_hit_count then
+        if M.hit_count.display == nil or M.hit_count.display == "" then
+          M.hit_count.display = "eol"
+        end
+      else
+        M.hit_count.display = ""
+      end
+    end
+  end
   
   -- Whitelist of valid config keys
   local valid_keys = {
@@ -429,6 +449,8 @@ function M.set_config(user_config)
     auto_adapt_colors = true,
     colors = true,
     hit_count = true,
+    default_show_hit_count = true,
+    show_hit_count = true,
     show_percentage = true,
     show_branch_summary = true,
     enable_line_hl = true,
@@ -454,6 +476,8 @@ function M.set_config(user_config)
         if M.dev then
           M.debug_notifications = true
         end
+      elseif key == "default_show_hit_count" or key == "show_hit_count" then
+        -- Already handled above for legacy compatibility
       else
         M[key] = value
       end

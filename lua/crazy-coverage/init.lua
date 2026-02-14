@@ -314,6 +314,12 @@ function M.toggle()
       project_root = config.find_project_root(coverage_file)
     end
     
+    local hit_count_cfg = config.hit_count
+    if type(hit_count_cfg) == "table" and hit_count_cfg.show_by_default == false and hit_count_cfg.display ~= "" then
+      state.last_enabled_display = hit_count_cfg.display
+      hit_count_cfg.display = ""
+    end
+
     if M.load_coverage(coverage_file, project_root) then
       start_file_watcher()
     end
