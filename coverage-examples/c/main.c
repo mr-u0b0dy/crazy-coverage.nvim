@@ -57,6 +57,10 @@ int main() {                        // COVERED
   fibonacci(8);
   fibonacci(10);
 
+  /* Hit count range demos */
+  sum_range(500);      // loop body hit 500 times → sign shows "5+"
+  count_pairs(100);    // inner loop body hit 4950 times → sign shows "4k"
+
   /* Minimal output */ // COVERED
   printf("Coverage test complete\n");
   return 0;

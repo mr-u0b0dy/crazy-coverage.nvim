@@ -128,6 +128,26 @@ int gcd(int a, int b) {      // COVERED
   return a; // COVERED: Fallback
 }
 
+// Hit count demo: single loop — body hit ~500 times → sign shows "5+"
+int sum_range(int n) {
+  int total = 0;
+  for (int i = 1; i <= n; i++) {
+    total += i;
+  }
+  return total;
+}
+
+// Hit count demo: nested loop — inner body hit ~4950 times → sign shows "4k"
+int count_pairs(int n) {
+  int count = 0;
+  for (int i = 0; i < n; i++) {
+    for (int j = i + 1; j < n; j++) {
+      count++;
+    }
+  }
+  return count;
+}
+
 int fibonacci(int n) { // COVERED
   if (n < 0) {         // PARTIALLY COVERED
     return -1;         // UNCOVERED: Negative input

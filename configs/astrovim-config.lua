@@ -13,7 +13,7 @@ return {
       require("crazy-coverage").setup({
         -- Hit count display options
         hit_count = {
-          display = "sign",               -- Display mode: 'eol', 'inline', 'overlay', 'right_align', or 'sign'
+          display = "eol",               -- Display mode: 'eol', 'inline', 'overlay', 'right_align', or 'sign'
           show_by_default = true,        -- Show hit counts by default when overlay is enabled
         },
         

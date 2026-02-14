@@ -19,4 +19,8 @@ int min(int a, int b);
 int gcd(int a, int b);
 int fibonacci(int n);
 
+// Hit count demo functions
+int sum_range(int n);
+int count_pairs(int n);
+
 #endif // MATH_UTILS_H

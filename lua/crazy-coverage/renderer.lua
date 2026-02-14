@@ -81,15 +81,15 @@ local function format_sign_text(sign_text)
     return text
   end
 
-  -- Try to abbreviate numeric values
+  -- Try to abbreviate numeric values to fit in 2 display cells
   local num = tonumber(text)
   if num then
-    if num >= 1000000 then
-      return "9+" -- cap large numbers
+    if num >= 10000 then
+      return ">9" -- overflow: exceeds thousands scale
     elseif num >= 1000 then
-      return "1k"
+      return math.floor(num / 1000) .. "k" -- "1k" to "9k"
     elseif num >= 100 then
-      return tostring(math.floor(num / 10)) .. "0" -- e.g., 123 -> "120"
+      return math.floor(num / 100) .. "+" -- "1+" to "9+", approximate hundreds
     else
       return tostring(math.floor(num))
     end
@@ -107,6 +107,9 @@ local function format_sign_text(sign_text)
   
   return truncated ~= "" and truncated or nil
 end
+
+-- Exposed for testing
+M._format_sign_text = format_sign_text
 
 M.namespace = vim.api.nvim_create_namespace("coverage_plugin")
 

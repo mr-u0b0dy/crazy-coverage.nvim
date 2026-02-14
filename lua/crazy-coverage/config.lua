@@ -22,7 +22,7 @@ local M = {
     -- Display mode: 'eol', 'inline', 'overlay', 'right_align', or 'sign'
     -- 'sign' displays hit count in the sign column (left gutter)
     -- Other values display as virtual text at the specified position
-    display = "sign",
+    display = "eol",
     
     -- Show hit count by default when toggling overlay on
     show_by_default = true,
