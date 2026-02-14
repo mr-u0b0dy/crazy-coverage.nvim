@@ -27,6 +27,9 @@ return {
       -- Hit count display toggle (enable/disable)
       { "<Leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle hit count display" },
 
+      -- Neo-tree coverage toggle
+      { "<Leader>lT", "<cmd>CoverageToggleNeoTree<cr>", desc = "Coverage: Toggle Neo-tree coverage" },
+
       -- Branch overlay toggle (floating window above code)
       { "<Leader>lb", "<cmd>CoverageToggleBranchOverlay<cr>", desc = "Coverage: Toggle branch overlay" },
 

@@ -135,6 +135,98 @@ require("crazy-coverage").setup({
     max_files = 5,
   },
 })
+
+```
+
+### `nvim_tree`
+
+**Type:** `table`
+**Default:** see below
+
+Show coverage percentages in NvimTree for files and folders. Folder values are cumulative for all files under that folder.
+
+```lua
+nvim_tree = {
+  enabled = false,
+  show_files = true,
+  show_folders = true,
+  format = "percent", -- "percent" or string.format pattern
+  fill_symbol = true, -- Show fill level symbol before percentage
+  thresholds = nil, -- defaults to summary.thresholds when nil
+}
+```
+
+**Fill symbols** indicate coverage level:
+- `▁` (0-20%)
+- `▂` (20-40%)
+- `▄` (40-60%)
+- `▆` (60-80%)
+- `█` (80-100%)
+
+Examples:
+
+```lua
+require("crazy-coverage").setup({
+  nvim_tree = {
+    enabled = true,
+  },
+})
+```
+
+```lua
+require("crazy-coverage").setup({
+  nvim_tree = {
+    enabled = true,
+    format = " %5.1f%% (%d/%d)", -- percent, covered, total
+    fill_symbol = true,
+  },
+})
+```
+
+### `neo_tree`
+
+**Type:** `table`
+**Default:** see below
+
+Show coverage percentages in neo-tree for files and folders. Folder values are cumulative for all files under that folder.
+
+```lua
+neo_tree = {
+  enabled = false,
+  show_files = true,
+  show_folders = true,
+  format = "percent", -- "percent" or string.format pattern
+  fill_symbol = true, -- Show fill level symbol before percentage
+  thresholds = nil, -- defaults to summary.thresholds when nil
+}
+```
+
+**Fill symbols** indicate coverage level:
+- `▁` (0-20%)
+- `▂` (20-40%)
+- `▄` (40-60%)
+- `▆` (60-80%)
+- `█` (80-100%)
+
+Examples:
+
+```lua
+require("crazy-coverage").setup({
+  neo_tree = {
+    enabled = true,
+  },
+})
+```
+
+```lua
+require("crazy-coverage").setup({
+  neo_tree = {
+    enabled = true,
+    format = " %5.1f%% (%d/%d)", -- percent, covered, total
+    fill_symbol = true,
+  },
+})
+```
 ```
 
 ## Highlight Groups

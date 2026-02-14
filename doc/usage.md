@@ -22,6 +22,8 @@ Complete guide to using crazy-coverage.nvim for viewing and navigating code cove
 | `:CoverageToggle` | **Smart toggle**: Auto-loads coverage, enables overlay, watches for changes |
 | `:CoverageLoad <file>` | Manually load specific coverage file |
 | `:CoverageToggleHitCount` | Toggle hit count display on/off |
+| `:CoverageToggleNvimTree` | Toggle coverage display in NvimTree |
+| `:CoverageToggleNeoTree` | Toggle coverage display in neo-tree |
 | `:CoverageSummary [project|file]` | Show coverage summary popup |
 
 ### Navigation Commands

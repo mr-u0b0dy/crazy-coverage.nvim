@@ -3,6 +3,8 @@ local M = {}
 
 local parser_dispatcher = require("crazy-coverage.parser")
 local renderer = require("crazy-coverage.renderer")
+local nvim_tree = require("crazy-coverage.nvim_tree")
+local neo_tree = require("crazy-coverage.neo_tree")
 local config = require("crazy-coverage.config")
 local utils = require("crazy-coverage.utils")
 local notify_once = vim.notify_once or vim.notify
@@ -39,6 +41,8 @@ local state = {
   coverage_file_missing_notified = false, -- Prevent duplicate deletion warnings
   last_enabled_display = "sign", -- Track the last enabled display mode for toggle
   branch_overlay_enabled = false,
+  nvim_tree_enabled = false,
+  neo_tree_enabled = false,
 }
 
 local autocmd_group = vim.api.nvim_create_augroup("CrazyCoverageAutoRender", { clear = true })
@@ -47,6 +51,10 @@ local autocmd_group = vim.api.nvim_create_augroup("CrazyCoverageAutoRender", { c
 local start_file_watcher
 local stop_file_watcher
 local setup_autocmds
+local refresh_nvim_tree
+local ensure_nvim_tree_events
+local refresh_neo_tree
+local ensure_neo_tree_events
 
 --- Get current state (read-only access)
 ---@return table
@@ -76,6 +84,16 @@ function M.setup(user_config)
   if not ok then
     vim.notify("Failed to setup renderer: " .. tostring(err), vim.log.levels.ERROR)
     return
+  end
+
+  state.nvim_tree_enabled = config.nvim_tree and config.nvim_tree.enabled and true or false
+  if state.nvim_tree_enabled then
+    ensure_nvim_tree_events()
+  end
+
+  state.neo_tree_enabled = config.neo_tree and config.neo_tree.enabled and true or false
+  if state.neo_tree_enabled then
+    ensure_neo_tree_events()
   end
 
   -- Create user commands
@@ -151,6 +169,16 @@ function M.load_coverage(file_path, project_root)
 
   if config.summary and config.summary.auto_show then
     M.show_summary(config.summary.scope)
+  end
+
+  if state.nvim_tree_enabled then
+    ensure_nvim_tree_events()
+    refresh_nvim_tree()
+  end
+
+  if state.neo_tree_enabled then
+    ensure_neo_tree_events()
+    refresh_neo_tree()
   end
 
   return true
@@ -285,6 +313,76 @@ stop_file_watcher = function()
     state.last_modified = nil
     state.last_size = nil
   end
+end
+
+refresh_nvim_tree = function(buf)
+  if buf and vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype ~= "NvimTree" then
+    return
+  end
+  if not state.nvim_tree_enabled then
+    if buf then
+      nvim_tree.clear_buffer(buf)
+    else
+      nvim_tree.clear_all()
+    end
+    return
+  end
+
+  if not state.coverage_data then
+    if buf then
+      nvim_tree.clear_buffer(buf)
+    else
+      nvim_tree.clear_all()
+    end
+    return
+  end
+
+  if buf then
+    nvim_tree.render_buffer(buf, state.coverage_data, state.project_root)
+    return
+  end
+  nvim_tree.render_all(state.coverage_data, state.project_root)
+end
+
+ensure_nvim_tree_events = function()
+  nvim_tree.setup_events(function(buf)
+    refresh_nvim_tree(buf)
+  end)
+end
+
+refresh_neo_tree = function(buf)
+  if buf and vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype ~= "neo-tree" then
+    return
+  end
+  if not state.neo_tree_enabled then
+    if buf then
+      neo_tree.clear_buffer(buf)
+    else
+      neo_tree.clear_all()
+    end
+    return
+  end
+
+  if not state.coverage_data then
+    if buf then
+      neo_tree.clear_buffer(buf)
+    else
+      neo_tree.clear_all()
+    end
+    return
+  end
+
+  if buf then
+    neo_tree.render_buffer(buf, state.coverage_data, state.project_root)
+    return
+  end
+  neo_tree.render_all(state.coverage_data, state.project_root)
+end
+
+ensure_neo_tree_events = function()
+  neo_tree.setup_events(function(buf)
+    refresh_neo_tree(buf)
+  end)
 end
 
 --- Compute per-file line coverage statistics
@@ -471,6 +569,8 @@ function M.toggle()
     state.coverage_file_info = nil
     state.project_root = nil
     state.is_enabled = false
+    refresh_nvim_tree()
+    refresh_neo_tree()
     vim.notify("Coverage disabled", vim.log.levels.INFO)
   else
     -- Enable: reuse cached file info or find new coverage file
@@ -940,6 +1040,42 @@ function M.toggle_hitcount()
   vim.notify("Hit count display: " .. status, vim.log.levels.INFO)
 end
 
+--- Toggle coverage display in NvimTree
+function M.toggle_nvim_tree()
+  state.nvim_tree_enabled = not state.nvim_tree_enabled
+
+  local current_config = config.get_config()
+  current_config.nvim_tree = current_config.nvim_tree or {}
+  current_config.nvim_tree.enabled = state.nvim_tree_enabled
+  config.set_config(current_config)
+
+  if state.nvim_tree_enabled then
+    ensure_nvim_tree_events()
+  end
+
+  refresh_nvim_tree()
+  local status = state.nvim_tree_enabled and "enabled" or "disabled"
+  vim.notify("NvimTree coverage: " .. status, vim.log.levels.INFO)
+end
+
+--- Toggle coverage display in neo-tree
+function M.toggle_neo_tree()
+  state.neo_tree_enabled = not state.neo_tree_enabled
+
+  local current_config = config.get_config()
+  current_config.neo_tree = current_config.neo_tree or {}
+  current_config.neo_tree.enabled = state.neo_tree_enabled
+  config.set_config(current_config)
+
+  if state.neo_tree_enabled then
+    ensure_neo_tree_events()
+  end
+
+  refresh_neo_tree()
+  local status = state.neo_tree_enabled and "enabled" or "disabled"
+  vim.notify("Neo-tree coverage: " .. status, vim.log.levels.INFO)
+end
+
 --- Create user commands
 function M.create_commands()
   vim.api.nvim_create_user_command("CoverageToggle", function()
@@ -948,6 +1084,14 @@ function M.create_commands()
 
   vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
     M.toggle_hitcount()
+  end, {})
+
+  vim.api.nvim_create_user_command("CoverageToggleNvimTree", function()
+    M.toggle_nvim_tree()
+  end, {})
+
+  vim.api.nvim_create_user_command("CoverageToggleNeoTree", function()
+    M.toggle_neo_tree()
   end, {})
 
   vim.api.nvim_create_user_command("CoverageSummary", function(opts)

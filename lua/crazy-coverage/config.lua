@@ -114,6 +114,26 @@ local M = {
       partial = 50,
     },
   },
+
+  -- NvimTree integration
+  nvim_tree = {
+    enabled = false,
+    show_files = true,
+    show_folders = true,
+    format = "percent", -- "percent", or a string.format pattern
+    fill_symbol = true, -- Show fill level symbol before percentage
+    thresholds = nil, -- defaults to summary.thresholds when nil
+  },
+
+  -- Neo-tree integration
+  neo_tree = {
+    enabled = false,
+    show_files = true,
+    show_folders = true,
+    format = "percent", -- "percent", or a string.format pattern
+    fill_symbol = true, -- Show fill level symbol before percentage
+    thresholds = nil, -- defaults to summary.thresholds when nil
+  },
 }
 
 --- Check if file is a valid coverage file by detecting its format
@@ -485,6 +505,8 @@ function M.set_config(user_config)
     dev = true,
     branch_overlay = true,
     summary = true,
+    nvim_tree = true,
+    neo_tree = true,
   }
   
   for key, value in pairs(user_config) do
