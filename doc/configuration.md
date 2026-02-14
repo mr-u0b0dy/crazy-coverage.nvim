@@ -99,6 +99,44 @@ Enable line highlighting with background colors. When enabled, covered lines get
 enable_line_hl = true
 ```
 
+### `summary`
+
+**Type:** `table`  
+**Default:** see below
+
+Configure the coverage summary popup and auto-display behavior.
+
+```lua
+summary = {
+  auto_show = false,   -- Show summary automatically after coverage updates
+  scope = "project",  -- "project" or "file"
+  show_files = true,   -- Show lowest-coverage files in project scope
+  max_files = 8,       -- Limit file list length
+  max_width = 80,
+  max_height = 14,
+  border = "rounded",
+  zindex = 50,
+  position = "center", -- "center" or "cursor"
+  title = "Coverage Summary",
+  thresholds = {
+    covered = 80,
+    partial = 50,
+  },
+}
+```
+
+Example:
+
+```lua
+require("crazy-coverage").setup({
+  summary = {
+    auto_show = true,
+    scope = "file",
+    max_files = 5,
+  },
+})
+```
+
 ## Highlight Groups
 
 ### `auto_adapt_colors`

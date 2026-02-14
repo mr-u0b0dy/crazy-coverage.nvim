@@ -96,6 +96,24 @@ local M = {
     show_ids = true,
     title = "Branch Coverage",
   },
+
+  -- Coverage summary popup configuration
+  summary = {
+    auto_show = false,
+    scope = "project", -- "project" or "file"
+    show_files = true,
+    max_files = 20,
+    max_width = 120,
+    max_height = 30,
+    border = "rounded",
+    zindex = 50,
+    position = "center", -- "center" or "cursor"
+    title = "Coverage Summary",
+    thresholds = {
+      covered = 80,
+      partial = 50,
+    },
+  },
 }
 
 --- Check if file is a valid coverage file by detecting its format
@@ -466,6 +484,7 @@ function M.set_config(user_config)
     cache_dir = true,
     dev = true,
     branch_overlay = true,
+    summary = true,
   }
   
   for key, value in pairs(user_config) do

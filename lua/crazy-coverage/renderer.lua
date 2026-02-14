@@ -345,6 +345,342 @@ function M.setup()
   config.setup_highlights()
 end
 
+-- Summary popup state
+local _summary_popup = {
+  win = nil,
+  buf = nil,
+  previous_summary = nil,
+}
+
+local function close_summary_popup()
+  if _summary_popup.win and vim.api.nvim_win_is_valid(_summary_popup.win) then
+    pcall(vim.api.nvim_win_close, _summary_popup.win, true)
+  end
+  if _summary_popup.buf and vim.api.nvim_buf_is_valid(_summary_popup.buf) then
+    pcall(vim.api.nvim_buf_delete, _summary_popup.buf, { force = true })
+  end
+  _summary_popup.win = nil
+  _summary_popup.buf = nil
+  -- Don't clear previous_summary here, let render_summary handle it
+end
+
+local function pick_percent_hl(percent, thresholds)
+  local covered = (thresholds and thresholds.covered) or 80
+  local partial = (thresholds and thresholds.partial) or 50
+  if percent >= covered then
+    return config.covered_hl
+  elseif percent >= partial then
+    return config.partial_hl
+  end
+  return config.uncovered_hl
+end
+
+local function truncate_line(text, max_width)
+  if max_width <= 0 then
+    return ""
+  end
+  if vim.fn.strdisplaywidth(text) <= max_width then
+    return text
+  end
+
+  local suffix = "..."
+  if max_width <= #suffix then
+    return text:sub(1, max_width)
+  end
+
+  local target = max_width - #suffix
+  local out = ""
+  for ch in text:gmatch(".") do
+    if vim.fn.strdisplaywidth(out .. ch) > target then
+      break
+    end
+    out = out .. ch
+  end
+
+  return out .. suffix
+end
+
+--- Render coverage summary popup
+---@param summary table
+function M.render_summary(summary)
+  if not summary then
+    return
+  end
+
+  -- Save previous summary BEFORE closing (which would clear it)
+  local prev_summary = _summary_popup.previous_summary
+  
+  close_summary_popup()
+
+  local cfg = config.summary or {}
+  local title = cfg.title or "Coverage Summary"
+  local scope_label = summary.scope == "file" and "File" or "Project"
+  local lines = {}
+  local highlights = {}
+
+  table.insert(lines, string.format("%s - %s", title, scope_label))
+  table.insert(highlights, {{ hl = "Title", col_start = 0, col_end = -1 }})
+
+  local totals = summary.totals or {}
+  local percent = totals.percent or 0
+  
+  -- Build stats lines with inline highlights
+  if totals.total_files then
+    table.insert(lines, string.format("Files: %d  Total Lines: %d", totals.total_files, totals.total_lines or 0))
+    table.insert(highlights, {})
+  else
+    table.insert(lines, string.format("Total Lines: %d", totals.total_lines or 0))
+    table.insert(highlights, {})
+  end
+  
+  table.insert(lines, "")
+  table.insert(highlights, {})
+  
+  -- Coverage breakdown with colored percentages on separate lines
+  local covered_pct = totals.total_lines > 0 and (totals.covered_lines / totals.total_lines * 100) or 0
+  local uncovered_pct = totals.total_lines > 0 and (totals.uncovered_lines / totals.total_lines * 100) or 0
+  local partial_pct = totals.total_lines > 0 and (totals.partial_lines / totals.total_lines * 100) or 0
+  
+  -- Covered line
+  local covered_line = string.format("  Covered:   %3d lines (%.1f%%)", totals.covered_lines or 0, covered_pct)
+  table.insert(lines, covered_line)
+  local covered_pct_str = string.format("%.1f%%", covered_pct)
+  local covered_pos = covered_line:find(covered_pct_str, 1, true)
+  if covered_pos then
+    table.insert(highlights, {{ hl = config.covered_hl, col_start = covered_pos - 1, col_end = covered_pos + #covered_pct_str - 1 }})
+  else
+    table.insert(highlights, {})
+  end
+  
+  -- Uncovered line
+  local uncovered_line = string.format("  Uncovered: %3d lines (%.1f%%)", totals.uncovered_lines or 0, uncovered_pct)
+  table.insert(lines, uncovered_line)
+  local uncovered_pct_str = string.format("%.1f%%", uncovered_pct)
+  local uncovered_pos = uncovered_line:find(uncovered_pct_str, 1, true)
+  if uncovered_pos then
+    table.insert(highlights, {{ hl = config.uncovered_hl, col_start = uncovered_pos - 1, col_end = uncovered_pos + #uncovered_pct_str - 1 }})
+  else
+    table.insert(highlights, {})
+  end
+  
+  -- Partial line
+  local partial_line = string.format("  Partial:   %3d lines (%.1f%%)", totals.partial_lines or 0, partial_pct)
+  table.insert(lines, partial_line)
+  local partial_pct_str = string.format("%.1f%%", partial_pct)
+  local partial_pos = partial_line:find(partial_pct_str, 1, true)
+  if partial_pos then
+    table.insert(highlights, {{ hl = config.partial_hl, col_start = partial_pos - 1, col_end = partial_pos + #partial_pct_str - 1 }})
+  else
+    table.insert(highlights, {})
+  end
+  
+  table.insert(lines, "")
+  table.insert(highlights, {})
+  
+  table.insert(lines, string.format("Overall Coverage: %.2f%%", percent))
+  table.insert(highlights, {{ hl = pick_percent_hl(percent, cfg.thresholds), col_start = 18, col_end = -1 }})
+
+  if summary.file_path then
+    table.insert(lines, "")
+    table.insert(highlights, {})
+    table.insert(lines, "File: " .. summary.file_path)
+    table.insert(highlights, {})
+    table.insert(lines, "")
+    table.insert(highlights, {})
+    if summary.from_project then
+      table.insert(lines, "(press 'b' to go back, 'q' to close)")
+    else
+      table.insert(lines, "(press 'q' to close)")
+    end
+    table.insert(highlights, {})
+  end
+
+  local file_line_offset = #lines + 1
+  if summary.scope == "project" and cfg.show_files and summary.files and #summary.files > 0 then
+    table.insert(lines, "")
+    table.insert(highlights, {})
+    table.insert(lines, "Files (press Enter to view, q to close):")
+    table.insert(highlights, {{ hl = "Title", col_start = 0, col_end = -1 }})
+    table.insert(lines, "Coverage  Cov/Unc/Part  Total  File")
+    table.insert(highlights, {})
+
+    for _, file_stat in ipairs(summary.files) do
+      local line = string.format(
+        "  %5.1f%%  %3d/%3d/%3d  %5d  %s",
+        file_stat.percent or 0,
+        file_stat.covered_lines or 0,
+        file_stat.uncovered_lines or 0,
+        file_stat.partial_lines or 0,
+        file_stat.total_lines or 0,
+        file_stat.display_path or file_stat.path or "(unknown)"
+      )
+      table.insert(lines, line)
+      -- Color just the percentage at the start
+      table.insert(highlights, {{ hl = pick_percent_hl(file_stat.percent or 0, cfg.thresholds), col_start = 2, col_end = 8 }})
+    end
+  end
+
+  local max_width = cfg.max_width or 80
+  local max_line_width = 0
+  for i, line in ipairs(lines) do
+    local truncated = truncate_line(line, max_width)
+    lines[i] = truncated
+    local width = vim.fn.strdisplaywidth(truncated)
+    if width > max_line_width then
+      max_line_width = width
+    end
+  end
+
+  local height = #lines
+  if cfg.max_height and height > cfg.max_height then
+    height = cfg.max_height
+    local trimmed = {}
+    local trimmed_hls = {}
+    for i = 1, height - 1 do
+      table.insert(trimmed, lines[i])
+      table.insert(trimmed_hls, highlights[i])
+    end
+    table.insert(trimmed, "...")
+    table.insert(trimmed_hls, {})
+    lines = trimmed
+    highlights = trimmed_hls
+  end
+
+  local width = math.max(max_line_width, 20)
+
+  local summary_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_option(summary_buf, "bufhidden", "wipe")
+  vim.api.nvim_buf_set_option(summary_buf, "buftype", "nofile")
+  vim.api.nvim_buf_set_option(summary_buf, "swapfile", false)
+  vim.api.nvim_buf_set_option(summary_buf, "modifiable", true)
+  vim.api.nvim_buf_set_lines(summary_buf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(summary_buf, "modifiable", false)
+  vim.api.nvim_buf_set_option(summary_buf, "filetype", "crazy-coverage-summary")
+
+  -- Apply inline highlights
+  for i, line_hls in ipairs(highlights) do
+    if line_hls and #line_hls > 0 then
+      for _, hl_info in ipairs(line_hls) do
+        pcall(vim.api.nvim_buf_add_highlight, summary_buf, 0, hl_info.hl, i - 1, hl_info.col_start, hl_info.col_end)
+      end
+    end
+  end
+  
+  -- Store summary data and file offset for interactivity
+  vim.b[summary_buf].coverage_summary = summary
+  vim.b[summary_buf].file_line_offset = file_line_offset
+  
+  -- Manage previous summary for back navigation
+  if summary.from_project and prev_summary then
+    -- Viewing file details from project: keep the previous (project) summary
+    _summary_popup.previous_summary = prev_summary
+  elseif not summary.from_project and summary.scope == "project" then
+    -- Back at project view: clear previous summary
+    _summary_popup.previous_summary = nil
+  elseif prev_summary and not summary.from_project then
+    -- Other transitions: preserve previous summary
+    _summary_popup.previous_summary = prev_summary
+  end
+
+  local opts
+  if cfg.position == "cursor" then
+    local cur_win = vim.api.nvim_get_current_win()
+    local cursor = vim.api.nvim_win_get_cursor(cur_win)
+    local win_top_line = vim.fn.line("w0")
+    local cursor_row = cursor[1] - win_top_line
+    if cursor_row < 0 then
+      cursor_row = 0
+    end
+    opts = {
+      relative = "win",
+      win = cur_win,
+      anchor = "NW",
+      row = cursor_row + 1,
+      col = 0,
+      width = width,
+      height = height,
+      style = "minimal",
+      border = cfg.border or "rounded",
+      zindex = cfg.zindex or 50,
+      noautocmd = true,
+      focusable = true,
+    }
+  else
+    local ui = vim.api.nvim_list_uis()[1]
+    local total_width = ui and ui.width or vim.o.columns
+    local total_height = ui and ui.height or vim.o.lines
+    local row = math.floor((total_height - height) / 2)
+    local col = math.floor((total_width - width) / 2)
+    if row < 0 then row = 0 end
+    if col < 0 then col = 0 end
+    opts = {
+      relative = "editor",
+      row = row,
+      col = col,
+      width = width,
+      height = height,
+      style = "minimal",
+      border = cfg.border or "rounded",
+      zindex = cfg.zindex or 50,
+      noautocmd = true,
+      focusable = true,
+    }
+  end
+
+  local summary_win = vim.api.nvim_open_win(summary_buf, true, opts)
+  _summary_popup.win = summary_win
+  _summary_popup.buf = summary_buf
+
+  vim.keymap.set("n", "q", function()
+    M.close_summary()
+  end, { buffer = summary_buf, silent = true, nowait = true })
+  
+  vim.keymap.set("n", "<CR>", function()
+    if not vim.api.nvim_win_is_valid(summary_win) then return end
+    local line_num = vim.api.nvim_win_get_cursor(summary_win)[1]
+    local offset = vim.b[summary_buf].file_line_offset or 0
+    local summary_data = vim.b[summary_buf].coverage_summary
+    
+    if summary_data and summary_data.scope == "project" and summary_data.files then
+      local file_idx = line_num - offset - 2  -- -2 for header lines
+      if file_idx >= 1 and file_idx <= #summary_data.files then
+        local file_stat = summary_data.files[file_idx]
+        -- Store previous summary before rendering new one
+        _summary_popup.previous_summary = vim.deepcopy(summary_data)
+        -- Build file summary
+        local file_summary = {
+          scope = "file",
+          totals = {
+            total_lines = file_stat.total_lines,
+            covered_lines = file_stat.covered_lines,
+            uncovered_lines = file_stat.uncovered_lines,
+            partial_lines = file_stat.partial_lines,
+            percent = file_stat.percent,
+          },
+          file_path = file_stat.display_path or file_stat.path,
+          from_project = true,
+        }
+        M.render_summary(file_summary)
+      end
+    end
+  end, { buffer = summary_buf, silent = true, nowait = true })
+  
+  vim.keymap.set("n", "b", function()
+    local prev = _summary_popup.previous_summary
+    if prev then
+      -- Don't clear it yet - let render_summary handle it
+      M.render_summary(prev)
+    end
+  end, { buffer = summary_buf, silent = true, nowait = true })
+end
+
+--- Close summary popup
+function M.close_summary()
+  close_summary_popup()
+  -- Clear previous summary when explicitly closing
+  _summary_popup.previous_summary = nil
+end
+
 -- Branch overlay state (per window)
 local _branch_overlay = {
   wins = {}, -- [win] = { win = win_id, buf = buf_id }

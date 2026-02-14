@@ -149,6 +149,10 @@ function M.load_coverage(file_path, project_root)
     return false
   end
 
+  if config.summary and config.summary.auto_show then
+    M.show_summary(config.summary.scope)
+  end
+
   return true
 end
 
@@ -283,11 +287,184 @@ stop_file_watcher = function()
   end
 end
 
+--- Compute per-file line coverage statistics
+---@param file_entry table
+---@return table
+local function compute_file_stats(file_entry)
+  local total_lines = 0
+  local covered_lines = 0
+  local uncovered_lines = 0
+  local partial_lines = 0
+
+  -- Build branch map first
+  local branch_map = {}
+  for _, br in ipairs(file_entry.branches or {}) do
+    local line_num = br.line_num or br.line
+    if type(line_num) == "number" then
+      if not branch_map[line_num] then
+        branch_map[line_num] = { total = 0, taken = 0 }
+      end
+      branch_map[line_num].total = branch_map[line_num].total + 1
+      local hit_count = br.hit_count
+      if hit_count == nil then
+        hit_count = br.hits
+      end
+      hit_count = hit_count or 0
+      if hit_count > 0 then
+        branch_map[line_num].taken = branch_map[line_num].taken + 1
+      end
+    end
+  end
+
+  for _, line_info in ipairs(file_entry.lines or {}) do
+    local line_num = line_info.line_num or line_info.line
+    if type(line_num) == "number" then
+      total_lines = total_lines + 1
+      local hit_count = line_info.hit_count
+      if hit_count == nil then
+        hit_count = line_info.hits
+      end
+      hit_count = hit_count or 0
+      
+      -- Check branch coverage
+      local branches = branch_map[line_num]
+      if branches and branches.total > 0 then
+        if branches.taken == 0 then
+          uncovered_lines = uncovered_lines + 1
+        elseif branches.taken > 0 and branches.taken < branches.total then
+          partial_lines = partial_lines + 1
+        else
+          covered_lines = covered_lines + 1
+        end
+      else
+        -- No branches, just line coverage
+        if hit_count > 0 then
+          covered_lines = covered_lines + 1
+        else
+          uncovered_lines = uncovered_lines + 1
+        end
+      end
+    end
+  end
+
+  if total_lines == 0 then
+    for line_num, branches in pairs(branch_map) do
+      total_lines = total_lines + 1
+      if branches.taken == 0 then
+        uncovered_lines = uncovered_lines + 1
+      elseif branches.taken > 0 and branches.taken < branches.total then
+        partial_lines = partial_lines + 1
+      else
+        covered_lines = covered_lines + 1
+      end
+    end
+  end
+
+  local percent = total_lines > 0 and (covered_lines / total_lines) * 100 or 0
+  return {
+    total_lines = total_lines,
+    covered_lines = covered_lines,
+    uncovered_lines = uncovered_lines,
+    partial_lines = partial_lines,
+    percent = percent,
+  }
+end
+
+local function display_path(file_path, project_root)
+  if project_root and file_path and file_path:sub(1, #project_root) == project_root then
+    local rel = file_path:sub(#project_root + 1)
+    if rel:sub(1, 1) == "/" then
+      rel = rel:sub(2)
+    end
+    if rel ~= "" then
+      return rel
+    end
+  end
+  return file_path
+end
+
+--- Build summary data for project or current file
+---@param scope string|nil
+---@return table|nil, string|nil
+local function build_summary(scope)
+  if not state.coverage_data then
+    return nil, "No coverage data loaded"
+  end
+
+  scope = scope or (config.summary and config.summary.scope) or "project"
+
+  if scope == "file" then
+    local file_entry = get_buffer_coverage()
+    if not file_entry then
+      return nil, "No coverage data for current file"
+    end
+    local stats = compute_file_stats(file_entry)
+    return {
+      scope = "file",
+      totals = stats,
+      file_path = display_path(vim.api.nvim_buf_get_name(0), state.project_root),
+    }, nil
+  end
+
+  local totals = {
+    total_lines = 0,
+    covered_lines = 0,
+    uncovered_lines = 0,
+    partial_lines = 0,
+    total_files = 0,
+  }
+  local files = {}
+  for file_path, file_entry in pairs(state.coverage_data) do
+    local stats = compute_file_stats(file_entry)
+    if stats.total_lines > 0 then
+      totals.total_lines = totals.total_lines + stats.total_lines
+      totals.covered_lines = totals.covered_lines + stats.covered_lines
+      totals.uncovered_lines = totals.uncovered_lines + stats.uncovered_lines
+      totals.partial_lines = totals.partial_lines + stats.partial_lines
+      totals.total_files = totals.total_files + 1
+      table.insert(files, {
+        path = file_path,
+        display_path = display_path(file_path, state.project_root),
+        total_lines = stats.total_lines,
+        covered_lines = stats.covered_lines,
+        uncovered_lines = stats.uncovered_lines,
+        partial_lines = stats.partial_lines,
+        percent = stats.percent,
+      })
+    end
+  end
+
+  totals.percent = totals.total_lines > 0 and (totals.covered_lines / totals.total_lines) * 100 or 0
+
+  table.sort(files, function(a, b)
+    if a.percent == b.percent then
+      return (a.total_lines or 0) > (b.total_lines or 0)
+    end
+    return (a.percent or 0) < (b.percent or 0)
+  end)
+
+  local max_files = config.summary and config.summary.max_files
+  if max_files and #files > max_files then
+    local trimmed = {}
+    for i = 1, max_files do
+      table.insert(trimmed, files[i])
+    end
+    files = trimmed
+  end
+
+  return {
+    scope = "project",
+    totals = totals,
+    files = files,
+  }, nil
+end
+
 --- Toggle coverage overlay (unified function)
 function M.toggle()
   if state.is_enabled then
     -- Disable: clear everything and stop watching
     renderer.clear_all()
+    renderer.close_summary()
     stop_file_watcher()
     state.coverage_data = nil
     state.coverage_file = nil
@@ -324,6 +501,23 @@ function M.toggle()
       start_file_watcher()
     end
   end
+end
+
+--- Show coverage summary popup
+---@param scope string|nil
+function M.show_summary(scope)
+  if not state.is_enabled or not state.coverage_data then
+    vim.notify("No coverage data loaded. Use :CoverageToggle or :CoverageLoad first", vim.log.levels.WARN)
+    return
+  end
+
+  local summary, err = build_summary(scope)
+  if not summary then
+    vim.notify(err or "Failed to build coverage summary", vim.log.levels.WARN)
+    return
+  end
+
+  renderer.render_summary(summary)
 end
 
 --- Enable coverage overlay (deprecated, use toggle)
@@ -755,6 +949,22 @@ function M.create_commands()
   vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
     M.toggle_hitcount()
   end, {})
+
+  vim.api.nvim_create_user_command("CoverageSummary", function(opts)
+    local scope = opts.args
+    if scope == "" then
+      scope = nil
+    end
+    M.show_summary(scope)
+  end, { nargs = "?" })
+
+  vim.api.nvim_create_user_command("CrazyCoverageSummary", function(opts)
+    local scope = opts.args
+    if scope == "" then
+      scope = nil
+    end
+    M.show_summary(scope)
+  end, { nargs = "?" })
   
   -- Load coverage from specific file
   vim.api.nvim_create_user_command("CoverageLoad", function(opts)

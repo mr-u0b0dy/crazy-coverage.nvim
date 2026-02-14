@@ -149,6 +149,7 @@ See [Configuration Reference](doc/configuration.md) for all 15+ options.
 | `:CoverageToggle` | Toggle coverage overlay (auto-loads, watches file) |
 | `:CoverageToggleHitCount` | Toggle hit count display |
 | `:CoverageLoad <file>` | Manually load specific coverage file |
+| `:CoverageSummary [project|file]` | Show coverage summary popup |
 | `:CoverageNextUncovered` | Jump to next uncovered line |
 | `:CoveragePrevCovered` | Jump to previous covered line |
 | `:CoverageNextPartial` | Jump to next partially covered line |

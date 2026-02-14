@@ -22,6 +22,7 @@ Complete guide to using crazy-coverage.nvim for viewing and navigating code cove
 | `:CoverageToggle` | **Smart toggle**: Auto-loads coverage, enables overlay, watches for changes |
 | `:CoverageLoad <file>` | Manually load specific coverage file |
 | `:CoverageToggleHitCount` | Toggle hit count display on/off |
+| `:CoverageSummary [project|file]` | Show coverage summary popup |
 
 ### Navigation Commands
 
@@ -33,6 +34,33 @@ Complete guide to using crazy-coverage.nvim for viewing and navigating code cove
 | `:CoveragePrevPartial` | Jump to previous partially covered line |
 | `:CoverageNextUncovered` | Jump to next uncovered line |
 | `:CoveragePrevUncovered` | Jump to previous uncovered line |
+
+---
+
+## Coverage Summary
+
+Get an overview of coverage for the whole project or the current file:
+
+```vim
+" Project summary (default)
+:CoverageSummary
+
+" File-only summary
+:CoverageSummary file
+```
+
+Alias: `:CrazyCoverageSummary`
+
+You can also enable automatic summary display after coverage updates:
+
+```lua
+require("crazy-coverage").setup({
+  summary = {
+    auto_show = true,
+    scope = "project",
+  },
+})
+```
 
 ---
 

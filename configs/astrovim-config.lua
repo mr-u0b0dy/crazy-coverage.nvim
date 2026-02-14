@@ -30,6 +30,9 @@ return {
       -- Branch overlay toggle (floating window above code)
       { "<Leader>lb", "<cmd>CoverageToggleBranchOverlay<cr>", desc = "Coverage: Toggle branch overlay" },
 
+      -- Coverage summary popup
+      { "<Leader>lm", "<cmd>CoverageSummary<cr>", desc = "Coverage: Summary" },
+
       -- Navigation: coverage lines
       { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next covered line" },
       { "[cc", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev covered line" },
