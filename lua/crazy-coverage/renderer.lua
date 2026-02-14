@@ -489,7 +489,7 @@ function M.render_branch_overlay(buf, file_entry)
     height = height,
     style = "minimal",
     border = cfg.border or "rounded",
-    zindex = cfg.zindex or 200,
+    zindex = cfg.zindex or 45,
     noautocmd = true,
     focusable = false,
   }
@@ -498,14 +498,28 @@ function M.render_branch_overlay(buf, file_entry)
   local augroup_name = "CoverageBranchOverlay_" .. cur_win
   _branch_overlay.wins[cur_win] = { win = overlay_win, buf = overlay_buf, cursor_line = cursor_line, augroup = augroup_name }
   
-  -- Auto-close overlay when cursor moves to a different line
+  -- Auto-close overlay when cursor moves or the source window loses focus
   vim.api.nvim_create_augroup(augroup_name, { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = augroup_name,
     buffer = buf,
     callback = function()
+      if not vim.api.nvim_win_is_valid(cur_win) then
+        M.close_branch_overlay(cur_win)
+        return
+      end
       local new_line = vim.api.nvim_win_get_cursor(cur_win)[1]
       if new_line ~= cursor_line then
+        M.close_branch_overlay(cur_win)
+      end
+    end,
+  })
+  vim.api.nvim_create_autocmd({ "WinLeave", "WinClosed" }, {
+    group = augroup_name,
+    callback = function(args)
+      -- WinClosed passes the closed win id as a string in args.match
+      local closed_win = (args.event == "WinClosed") and tonumber(args.match) or nil
+      if closed_win == cur_win or (args.event == "WinLeave" and vim.api.nvim_get_current_win() == cur_win) then
         M.close_branch_overlay(cur_win)
       end
     end,
@@ -546,6 +560,19 @@ function M.is_branch_overlay_open(win)
   win = win or vim.api.nvim_get_current_win()
   local entry = _branch_overlay.wins[win]
   return entry ~= nil and entry.win and vim.api.nvim_win_is_valid(entry.win)
+end
+
+--- Check if a window is a branch overlay window
+--- @param win number|nil
+--- @return boolean
+function M.is_branch_overlay_win(win)
+  win = win or vim.api.nvim_get_current_win()
+  for _, entry in pairs(_branch_overlay.wins) do
+    if entry.win == win then
+      return true
+    end
+  end
+  return false
 end
 
 return M

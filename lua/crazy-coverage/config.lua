@@ -92,7 +92,7 @@ local M = {
     enabled_by_default = false,
     border = "rounded",
     max_height = 12,
-    zindex = 200,
+    zindex = 45,
     show_ids = true,
     title = "Branch Coverage",
   },

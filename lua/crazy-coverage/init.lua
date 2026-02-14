@@ -461,6 +461,7 @@ setup_autocmds = function()
       end
     end,
   })
+
 end
 
 --- Navigate to next/previous line matching a coverage filter
