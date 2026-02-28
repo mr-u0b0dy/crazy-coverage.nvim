@@ -97,6 +97,16 @@ local M = {
     title = "Branch Coverage",
   },
 
+  -- Region overlay configuration (floating window + region highlight)
+  region_overlay = {
+    enabled_by_default = false,
+    border = "rounded",
+    max_height = 8,
+    zindex = 46,
+    title = "Region Coverage",
+    highlight_hl = "CoverageRegionActive",
+  },
+
   -- Coverage summary popup configuration
   summary = {
     auto_show = false,
@@ -440,6 +450,13 @@ function M.setup_highlights()
     bold = true,
     default = false,
   })
+
+  vim.api.nvim_set_hl(0, (M.region_overlay and M.region_overlay.highlight_hl) or "CoverageRegionActive", {
+    bg = partial_color.bg,
+    fg = partial_color.fg,
+    bold = true,
+    default = false,
+  })
 end
 
 -- Re-apply highlights when colorscheme changes so custom groups persist
@@ -504,6 +521,7 @@ function M.set_config(user_config)
     cache_dir = true,
     dev = true,
     branch_overlay = true,
+    region_overlay = true,
     summary = true,
     nvim_tree = true,
     neo_tree = true,

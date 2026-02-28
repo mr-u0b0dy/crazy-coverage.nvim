@@ -73,6 +73,7 @@ function M.parse(file_path, project_root)
         local file_entry = {
           lines = {},
           branches = {},
+          source_format = "llvm_json",
         }
 
         -- Try parsing Format A: "lines" array (standard llvm-cov export output)

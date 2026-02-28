@@ -41,6 +41,8 @@ local state = {
   coverage_file_missing_notified = false, -- Prevent duplicate deletion warnings
   last_enabled_display = "sign", -- Track the last enabled display mode for toggle
   branch_overlay_enabled = false,
+  region_overlay_enabled = false,
+  restore_region_overlay_after_branch = false,
   nvim_tree_enabled = false,
   neo_tree_enabled = false,
 }
@@ -563,12 +565,17 @@ function M.toggle()
     -- Disable: clear everything and stop watching
     renderer.clear_all()
     renderer.close_summary()
+    renderer.close_all_branch_overlays()
+    renderer.close_all_region_overlays()
     stop_file_watcher()
     state.coverage_data = nil
     state.coverage_file = nil
     state.coverage_file_info = nil
     state.project_root = nil
     state.is_enabled = false
+    state.branch_overlay_enabled = false
+    state.region_overlay_enabled = false
+    state.restore_region_overlay_after_branch = false
     refresh_nvim_tree()
     refresh_neo_tree()
     vim.notify("Coverage disabled", vim.log.levels.INFO)
@@ -730,6 +737,29 @@ local function render_branch_overlay_in_buf(buf)
   end
 end
 
+--- Render region overlay in a buffer if enabled and data is available
+---@param buf number|nil
+local function render_region_overlay_in_buf(buf)
+  if not state.region_overlay_enabled or not state.coverage_data then
+    return
+  end
+  buf = buf or vim.api.nvim_get_current_buf()
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+  local file_entry = get_buffer_coverage(buf)
+  if not file_entry then
+    if renderer.is_region_overlay_open() then
+      renderer.close_region_overlay()
+    end
+    return
+  end
+  local ok, err = pcall(renderer.render_region_overlay, buf, file_entry)
+  if not ok then
+    notify("Region overlay render failed: " .. tostring(err), vim.log.levels.WARN)
+  end
+end
+
 setup_autocmds = function()
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
     group = autocmd_group,
@@ -754,6 +784,43 @@ setup_autocmds = function()
       if renderer.is_branch_overlay_open(cur_win) then
         renderer.close_branch_overlay(cur_win)
       end
+      if renderer.is_region_overlay_open(cur_win) then
+        renderer.close_region_overlay(cur_win)
+      end
+    end,
+  })
+
+  vim.api.nvim_create_autocmd("CursorMoved", {
+    group = autocmd_group,
+    callback = function(args)
+      if not state.is_enabled or not state.coverage_data then
+        return
+      end
+
+      local buf = args.buf
+      if not buf or not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
+
+      if state.branch_overlay_enabled and not renderer.is_branch_overlay_open() then
+        state.branch_overlay_enabled = false
+        if state.restore_region_overlay_after_branch then
+          state.region_overlay_enabled = true
+          state.restore_region_overlay_after_branch = false
+        end
+      end
+
+      if not state.region_overlay_enabled then
+        return
+      end
+
+      if state.branch_overlay_enabled then
+        state.branch_overlay_enabled = false
+        state.restore_region_overlay_after_branch = false
+        renderer.close_all_branch_overlays()
+      end
+
+      render_region_overlay_in_buf(buf)
     end,
   })
 
@@ -1160,6 +1227,11 @@ function M.create_commands()
   vim.api.nvim_create_user_command("CoverageToggleBranchOverlay", function()
     M.toggle_branch_overlay()
   end, {})
+
+  -- Toggle region overlay floating window
+  vim.api.nvim_create_user_command("CoverageToggleRegionOverlay", function()
+    M.toggle_region_overlay()
+  end, {})
 end
 
 --- Toggle branch coverage overlay (floating window)
@@ -1176,15 +1248,54 @@ function M.toggle_branch_overlay()
 
   if state.branch_overlay_enabled then
     state.branch_overlay_enabled = false
+    state.restore_region_overlay_after_branch = false
     renderer.close_all_branch_overlays()
     vim.notify("Branch overlay: disabled", vim.log.levels.INFO)
     return
+  end
+
+  state.restore_region_overlay_after_branch = state.region_overlay_enabled and true or false
+  if state.region_overlay_enabled then
+    state.region_overlay_enabled = false
+    renderer.close_all_region_overlays()
   end
 
   state.branch_overlay_enabled = true
   -- Render for current buffer
   render_branch_overlay_in_buf(vim.api.nvim_get_current_buf())
   vim.notify("Branch overlay: enabled", vim.log.levels.INFO)
+end
+
+--- Toggle LLVM region coverage hitcount overlay (floating window)
+function M.toggle_region_overlay()
+  if not state.is_enabled or not state.coverage_data then
+    vim.notify("No coverage data loaded. Use :CoverageToggle or :CoverageLoad first", vim.log.levels.WARN)
+    return
+  end
+
+  -- Sync state: if overlay was auto-closed on cursor movement, update state
+  if state.region_overlay_enabled and not renderer.is_region_overlay_open() then
+    state.region_overlay_enabled = false
+  end
+
+  if state.region_overlay_enabled then
+    state.region_overlay_enabled = false
+    state.restore_region_overlay_after_branch = false
+    renderer.close_all_region_overlays()
+    vim.notify("Region overlay: disabled", vim.log.levels.INFO)
+    return
+  end
+
+  if state.branch_overlay_enabled then
+    state.branch_overlay_enabled = false
+    state.restore_region_overlay_after_branch = false
+    renderer.close_all_branch_overlays()
+  end
+
+  state.region_overlay_enabled = true
+  -- Render for current buffer (only appears when cursor is on a valid LLVM region)
+  render_region_overlay_in_buf(vim.api.nvim_get_current_buf())
+  vim.notify("Region overlay: enabled", vim.log.levels.INFO)
 end
 
 return M

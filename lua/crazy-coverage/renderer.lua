@@ -112,6 +112,32 @@ end
 M._format_sign_text = format_sign_text
 
 M.namespace = vim.api.nvim_create_namespace("coverage_plugin")
+M.region_overlay_namespace = vim.api.nvim_create_namespace("coverage_region_overlay")
+
+local function clear_region_highlight(buf)
+  if buf and vim.api.nvim_buf_is_valid(buf) then
+    vim.api.nvim_buf_clear_namespace(buf, M.region_overlay_namespace, 0, -1)
+  end
+end
+
+local function set_region_highlight(buf, region)
+  clear_region_highlight(buf)
+  if not region or not buf or not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+
+  local start_row = region.line - 1
+  local start_col = math.max(region.start_col or 0, 0)
+  local end_col = math.max(region.end_col or (start_col + 1), start_col + 1)
+  local hl = region.hl or config.partial_hl
+
+  pcall(vim.api.nvim_buf_set_extmark, buf, M.region_overlay_namespace, start_row, start_col, {
+    end_col = end_col,
+    hl_group = hl,
+    priority = 220,
+    strict = false,
+  })
+end
 
 --- Clear all coverage marks from a buffer
 ---@param buf number|nil
@@ -751,10 +777,15 @@ local _branch_overlay = {
   wins = {}, -- [win] = { win = win_id, buf = buf_id }
 }
 
+-- Region overlay state (per window)
+local _region_overlay = {
+  wins = {}, -- [win] = { win = win_id, buf = buf_id, source_buf = source_buf }
+}
+
 --- Build lines for branch overlay
 --- @param file_entry table
 --- @param current_line number|nil Current cursor line (only show this line if provided)
---- @return table lines, table highlights -- lines of text, and per-line highlight groups
+--- @return table lines, table highlights
 local function build_branch_overlay_lines(file_entry, current_line)
   local branch_map = {}
   for _, br in ipairs(file_entry.branches or {}) do
@@ -769,7 +800,10 @@ local function build_branch_overlay_lines(file_entry, current_line)
       end
       hits = hits or 0
       local id = br.id or br.branch_id or br.col or #branch_map[line] + 1
-      table.insert(branch_map[line], { id = id, hits = hits })
+      table.insert(branch_map[line], {
+        id = id,
+        hits = hits,
+      })
     end
   end
 
@@ -868,7 +902,6 @@ function M.render_branch_overlay(buf, file_entry)
   end
 
   local cur_win = vim.api.nvim_get_current_win()
-  -- Get current cursor line
   local cursor_line = vim.api.nvim_win_get_cursor(cur_win)[1]
   local lines, hls = build_branch_overlay_lines(file_entry, cursor_line)
 
@@ -924,7 +957,12 @@ function M.render_branch_overlay(buf, file_entry)
 
   local overlay_win = vim.api.nvim_open_win(overlay_buf, false, opts)
   local augroup_name = "CoverageBranchOverlay_" .. cur_win
-  _branch_overlay.wins[cur_win] = { win = overlay_win, buf = overlay_buf, cursor_line = cursor_line, augroup = augroup_name }
+  _branch_overlay.wins[cur_win] = {
+    win = overlay_win,
+    buf = overlay_buf,
+    cursor_line = cursor_line,
+    augroup = augroup_name,
+  }
   
   -- Auto-close overlay when cursor moves or the source window loses focus
   vim.api.nvim_create_augroup(augroup_name, { clear = true })
@@ -1001,6 +1039,215 @@ function M.is_branch_overlay_win(win)
     end
   end
   return false
+end
+
+local function get_llvm_region_at_cursor(file_entry, buf, cursor_line, cursor_col0)
+  if not file_entry or file_entry.source_format ~= "llvm_json" then
+    return nil
+  end
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    return nil
+  end
+
+  local regions = {}
+  for _, br in ipairs(file_entry.branches or {}) do
+    local line = br.line or br.line_num
+    if line == cursor_line and not br.is_branch and type(br.col) == "number" and br.col > 0 then
+      table.insert(regions, {
+        line = line,
+        col = br.col,
+        end_col = br.end_col,
+        hits = br.hits or br.hit_count or 0,
+      })
+    end
+  end
+
+  if #regions == 0 then
+    return nil
+  end
+
+  table.sort(regions, function(a, b)
+    return (a.col or 0) < (b.col or 0)
+  end)
+
+  local line_text = vim.api.nvim_buf_get_lines(buf, cursor_line - 1, cursor_line, false)[1] or ""
+  local line_end_col0 = #line_text
+
+  for i, region in ipairs(regions) do
+    local start_col0 = math.max((region.col or 1) - 1, 0)
+    local end_col0
+
+    if type(region.end_col) == "number" and region.end_col > 0 then
+      end_col0 = math.max(region.end_col - 1, start_col0 + 1)
+    elseif regions[i + 1] and type(regions[i + 1].col) == "number" then
+      end_col0 = math.max(regions[i + 1].col - 1, start_col0 + 1)
+    else
+      end_col0 = math.max(line_end_col0, start_col0 + 1)
+    end
+
+    if cursor_col0 >= start_col0 and cursor_col0 < end_col0 then
+      return {
+        line = cursor_line,
+        start_col = start_col0,
+        end_col = end_col0,
+        hits = region.hits,
+      }
+    end
+  end
+
+  return nil
+end
+
+local function build_region_overlay_lines(region)
+  local cfg = config.region_overlay or {}
+  local title = cfg.title or "Region Coverage"
+  local lines = {
+    title,
+    string.format("Line %d, Col %d-%d", region.line, region.start_col + 1, region.end_col),
+    string.format("Hit Count: %d", region.hits or 0),
+  }
+
+  local hls = {
+    "Normal",
+    "Normal",
+    (region.hits or 0) > 0 and config.covered_hl or config.uncovered_hl,
+  }
+
+  return lines, hls
+end
+
+function M.render_region_overlay(buf, file_entry)
+  if not buf or not vim.api.nvim_buf_is_valid(buf) or not file_entry then
+    return false
+  end
+
+  local cur_win = vim.api.nvim_get_current_win()
+  local cursor = vim.api.nvim_win_get_cursor(cur_win)
+  local cursor_line = cursor[1]
+  local cursor_col0 = cursor[2] or 0
+
+  local region = get_llvm_region_at_cursor(file_entry, buf, cursor_line, cursor_col0)
+  if not region then
+    M.close_region_overlay(cur_win)
+    clear_region_highlight(buf)
+    return false
+  end
+
+  if M.is_region_overlay_open(cur_win) then
+    M.close_region_overlay(cur_win)
+  end
+
+  set_region_highlight(buf, {
+    line = region.line,
+    start_col = region.start_col,
+    end_col = region.end_col,
+    hl = (config.region_overlay and config.region_overlay.highlight_hl) or "CoverageRegionActive",
+  })
+
+  local lines, hls = build_region_overlay_lines(region)
+  local overlay_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_option(overlay_buf, "bufhidden", "wipe")
+  vim.api.nvim_buf_set_option(overlay_buf, "modifiable", true)
+  vim.api.nvim_buf_set_lines(overlay_buf, 0, -1, false, lines)
+  vim.api.nvim_buf_set_option(overlay_buf, "modifiable", false)
+
+  for i, hl in ipairs(hls) do
+    pcall(vim.api.nvim_buf_add_highlight, overlay_buf, 0, hl, i - 1, 0, -1)
+  end
+
+  local cfg = config.region_overlay or {}
+  local win_width = vim.api.nvim_win_get_width(cur_win)
+  local width = math.min(win_width, 40)
+  local height = math.min(cfg.max_height or 8, #lines)
+
+  local win_height = vim.api.nvim_win_get_height(cur_win)
+  local win_top_line = vim.fn.line("w0")
+  local cursor_screen_row = cursor_line - win_top_line
+  local row = (win_height - cursor_screen_row - 1) >= height and (cursor_screen_row + 1) or (cursor_screen_row - height)
+
+  local opts = {
+    relative = "win",
+    win = cur_win,
+    anchor = "NW",
+    row = row,
+    col = 0,
+    width = width,
+    height = height,
+    style = "minimal",
+    border = cfg.border or "rounded",
+    zindex = cfg.zindex or 46,
+    noautocmd = true,
+    focusable = false,
+  }
+
+  local overlay_win = vim.api.nvim_open_win(overlay_buf, false, opts)
+  local augroup_name = "CoverageRegionOverlay_" .. cur_win
+  _region_overlay.wins[cur_win] = {
+    win = overlay_win,
+    buf = overlay_buf,
+    source_buf = buf,
+    augroup = augroup_name,
+  }
+
+  vim.api.nvim_create_augroup(augroup_name, { clear = true })
+  vim.api.nvim_create_autocmd("CursorMoved", {
+    group = augroup_name,
+    buffer = buf,
+    callback = function()
+      if not vim.api.nvim_win_is_valid(cur_win) then
+        M.close_region_overlay(cur_win)
+        return
+      end
+      local ok, err = pcall(M.render_region_overlay, buf, file_entry)
+      if not ok then
+        notify("Region overlay render failed: " .. tostring(err), vim.log.levels.WARN)
+      end
+    end,
+  })
+
+  vim.api.nvim_create_autocmd({ "WinLeave", "WinClosed" }, {
+    group = augroup_name,
+    callback = function(args)
+      local closed_win = (args.event == "WinClosed") and tonumber(args.match) or nil
+      if closed_win == cur_win or (args.event == "WinLeave" and vim.api.nvim_get_current_win() == cur_win) then
+        M.close_region_overlay(cur_win)
+      end
+    end,
+  })
+
+  return true
+end
+
+function M.close_region_overlay(win)
+  win = win or vim.api.nvim_get_current_win()
+  local entry = _region_overlay.wins[win]
+  if entry then
+    if entry.win and vim.api.nvim_win_is_valid(entry.win) then
+      pcall(vim.api.nvim_win_close, entry.win, true)
+    end
+    if entry.buf and vim.api.nvim_buf_is_valid(entry.buf) then
+      pcall(vim.api.nvim_buf_delete, entry.buf, { force = true })
+    end
+    if entry.augroup then
+      pcall(vim.api.nvim_del_augroup_by_name, entry.augroup)
+    end
+    if entry.source_buf then
+      clear_region_highlight(entry.source_buf)
+    end
+    _region_overlay.wins[win] = nil
+  end
+end
+
+function M.close_all_region_overlays()
+  for win, _ in pairs(_region_overlay.wins) do
+    M.close_region_overlay(win)
+  end
+end
+
+function M.is_region_overlay_open(win)
+  win = win or vim.api.nvim_get_current_win()
+  local entry = _region_overlay.wins[win]
+  return entry ~= nil and entry.win and vim.api.nvim_win_is_valid(entry.win)
 end
 
 return M

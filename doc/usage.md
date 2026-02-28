@@ -22,6 +22,8 @@ Complete guide to using crazy-coverage.nvim for viewing and navigating code cove
 | `:CoverageToggle` | **Smart toggle**: Auto-loads coverage, enables overlay, watches for changes |
 | `:CoverageLoad <file>` | Manually load specific coverage file |
 | `:CoverageToggleHitCount` | Toggle hit count display on/off |
+| `:CoverageToggleBranchOverlay` | Toggle floating branch overlay for the current cursor line |
+| `:CoverageToggleRegionOverlay` | Toggle floating LLVM region hitcount overlay at cursor |
 | `:CoverageToggleNvimTree` | Toggle coverage display in NvimTree |
 | `:CoverageToggleNeoTree` | Toggle coverage display in neo-tree |
 | `:CoverageSummary [project|file]` | Show coverage summary popup |
@@ -151,6 +153,17 @@ Navigate through coverage using Vim-style motions: `{` or `}` for direction, the
 ]cp   " Next partial
 ]cp   " Next partial again
 ```
+
+**Inspect Branch/Region Details on Current Line**
+```vim
+" Show floating overlay at cursor line
+:CoverageToggleBranchOverlay
+
+" Show LLVM region hitcount overlay (only on valid region)
+:CoverageToggleRegionOverlay
+```
+
+`CoverageToggleBranchOverlay` and `CoverageToggleRegionOverlay` are independent. Region overlay only appears when the cursor is on a valid LLVM region and shows that region's hit count.
 
 **Quick Coverage Check**
 ```vim

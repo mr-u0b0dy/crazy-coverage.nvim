@@ -18,6 +18,20 @@ return {
         },
         
         -- Other display options
+        branch_overlay = {
+          border = "rounded",
+          max_height = 12,
+          zindex = 45,
+          title = "Branch Coverage",
+        },
+
+        region_overlay = {
+          border = "rounded",
+          max_height = 8,
+          zindex = 46,
+          title = "Region Coverage",
+          highlight_hl = "CoverageRegionActive", -- Highlights the exact region whose hitcount is displayed
+        },
       })
     end,
     keys = {
@@ -32,6 +46,9 @@ return {
 
       -- Branch overlay toggle (floating window above code)
       { "<Leader>lb", "<cmd>CoverageToggleBranchOverlay<cr>", desc = "Coverage: Toggle branch overlay" },
+
+      -- Region overlay toggle (floating hitcount for current LLVM region)
+      { "<Leader>lr", "<cmd>CoverageToggleRegionOverlay<cr>", desc = "Coverage: Toggle region overlay" },
 
       -- Coverage summary popup
       { "<Leader>lm", "<cmd>CoverageSummary<cr>", desc = "Coverage: Summary" },

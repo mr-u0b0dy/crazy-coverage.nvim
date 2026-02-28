@@ -65,6 +65,7 @@ end_of_record
 **Features**:
 - Line coverage
 - Region coverage (converted to branches)
+- Region hitcount overlay (`:CoverageToggleRegionOverlay`) shows execution count for the LLVM region under cursor
 
 ## Cobertura XML
 
