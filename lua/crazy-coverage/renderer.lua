@@ -400,6 +400,71 @@ local function truncate_line(text, max_width)
   return out .. suffix
 end
 
+--- Compute boolean combinations for a small power-of-two branch group
+-- @param branches table Array of branch entries for a line
+-- @param enable boolean Whether to compute combos (driven by config)
+-- @return combos, combos_by_branch, covered, missing
+local function compute_branch_combos(branches, enable)
+  if not enable or not branches or #branches <= 1 then
+    return nil, nil, nil, nil
+  end
+
+  local total = #branches
+
+  local function is_power_of_two(n)
+    if n <= 0 then return false end
+    local v = n
+    while v % 2 == 0 do v = v / 2 end
+    return v == 1
+  end
+
+  if not is_power_of_two(total) then
+    return nil, nil, nil, nil
+  end
+
+  local bits = 0
+  do
+    local t = total
+    while t > 1 do bits = bits + 1; t = t / 2 end
+  end
+
+  if bits <= 0 or bits > 4 then
+    return nil, nil, nil, nil
+  end
+
+  local combos = {}
+  local combos_by_branch = {}
+  local covered = {}
+  local missing = {}
+  for bi = 1, #branches do combos_by_branch[bi] = {} end
+
+  for i = 0, total - 1 do
+    local s = ""
+    for bidx = bits - 1, 0, -1 do
+      local pow = 2 ^ bidx
+      local bit = math.floor(i / pow) % 2
+      s = s .. (bit == 1 and "T" or "F")
+    end
+    table.insert(combos, s)
+    for bi = 1, #branches do
+      local bitpos = bits - 1 - (bi - 1)
+      local pow = 2 ^ bitpos
+      local bit = math.floor(i / pow) % 2
+      if bit == 1 then
+        table.insert(combos_by_branch[bi], s)
+      end
+    end
+    local br = branches[i + 1]
+    if br and (br.hits or 0) > 0 then
+      table.insert(covered, s)
+    else
+      table.insert(missing, s)
+    end
+  end
+
+  return combos, combos_by_branch, covered, missing
+end
+
 --- Render coverage summary popup
 ---@param summary table
 function M.render_summary(summary)
@@ -741,15 +806,42 @@ local function build_branch_overlay_lines(file_entry, current_line)
     local percentage = total > 0 and math.floor((taken / total) * 100) or 0
     lines[1] = string.format("Branch Coverage: %d/%d taken (%d%%)", taken, total, percentage)
 
-    -- Add individual branch lines
-    for _, b in ipairs(branches) do
-      local branch_line = string.format("Branch %s : %d", tostring(b.id), b.hits or 0)
+    -- Pre-compute boolean combinations and per-branch markers if requested.
+    local combos, combos_by_branch, covered, missing = compute_branch_combos(branches, config.show_branch_summary)
+
+    -- Add individual branch lines.
+    -- If we computed a list of combinations that map to branch entries (combos),
+    -- show the corresponding combination next to the branch id like
+    -- "Branch <id> (<comb>) : <hits>". Otherwise fall back to the original format.
+    for bi, b in ipairs(branches) do
+      local hit_count = b.hits or 0
+      local branch_line
+
+      -- Prefer a representative combination from combos_by_branch (first match),
+      -- fall back to the naive combos[bi] mapping if present.
+      local rep = nil
+      if combos_by_branch and combos_by_branch[bi] and #combos_by_branch[bi] > 0 then
+        rep = combos_by_branch[bi][1]
+      elseif combos and combos[bi] then
+        rep = combos[bi]
+      end
+
+      if rep then
+        branch_line = string.format("Branch %s (%s) : %d", tostring(b.id), rep, hit_count)
+      else
+        branch_line = string.format("Branch %s : %d", tostring(b.id), hit_count)
+      end
+
       table.insert(lines, branch_line)
-      
+
       -- Color based on hit count: green if > 0, red if 0
-      local hl = (b.hits or 0) > 0 and config.covered_hl or config.uncovered_hl
+      local hl = hit_count > 0 and config.covered_hl or config.uncovered_hl
       table.insert(hls, hl)
     end
+
+    -- Note: global combinations summary (Combinations/Covered/Missing)
+    -- intentionally omitted to keep the overlay compact; per-branch
+    -- combination is shown next to each branch line when available.
   end
 
   if #sorted == 0 then
