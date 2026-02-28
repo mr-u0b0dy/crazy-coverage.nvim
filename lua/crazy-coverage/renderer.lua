@@ -436,25 +436,12 @@ local function compute_branch_combos(branches, enable)
   end
 
   local total = #branches
-
-  local function is_power_of_two(n)
-    if n <= 0 then return false end
-    local v = n
-    while v % 2 == 0 do v = v / 2 end
-    return v == 1
+  local bits = 1
+  while (2 ^ bits) < total do
+    bits = bits + 1
   end
 
-  if not is_power_of_two(total) then
-    return nil, nil, nil, nil
-  end
-
-  local bits = 0
-  do
-    local t = total
-    while t > 1 do bits = bits + 1; t = t / 2 end
-  end
-
-  if bits <= 0 or bits > 4 then
+  if bits > 8 then
     return nil, nil, nil, nil
   end
 
@@ -464,23 +451,17 @@ local function compute_branch_combos(branches, enable)
   local missing = {}
   for bi = 1, #branches do combos_by_branch[bi] = {} end
 
-  for i = 0, total - 1 do
+  for i = 1, total do
+    local idx = i - 1
     local s = ""
     for bidx = bits - 1, 0, -1 do
       local pow = 2 ^ bidx
-      local bit = math.floor(i / pow) % 2
+      local bit = math.floor(idx / pow) % 2
       s = s .. (bit == 1 and "T" or "F")
     end
-    table.insert(combos, s)
-    for bi = 1, #branches do
-      local bitpos = bits - 1 - (bi - 1)
-      local pow = 2 ^ bitpos
-      local bit = math.floor(i / pow) % 2
-      if bit == 1 then
-        table.insert(combos_by_branch[bi], s)
-      end
-    end
-    local br = branches[i + 1]
+    combos[i] = s
+    combos_by_branch[i] = { s }
+    local br = branches[i]
     if br and (br.hits or 0) > 0 then
       table.insert(covered, s)
     else
@@ -860,10 +841,11 @@ local function build_branch_overlay_lines(file_entry, current_line)
         rep = combos[bi]
       end
 
+      local display_branch_num = b.id or bi
       if rep then
-        branch_line = string.format("Branch %s (%s) : %d", tostring(b.id), rep, hit_count)
+        branch_line = string.format("Branch %s (%s) : %d", tostring(display_branch_num), rep, hit_count)
       else
-        branch_line = string.format("Branch %s : %d", tostring(b.id), hit_count)
+        branch_line = string.format("Branch %s : %d", tostring(display_branch_num), hit_count)
       end
 
       table.insert(lines, branch_line)

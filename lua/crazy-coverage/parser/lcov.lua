@@ -63,11 +63,11 @@ local function parse_branch_coverage(line, current_file)
   local parts = split_string(line:sub(6), ",")
   if #parts >= 4 then
     local line_num = tonumber(parts[1])
-    local block_id = tonumber(parts[2])
-    local branch_id = tonumber(parts[3])
+    local block_id = parts[2]
+    local branch_id = parts[3]
     local taken_str = parts[4]
     
-    if line_num and block_id ~= nil and branch_id ~= nil then
+    if line_num and block_id and block_id ~= "" and branch_id and branch_id ~= "" then
       -- Handle "-" as 0 hits (branch not taken / not instrumented)
       local taken = 0
       if taken_str ~= "-" then
@@ -76,7 +76,9 @@ local function parse_branch_coverage(line, current_file)
       
       table.insert(current_file.branches, {
         line = line_num,
-        id = block_id * 100 + branch_id,
+        id = tonumber(branch_id) or branch_id,
+        block_id = tonumber(block_id) or block_id,
+        branch_id = tonumber(branch_id) or branch_id,
         hits = taken,
       })
     end

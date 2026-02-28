@@ -570,9 +570,11 @@ end_of_record
       local result = lcov_parser.parse(temp_file, temp_dir)
       
       assert.is_not_nil(result)
-      -- Parser should handle branch data without errors
       local file_data = next(result)
       assert.is_not_nil(file_data)
+      assert.equals(2, #file_data.branches)
+      assert.equals(0, file_data.branches[1].id)
+      assert.equals(1, file_data.branches[2].id)
     end)
   end)
 end)

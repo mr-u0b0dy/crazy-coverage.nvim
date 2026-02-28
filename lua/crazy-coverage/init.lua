@@ -760,6 +760,18 @@ local function render_region_overlay_in_buf(buf)
   end
 end
 
+---@param buf number|nil
+---@return boolean
+local function is_region_overlay_supported(buf)
+  local file_entry = get_buffer_coverage(buf)
+  if file_entry and file_entry.source_format then
+    return file_entry.source_format == "llvm_json"
+  end
+
+  local format = state.coverage_file_info and state.coverage_file_info.format
+  return format == "llvm_json"
+end
+
 setup_autocmds = function()
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
     group = autocmd_group,
@@ -1286,6 +1298,12 @@ function M.toggle_region_overlay()
     return
   end
 
+  local buf = vim.api.nvim_get_current_buf()
+  if not is_region_overlay_supported(buf) then
+    vim.notify("Region overlay is only supported for LLVM JSON coverage format", vim.log.levels.WARN)
+    return
+  end
+
   if state.branch_overlay_enabled then
     state.branch_overlay_enabled = false
     state.restore_region_overlay_after_branch = false
@@ -1294,7 +1312,7 @@ function M.toggle_region_overlay()
 
   state.region_overlay_enabled = true
   -- Render for current buffer (only appears when cursor is on a valid LLVM region)
-  render_region_overlay_in_buf(vim.api.nvim_get_current_buf())
+  render_region_overlay_in_buf(buf)
   vim.notify("Region overlay: enabled", vim.log.levels.INFO)
 end
 
