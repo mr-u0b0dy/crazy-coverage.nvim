@@ -6,8 +6,10 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 
 - **Multi-Format Support**: LCOV, LLVM JSON, Cobertura XML, GCOV, LLVM Profdata
 - **Smart Toggle**: Single command auto-loads coverage and watches for changes
-- **Virtual Text Overlay**: Display hit counts and branch coverage inline
-- **Configurable**: Customize colors, position, and display options
+- **Flexible Display**: Show hit counts via virtual text or sign column
+- **Branch/Region Overlays**: Inspect branch and LLVM region hit details at cursor
+- **Tree Integration**: Coverage in NvimTree and neo-tree (optional)
+- **Configurable**: Customize colors, display behavior, and summary popup
 - **Navigation**: Jump between covered/uncovered/partial lines
 
 ## Supported Languages
@@ -106,8 +108,10 @@ See [Configuration Reference](doc/configuration.md#file-detection) for more deta
 
 ```lua
 require("crazy-coverage").setup({
-  default_show_hit_count = true,  -- Show hit counts by default
-  virt_text_pos = "eol",          -- "eol", "inline", "overlay", "right_align"
+  hit_count = {
+    show_by_default = true,        -- Show hit counts when coverage is enabled
+    display = "eol",              -- "eol", "inline", "overlay", "right_align", "sign"
+  },
   auto_adapt_colors = true,       -- Auto-adapt colors to your theme
 })
 ```
@@ -117,7 +121,9 @@ require("crazy-coverage").setup({
 ```lua
 -- Right-aligned with branch coverage
 require("crazy-coverage").setup({
-  virt_text_pos = "right_align",
+  hit_count = {
+    display = "right_align",
+  },
   show_branch_summary = true,
 })
 
@@ -140,6 +146,8 @@ require("crazy-coverage").setup({
 })
 ```
 
+Legacy options (`default_show_hit_count`, `show_hit_count`) are still supported for compatibility.
+
 See [Configuration Reference](doc/configuration.md) for all 15+ options.
 
 ## Commands
@@ -148,11 +156,18 @@ See [Configuration Reference](doc/configuration.md) for all 15+ options.
 |---------|-------------|
 | `:CoverageToggle` | Toggle coverage overlay (auto-loads, watches file) |
 | `:CoverageToggleHitCount` | Toggle hit count display |
+| `:CoverageToggleBranchOverlay` | Toggle branch overlay at cursor |
+| `:CoverageToggleRegionOverlay` | Toggle LLVM region overlay at cursor |
+| `:CoverageToggleNvimTree` | Toggle coverage display in NvimTree |
+| `:CoverageToggleNeoTree` | Toggle coverage display in neo-tree |
 | `:CoverageLoad <file>` | Manually load specific coverage file |
-| `:CoverageSummary [project|file]` | Show coverage summary popup |
-| `:CoverageNextUncovered` | Jump to next uncovered line |
+| `:CoverageSummary [project|file]` | Show coverage summary popup (alias: `:CrazyCoverageSummary`) |
+| `:CoverageNextCovered` | Jump to next covered line |
 | `:CoveragePrevCovered` | Jump to previous covered line |
+| `:CoverageNextUncovered` | Jump to next uncovered line |
+| `:CoveragePrevUncovered` | Jump to previous uncovered line |
 | `:CoverageNextPartial` | Jump to next partially covered line |
+| `:CoveragePrevPartial` | Jump to previous partially covered line |
 
 See [Usage Guide](doc/usage.md) for keybindings and navigation.
 
