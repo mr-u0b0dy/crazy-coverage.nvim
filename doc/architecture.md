@@ -297,7 +297,6 @@ local M = {
   virt_text_pos = "eol",
   show_hit_count = true,
   show_percentage = false,
-  show_branch_summary = false,
   
   -- Highlights
   covered_hl = "CoverageCovered",
@@ -317,7 +316,7 @@ Users override via `setup()`:
 
 ```lua
 require("crazy-coverage").setup({
-  show_branch_summary = true,  -- Override default
+  enable_line_hl = true,
 })
 ```
 

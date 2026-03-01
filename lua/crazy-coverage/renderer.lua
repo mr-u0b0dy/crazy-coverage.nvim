@@ -426,52 +426,6 @@ local function truncate_line(text, max_width)
   return out .. suffix
 end
 
---- Compute boolean combinations for a small power-of-two branch group
--- @param branches table Array of branch entries for a line
--- @param enable boolean Whether to compute combos (driven by config)
--- @return combos, combos_by_branch, covered, missing
-local function compute_branch_combos(branches, enable)
-  if not enable or not branches or #branches <= 1 then
-    return nil, nil, nil, nil
-  end
-
-  local total = #branches
-  local bits = 1
-  while (2 ^ bits) < total do
-    bits = bits + 1
-  end
-
-  if bits > 8 then
-    return nil, nil, nil, nil
-  end
-
-  local combos = {}
-  local combos_by_branch = {}
-  local covered = {}
-  local missing = {}
-  for bi = 1, #branches do combos_by_branch[bi] = {} end
-
-  for i = 1, total do
-    local idx = i - 1
-    local s = ""
-    for bidx = bits - 1, 0, -1 do
-      local pow = 2 ^ bidx
-      local bit = math.floor(idx / pow) % 2
-      s = s .. (bit == 1 and "T" or "F")
-    end
-    combos[i] = s
-    combos_by_branch[i] = { s }
-    local br = branches[i]
-    if br and (br.hits or 0) > 0 then
-      table.insert(covered, s)
-    else
-      table.insert(missing, s)
-    end
-  end
-
-  return combos, combos_by_branch, covered, missing
-end
-
 --- Render coverage summary popup
 ---@param summary table
 function M.render_summary(summary)
@@ -817,36 +771,17 @@ local function build_branch_overlay_lines(file_entry, current_line)
       end
     end
 
-    -- Update title to show summary with percentage
-    local percentage = total > 0 and math.floor((taken / total) * 100) or 0
-    lines[1] = string.format("Branch Coverage: %d/%d taken (%d%%)", taken, total, percentage)
-
-    -- Pre-compute boolean combinations and per-branch markers if requested.
-    local combos, combos_by_branch, covered, missing = compute_branch_combos(branches, config.show_branch_summary)
+    -- Optionally update title to show summary with percentage
+    if config.show_branch_summary then
+      local percentage = total > 0 and math.floor((taken / total) * 100) or 0
+      lines[1] = string.format("Branch Coverage: %d/%d taken (%d%%)", taken, total, percentage)
+    end
 
     -- Add individual branch lines.
-    -- If we computed a list of combinations that map to branch entries (combos),
-    -- show the corresponding combination next to the branch id like
-    -- "Branch <id> (<comb>) : <hits>". Otherwise fall back to the original format.
     for bi, b in ipairs(branches) do
       local hit_count = b.hits or 0
-      local branch_line
-
-      -- Prefer a representative combination from combos_by_branch (first match),
-      -- fall back to the naive combos[bi] mapping if present.
-      local rep = nil
-      if combos_by_branch and combos_by_branch[bi] and #combos_by_branch[bi] > 0 then
-        rep = combos_by_branch[bi][1]
-      elseif combos and combos[bi] then
-        rep = combos[bi]
-      end
-
       local display_branch_num = b.id or bi
-      if rep then
-        branch_line = string.format("Branch %s (%s) : %d", tostring(display_branch_num), rep, hit_count)
-      else
-        branch_line = string.format("Branch %s : %d", tostring(display_branch_num), hit_count)
-      end
+      local branch_line = string.format("Branch %s : %d", tostring(display_branch_num), hit_count)
 
       table.insert(lines, branch_line)
 
@@ -854,10 +789,6 @@ local function build_branch_overlay_lines(file_entry, current_line)
       local hl = hit_count > 0 and config.covered_hl or config.uncovered_hl
       table.insert(hls, hl)
     end
-
-    -- Note: global combinations summary (Combinations/Covered/Missing)
-    -- intentionally omitted to keep the overlay compact; per-branch
-    -- combination is shown next to each branch line when available.
   end
 
   if #sorted == 0 then

@@ -58,7 +58,7 @@ You can customize the configuration in the `setup()` function:
 require("crazy-coverage").setup({
   virt_text_pos = "eol",           -- Position: "eol", "inline", "overlay", "right_align"
   show_hit_count = true,            -- Show execution count
-  show_branch_summary = false,      -- Show branch coverage (b:taken/total)
+  show_branch_summary = true,       -- Branch overlay header summary (taken/total)
   auto_load = true,                 -- Auto-load coverage on file open
   enable_line_hl = false,           -- Enable full line highlighting
 })

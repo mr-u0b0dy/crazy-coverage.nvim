@@ -39,9 +39,9 @@ local M = {
   -- Show percentage for lines
   show_percentage = false,
 
-  -- Show branch summary per line (taken/total)
+  -- Show branch summary in branch overlay header (taken/total and percentage)
   show_branch_summary = true,
-  
+
   -- Enable line highlighting
   enable_line_hl = true,
 

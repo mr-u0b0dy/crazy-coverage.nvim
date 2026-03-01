@@ -342,17 +342,23 @@ Toggle hit counts on/off:
 
 ### Branch Coverage
 
-Show branch coverage per line:
+Use the branch overlay command to inspect branches on the cursor line:
+
+```vim
+:CoverageToggleBranchOverlay
+```
+
+Header summary is controlled by `show_branch_summary`:
 
 ```lua
 require("crazy-coverage").setup({
-  show_branch_summary = true,
+  show_branch_summary = true, -- show "taken/total" and percentage in overlay header
 })
 ```
 
-Display format: `5 b:2/4`
-- `5` = hit count (line executed 5 times)
-- `b:2/4` = 2 out of 4 branches taken
+Display format:
+- `Branch Coverage: <taken>/<total> taken (<percent>%)`
+- `Branch <id> : <hits>` for each branch on the current line (no truth-table suffix)
 
 ### Line Highlighting
 

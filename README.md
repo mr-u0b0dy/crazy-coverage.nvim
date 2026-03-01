@@ -124,7 +124,7 @@ require("crazy-coverage").setup({
   hit_count = {
     display = "right_align",
   },
-  show_branch_summary = true,
+  show_branch_summary = true,      -- Branch overlay header: taken/total + percentage
 })
 
 -- Custom colors (disable auto-adaptation)

@@ -78,14 +78,17 @@ show_percentage = false
 ### `show_branch_summary`
 
 **Type:** `boolean`  
-**Default:** `false`
+**Default:** `true`
 
-Show branch coverage summary per line in the format `b:taken/total`.
+Show the branch summary line in branch overlay header.
 
-Example: `b:2/4` means 2 out of 4 branches on this line were executed.
+When enabled, the overlay title is shown as:
+`Branch Coverage: <taken>/<total> taken (<percent>%)`
+
+When disabled, the overlay title stays as the static title (default: `Branch Coverage`).
 
 ```lua
-show_branch_summary = false  -- Set to true to see branch coverage
+show_branch_summary = true
 ```
 
 ### `enable_line_hl`
@@ -564,7 +567,6 @@ require("crazy-coverage").setup({
   default_show_hit_count = true,
   show_hit_count = true,
   show_percentage = false,
-  show_branch_summary = true,
   enable_line_hl = true,
   
   -- Colors
@@ -613,7 +615,7 @@ require("crazy-coverage").setup()
 ```lua
 require("crazy-coverage").setup({
   virt_text_pos = "inline",
-  show_branch_summary = true,
+  enable_line_hl = true,
 })
 ```
 
