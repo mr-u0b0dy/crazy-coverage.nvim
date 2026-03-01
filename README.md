@@ -161,7 +161,7 @@ See [Configuration Reference](doc/configuration.md) for all 15+ options.
 | `:CoverageToggleNvimTree` | Toggle coverage display in NvimTree |
 | `:CoverageToggleNeoTree` | Toggle coverage display in neo-tree |
 | `:CoverageLoad <file>` | Manually load specific coverage file |
-| `:CoverageSummary [project|file]` | Show coverage summary popup (alias: `:CrazyCoverageSummary`) |
+| `:CoverageSummary <project/file>` | Show coverage summary popup (alias: `:CrazyCoverageSummary`) |
 | `:CoverageNextCovered` | Jump to next covered line |
 | `:CoveragePrevCovered` | Jump to previous covered line |
 | `:CoverageNextUncovered` | Jump to next uncovered line |
