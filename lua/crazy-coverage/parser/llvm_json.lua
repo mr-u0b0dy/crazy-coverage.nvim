@@ -76,6 +76,15 @@ function M.parse(file_path, project_root)
           source_format = "llvm_json",
         }
 
+        -- Track branch IDs per line so overlay numbering stays local to each source line
+        local line_branch_counters = {}
+        local function next_branch_id(line_num)
+          local current = line_branch_counters[line_num] or 0
+          current = current + 1
+          line_branch_counters[line_num] = current
+          return current
+        end
+
         -- Try parsing Format A: "lines" array (standard llvm-cov export output)
         if file_data.lines and #file_data.lines > 0 then
           for _, line_data in ipairs(file_data.lines) do
@@ -90,11 +99,11 @@ function M.parse(file_path, project_root)
               
               -- Parse regions as branch coverage if present
               if line_data.regions and #line_data.regions > 0 then
-                for region_idx, region in ipairs(line_data.regions) do
+                for _, region in ipairs(line_data.regions) do
                   local region_count = region.count or 0
                   table.insert(file_entry.branches, {
                     line = line_num,
-                    id = region_idx,
+                    id = next_branch_id(line_num),
                     hits = region_count,
                   })
                 end
@@ -114,10 +123,9 @@ function M.parse(file_path, project_root)
         -- Fallback to Format B: "segments" array (compact representation)
         elseif file_data.segments and #file_data.segments > 0 then
           local line_coverage = {}  -- Map line_num -> max hit count
-          local segment_idx = 0     -- Track segment index for region IDs
+          local region_count = 0    -- Track parsed regions for debug logging
           
           for _, segment in ipairs(file_data.segments) do
-            segment_idx = segment_idx + 1
             local line_num = segment[1]
             local col_start = segment[2]
             local count = segment[3] or 0
@@ -140,10 +148,11 @@ function M.parse(file_path, project_root)
               
               -- Add each segment as a branch/region entry
               -- This preserves fine-grained coverage data (column level)
+              region_count = region_count + 1
               table.insert(file_entry.branches, {
                 line = line_num,
                 col = col_start,          -- Column position for location accuracy
-                id = segment_idx,         -- Unique ID for this region
+                id = next_branch_id(line_num),
                 hits = count,
               })
             end
@@ -169,7 +178,7 @@ function M.parse(file_path, project_root)
           if config.debug_notifications then
             vim.notify(
               string.format("LLVM JSON: Parsed %d lines (Format B) and %d regions from %s", 
-                #file_entry.lines, segment_idx, source_file_path),
+                #file_entry.lines, region_count, source_file_path),
               vim.log.levels.DEBUG
             )
           end
@@ -178,7 +187,7 @@ function M.parse(file_path, project_root)
         -- Parse branches (Format B compact array) - actual branch points
         -- These are more specific than segments and represent true branch coverage
         if file_data.branches and #file_data.branches > 0 then
-          for idx, branch in ipairs(file_data.branches) do
+          for _, branch in ipairs(file_data.branches) do
             -- Branch format: [line, col, endLine, endCol, folded, count, ...]
             local line_num = branch[1]
             local count = branch[6] or 0
@@ -188,7 +197,7 @@ function M.parse(file_path, project_root)
                 line = line_num,
                 col = branch[2],          -- Column start for location
                 end_col = branch[4],      -- Column end for location
-                id = idx + 1000,          -- Offset ID to avoid collision with segment IDs
+                id = next_branch_id(line_num),
                 hits = count,
                 is_branch = true,         -- Mark as explicit branch for priority rendering
               })
