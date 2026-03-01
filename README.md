@@ -12,6 +12,20 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 - **Configurable**: Customize colors, display behavior, and summary popup
 - **Navigation**: Jump between covered/uncovered/partial lines
 
+## Demo
+
+### Branch Coverage Overlay
+
+![Branch Coverage Overlay](assets/branch_coverage.png)
+
+### Coverage Summary
+
+![Coverage Summary](assets/Coverage_summary.png)
+
+### Region Coverage Overlay
+
+![Region Coverage Overlay](assets/region_coverage.png)
+
 ## Supported Languages
 
 - **C/C++** - GCC (gcov/lcov), LLVM/Clang
