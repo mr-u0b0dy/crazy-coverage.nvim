@@ -4,6 +4,9 @@
 end_of_line = lf
 insert_final_newline = true
 
+[*.{yml,yaml}]
+trim_trailing_whitespace = true
+
 [*.{lua,yml,yaml}]
 indent_size = 2
 indent_style = space

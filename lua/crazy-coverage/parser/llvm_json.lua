@@ -160,18 +160,13 @@ function M.parse(file_path, project_root)
             ::continue::
           end
           
-          -- Convert line coverage map to sorted array
+          -- Convert line coverage map to array
           for line_num, hit_count in pairs(line_coverage) do
             table.insert(file_entry.lines, {
               line = line_num,
               hits = hit_count,
             })
           end
-          
-          -- Sort by line number
-          table.sort(file_entry.lines, function(a, b)
-            return a.line < b.line
-          end)
           
           -- Log success if debug is enabled
           local config = require("crazy-coverage.config")
@@ -206,6 +201,11 @@ function M.parse(file_path, project_root)
         end
 
         if source_file_path then
+          -- Sort by line number
+          table.sort(file_entry.lines, function(a, b)
+            return a.line < b.line
+          end)
+
           coverage_data[source_file_path] = file_entry
         end
       end

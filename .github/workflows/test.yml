@@ -14,13 +14,32 @@ jobs:
         nvim-version: [ stable, nightly ]
     steps:
       - uses: actions/checkout@v4
-      
+      - uses: actions/checkout@v4
+        with:
+          repository: nvim-mini/mini.test
+          path: build/mini.test
+
       - name: Install Neovim ${{ matrix.nvim-version }}
         uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
           version: ${{ matrix.nvim-version }}
-      
+
+      - name: Install Lua libraries
+        run: |
+          sudo apt update --yes
+          sudo apt install --yes luarocks
+          luarocks install --local luassert
+
+      # headless MiniTest exits non-zero when there are test failures,
+      # and the final cquit exits non-zero when MiniTest fails
       - name: Run tests
         run: |
           nvim --headless -u NONE +"lua dofile('test/run_all.lua')" +cq
+
+          eval "$(luarocks path)"
+          nvim --headless -u NONE \
+          +"set rtp+=$(pwd)/build/mini.test" \
+          +"lua require('mini.test').setup()" \
+          +"lua MiniTest.run_file('test/spec/parsers_spec.lua')" \
+          +"cquit"
