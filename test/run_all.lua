@@ -1,5 +1,5 @@
 -- Headless test runner for quick manual testing
--- Run with: nvim --headless -u NONE -c "lua dofile('test/run_all.lua')" +qa
+-- Run with: nvim --headless -u NONE -c "lua dofile('test/run_all.lua')" +cq
 
 local cwd = vim.fn.getcwd()
 package.path = package.path .. ';' .. cwd .. '/lua/?.lua;' .. cwd .. '/lua/?/init.lua;' .. cwd .. '/lua/?/?.lua'
@@ -139,22 +139,29 @@ end)
 print("\n[File Parsing]")
 test("Parse LCOV fixture", function()
   local data = parser.parse(cwd .. "/test/fixtures/sample_coverage.lcov")
-  assert(data ~= nil and data.files ~= nil)
+  assert(type(data) == 'table')
+
+  local file, info = next(data)
+  assert(file and info and type(info.lines) == 'table')
 end)
 test("Parse JSON fixture", function()
   local data = parser.parse(cwd .. "/test/fixtures/sample_coverage.json")
-  assert(data ~= nil and data.files ~= nil)
+  assert(type(data) == 'table')
+
+  local file, info = next(data)
+  assert(file and info and type(info.lines) == 'table')
 end)
 test("Parse XML fixture", function()
   local data = parser.parse(cwd .. "/test/fixtures/sample_coverage.xml")
-  assert(data ~= nil and data.files ~= nil)
+  assert(type(data) == 'table')
+
+  local file, info = next(data)
+  assert(file and info and type(info.lines) == 'table')
 end)
 
 -- Summary
-print("\n" .. "=" .. string.rep("=", 58))
+print("\n" .. string.rep("=", 58))
 print(string.format("Results: %d passed, %d failed", passed, failed))
-print("=" .. string.rep("=", 58))
+print(string.rep("=", 58) .. "\n")
 
-if failed > 0 then
-  vim.fn.exit(1)
-end
+vim.cmd(failed == 0 and 'qall!' or 'cquit!')

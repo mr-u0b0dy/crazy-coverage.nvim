@@ -22,7 +22,7 @@ We welcome contributions! Here's how you can help:
 ### Running Tests
 ```bash
 # Quick tests (no dependencies)
-nvim --headless -u NONE +"lua dofile('test/run_tests.lua')" +qa
+nvim --headless -u NONE +"lua dofile('test/run_tests.lua')" +cq
 
 # Plenary/Busted tests (with organized suites)
 nvim --headless --noplugin -u NONE -c "set rtp+=$(pwd)" +"lua require('test.spec.lcov_parser_spec')" +qa
