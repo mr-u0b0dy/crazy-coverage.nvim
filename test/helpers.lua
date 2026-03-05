@@ -1,6 +1,9 @@
 -- Test helpers and utilities
 local M = {}
 
+assert = require("luassert")
+vim.opt.rtp:append(vim.fn.getcwd())
+
 -- Create temporary coverage files for testing
 function M.create_temp_coverage_file(format, content)
   local tmp_dir = "/tmp/crazy-coverage-test-" .. os.time()
@@ -35,7 +38,7 @@ end
 
 -- Sample coverage data generators
 function M.sample_llvm_coverage()
-  return [[{
+  return [=[{
   "version": "2.0.1",
   "data": [{
     "files": [{
@@ -43,11 +46,11 @@ function M.sample_llvm_coverage()
       "segments": [[10, 0, 5, true, false, false], [11, 0, 0, true, false, false], [12, 0, 3, true, false, false]]
     }]
   }]
-}]]
+}]=]
 end
 
 function M.sample_cobertura_coverage()
-  return [[<?xml version="1.0" ?>
+  return [=[<?xml version="1.0" ?>
 <coverage version="5.4" timestamp="1234567890" lines-valid="3" lines-covered="2" line-rate="0.667">
   <packages>
     <package name="main" line-rate="0.667" branch-rate="1.0">
@@ -63,17 +66,17 @@ function M.sample_cobertura_coverage()
       </classes>
     </package>
   </packages>
-</coverage>]]
+</coverage>]=]
 end
 
 function M.sample_lcov_coverage()
-  return [[TN:main.c
+  return [=[TN:main.c
 SF:../main.c
 DA:10,5
 DA:11,0
 DA:12,3
 end_of_record
-]]
+]=]
 end
 
 return M

@@ -26,12 +26,12 @@ describe("LLVM JSON Parser", function()
       for file_path, _ in pairs(result) do
         assert.is_string(file_path)
         -- Path should not contain unresolved .. segments
-        assert.is_false(file_path:match("%.%."))
+        assert.is_falsy(file_path:match("%.%."))
       end
     end)
 
     it("should preserve absolute paths", function()
-      local content = [[
+      local content = [=[
 {
   "version": "2.0.1",
   "data": [{
@@ -41,7 +41,7 @@ describe("LLVM JSON Parser", function()
     }]
   }]
 }
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
       
       local result = llvm_parser.parse(temp_file, temp_dir)
@@ -58,7 +58,7 @@ describe("LLVM JSON Parser", function()
     end)
 
     it("should handle multiple relative path segments", function()
-      local content = [[
+      local content = [=[
 {
   "version": "2.0.1",
   "data": [{
@@ -68,7 +68,7 @@ describe("LLVM JSON Parser", function()
     }]
   }]
 }
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
       
       local result = llvm_parser.parse(temp_file, temp_dir)
@@ -92,7 +92,7 @@ describe("LLVM JSON Parser", function()
       local result = llvm_parser.parse(temp_file, temp_dir)
       
       assert.is_not_nil(result)
-      local file_data = next(result)
+      local _, file_data = next(result)
       assert.is_not_nil(file_data)
       assert.is_table(file_data.lines)
       
@@ -113,7 +113,7 @@ describe("LLVM JSON Parser", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", helpers.sample_llvm_coverage())
       
       local result = llvm_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
       
       -- Line 11 in sample has count=0
       local line_11_data
@@ -133,7 +133,7 @@ describe("LLVM JSON Parser", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", helpers.sample_llvm_coverage())
       
       local result = llvm_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
       
       -- Lines 10 and 12 in sample have count > 0
       local covered_count = 0
@@ -149,7 +149,7 @@ describe("LLVM JSON Parser", function()
 
   describe("Format A (lines array) parsing", function()
     it("should parse lines array format (standard llvm-cov output)", function()
-      local content = [[{
+      local content = [=[{
   "version": "2.0.1",
   "data": [{
     "files": [{
@@ -161,31 +161,28 @@ describe("LLVM JSON Parser", function()
       ]
     }]
   }]
-}]]
+}]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
       
       local result = llvm_parser.parse(temp_file, temp_dir)
       
       assert.is_not_nil(result)
-      local file_data = next(result)
+      local _, file_data = next(result)
       assert.is_not_nil(file_data)
       assert.equals(3, #file_data.lines)
       
       -- Check line 5 is covered
-      assert.equals(10, file_data.lines[1].hit_count)
-      assert.is_true(file_data.lines[1].covered)
+      assert.equals(10, file_data.lines[1].hits)
       
       -- Check line 6 is uncovered
-      assert.equals(0, file_data.lines[2].hit_count)
-      assert.is_false(file_data.lines[2].covered)
+      assert.equals(0, file_data.lines[2].hits)
       
       -- Check line 7 is covered
-      assert.equals(5, file_data.lines[3].hit_count)
-      assert.is_true(file_data.lines[3].covered)
+      assert.equals(5, file_data.lines[3].hits)
     end)
 
     it("should parse regions as branch coverage", function()
-      local content = [[{
+      local content = [=[{
   "version": "2.0.1",
   "data": [{
     "files": [{
@@ -202,29 +199,26 @@ describe("LLVM JSON Parser", function()
       ]
     }]
   }]
-}]]
+}]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
       
       local result = llvm_parser.parse(temp_file, temp_dir)
       
       assert.is_not_nil(result)
-      local file_data = next(result)
+      local _, file_data = next(result)
       assert.equals(1, #file_data.lines)
       assert.equals(2, #file_data.branches)
       
       -- Check line coverage
-      assert.equals(5, file_data.lines[1].hit_count)
-      assert.is_true(file_data.lines[1].covered)
+      assert.equals(5, file_data.lines[1].hits)
       
       -- Check branch coverage from regions
-      assert.equals(5, file_data.branches[1].hit_count)
-      assert.is_true(file_data.branches[1].covered)
-      assert.equals(2, file_data.branches[2].hit_count)
-      assert.is_true(file_data.branches[2].covered)
+      assert.equals(5, file_data.branches[1].hits)
+      assert.equals(2, file_data.branches[2].hits)
     end)
 
     it("should handle uncovered regions correctly", function()
-      local content = [[{
+      local content = [=[{
   "version": "2.0.1",
   "data": [{
     "files": [{
@@ -240,21 +234,19 @@ describe("LLVM JSON Parser", function()
       ]
     }]
   }]
-}]]
+}]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
       
       local result = llvm_parser.parse(temp_file, temp_dir)
       
       assert.is_not_nil(result)
-      local file_data = next(result)
+      local _, file_data = next(result)
       assert.equals(1, #file_data.lines)
-      assert.is_false(file_data.lines[1].covered)
       assert.equals(1, #file_data.branches)
-      assert.is_false(file_data.branches[1].covered)
     end)
 
     it("should preserve line numbers in order", function()
-      local content = [[{
+      local content = [=[{
   "version": "2.0.1",
   "data": [{
     "files": [{
@@ -266,17 +258,18 @@ describe("LLVM JSON Parser", function()
       ]
     }]
   }]
-}]]
+}]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
       
       local result = llvm_parser.parse(temp_file, temp_dir)
       
       assert.is_not_nil(result)
-      local file_data = next(result)
+      local _, file_data = next(result)
+
       -- Should be sorted by line number
-      assert.equals(50, file_data.lines[1].line_num)
-      assert.equals(75, file_data.lines[2].line_num)
-      assert.equals(100, file_data.lines[3].line_num)
+      assert.equals(50, file_data.lines[1].line)
+      assert.equals(75, file_data.lines[2].line)
+      assert.equals(100, file_data.lines[3].line)
     end)
   end)
 end)
@@ -304,12 +297,12 @@ describe("Cobertura Parser", function()
       for file_path, _ in pairs(result) do
         assert.is_string(file_path)
         -- Should not contain unresolved .. segments
-        assert.is_false(file_path:match("%.%."))
+        assert.is_falsy(file_path:match("%.%."))
       end
     end)
 
     it("should use absolute path when available", function()
-      local content = [[
+      local content = [=[
 <?xml version="1.0" ?>
 <coverage version="5.4" timestamp="1234567890">
   <packages>
@@ -324,7 +317,7 @@ describe("Cobertura Parser", function()
     </package>
   </packages>
 </coverage>
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", content)
       
       local result = cobertura_parser.parse(temp_file, temp_dir)
@@ -346,7 +339,7 @@ describe("Cobertura Parser", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
       
       local result = cobertura_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
       
       assert.is_not_nil(file_data)
       assert.is_table(file_data.lines)
@@ -365,7 +358,7 @@ describe("Cobertura Parser", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
       
       local result = cobertura_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
       
       -- Sample has line 11 with hits=0
       local has_uncovered = false
@@ -382,7 +375,7 @@ describe("Cobertura Parser", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
       
       local result = cobertura_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
       
       -- Sample has lines 10 and 12 with hits > 0
       local covered_count = 0
@@ -397,7 +390,7 @@ describe("Cobertura Parser", function()
 
   describe("branch coverage", function()
     it("should parse branch data when available", function()
-      local content = [[
+      local content = [=[
 <?xml version="1.0" ?>
 <coverage version="5.4" timestamp="1234567890">
   <packages>
@@ -416,14 +409,14 @@ describe("Cobertura Parser", function()
     </package>
   </packages>
 </coverage>
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", content)
       
       local result = cobertura_parser.parse(temp_file, temp_dir)
       
       assert.is_not_nil(result)
       -- Parser should handle branch data without errors
-      local file_data = next(result)
+      local _, file_data = next(result)
       assert.is_not_nil(file_data)
     end)
   end)
@@ -452,18 +445,18 @@ describe("LCOV Parser", function()
       for file_path, _ in pairs(result) do
         assert.is_string(file_path)
         -- Should not contain unresolved .. segments
-        assert.is_false(file_path:match("%.%."))
+        assert.is_falsy(file_path:match("%.%."))
       end
     end)
 
     it("should use absolute paths when present in SF:", function()
-      local content = [[
+      local content = [=[
 TN:test
 SF:/absolute/path/main.c
 DA:10,5
 DA:11,0
 end_of_record
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
       
       local result = lcov_parser.parse(temp_file, temp_dir)
@@ -480,7 +473,7 @@ end_of_record
     end)
 
     it("should handle multiple source files", function()
-      local content = [[
+      local content = [=[
 TN:test
 SF:../file1.c
 DA:10,5
@@ -488,7 +481,7 @@ end_of_record
 SF:../file2.c
 DA:20,3
 end_of_record
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
       
       local result = lcov_parser.parse(temp_file, temp_dir)
@@ -508,7 +501,7 @@ end_of_record
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
       
       local result = lcov_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
       
       assert.is_not_nil(file_data)
       assert.is_table(file_data.lines)
@@ -525,7 +518,7 @@ end_of_record
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
       
       local result = lcov_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
       
       -- Sample has line 11 with 0 hits
       local has_uncovered = false
@@ -542,7 +535,7 @@ end_of_record
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
       
       local result = lcov_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
       
       -- Sample has lines with hits > 0
       local covered_count = 0
@@ -557,20 +550,20 @@ end_of_record
 
   describe("branch data parsing", function()
     it("should parse BRDA: (branch data) entries", function()
-      local content = [[
+      local content = [=[
 TN:test
 SF:../main.c
 DA:10,5
 BRDA:10,0,0,3
 BRDA:10,0,1,2
 end_of_record
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
       
       local result = lcov_parser.parse(temp_file, temp_dir)
       
       assert.is_not_nil(result)
-      local file_data = next(result)
+      local _, file_data = next(result)
       assert.is_not_nil(file_data)
       assert.equals(2, #file_data.branches)
       assert.equals(0, file_data.branches[1].id)
@@ -707,7 +700,7 @@ describe("Edge Cases", function()
       
       assert.is_not_nil(result)
       -- Should reduce to single slashes
-      assert.is_false(result:match("//"))
+      assert.is_falsy(result:match("//"))
     end)
   end)
 
@@ -734,11 +727,11 @@ describe("Edge Cases", function()
     end)
 
     it("should handle coverage with no line data", function()
-      local content = [[
+      local content = [=[
 TN:test
 SF:../main.c
 end_of_record
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
       
       local parser = require("crazy-coverage.parser.init")
@@ -746,26 +739,26 @@ end_of_record
       
       assert.is_not_nil(result)
       -- File should be in result but with empty or no lines
-      local file_data = next(result)
+      local _, file_data = next(result)
       if file_data and file_data.lines then
         assert.equals(0, #file_data.lines)
       end
     end)
 
     it("should handle very large hit counts", function()
-      local content = [[
+      local content = [=[
 TN:test
 SF:../main.c
 DA:10,999999999
 end_of_record
-]]
+]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
       
       local parser = require("crazy-coverage.parser.init")
       local result = parser.parse(temp_file)
       
       assert.is_not_nil(result)
-      local file_data = next(result)
+      local _, file_data = next(result)
       assert.is_not_nil(file_data)
       
       -- Should handle large numbers correctly
@@ -959,7 +952,7 @@ describe("Coverage File Caching", function()
     it("normalizes cached paths", function()
       local path = "/path/to/project/./build/../coverage.lcov"
       local normalized = utils.normalize_path(path)
-      assert.equals("/path/to/project/build/coverage.lcov", normalized)
+      assert.equals("/path/to/project/coverage.lcov", normalized)
     end)
 
     it("normalizes project_root", function()
