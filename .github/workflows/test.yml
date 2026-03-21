@@ -13,8 +13,11 @@ jobs:
       matrix:
         nvim-version: [ stable, nightly ]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+
+      - name: Checkout mini.test
+        uses: actions/checkout@v4
         with:
           repository: nvim-mini/mini.test
           path: build/mini.test
