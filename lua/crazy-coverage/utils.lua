@@ -138,8 +138,6 @@ function M.detect_format(file_path)
       end
     end
     return "llvm_json" -- Default JSON to LLVM JSON
-  elseif ext == "out" then
-    return nil
   end
 
   -- Try content-based detection for text formats
