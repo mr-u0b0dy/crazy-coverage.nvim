@@ -378,8 +378,27 @@ function M.parse(file_path, project_root)
   -- Project root can be used for context, but coverage file directory is the base
   if not project_root then
     -- Prefer inferred module root from coverage location before generic fallbacks.
-    project_root = find_go_module_root(coverage_dir, 8)
-      or vim.fn.fnamemodify(file_path, ":p:h:h:h")
+    local inferred_root = find_go_module_root(coverage_dir, 8)
+    if inferred_root then
+      project_root = inferred_root
+    else
+      -- Fall back to the parent of coverage_dir (one level above the directory that
+      -- contains the coverage file). Using `:p:h:h:h` (grandparent of the file) can
+      -- overshoot to "/" for layouts like <root>/coverage/coverage.lcov, so we go
+      -- only one level above coverage_dir and guard against reaching the fs root.
+      local parent_dir = vim.fn.fnamemodify(coverage_dir, ":h")
+      if parent_dir and parent_dir ~= "/" and parent_dir ~= coverage_dir then
+        project_root = parent_dir
+      else
+        project_root = coverage_dir
+      end
+    end
+  end
+
+  -- Guard against project_root resolving to the filesystem root, which would cause
+  -- unresolved relative SF paths to normalize to "/<file>" instead of a meaningful path.
+  if project_root == "/" then
+    project_root = coverage_dir
   end
 
   local module_root = find_go_module_root(project_root, 8)
