@@ -44,6 +44,23 @@ function M.read_file(file_path)
   return ok and result or nil
 end
 
+--- Read first N lines of a file (avoids reading large or binary files in full)
+---@param file_path string
+---@param max_lines number
+---@return string[]|nil
+function M.read_file_prefix(file_path, max_lines)
+  if not file_path or file_path == "" then
+    return nil
+  end
+
+  if not M.file_exists(file_path) then
+    return nil
+  end
+
+  local ok, result = pcall(vim.fn.readfile, file_path, "", max_lines)
+  return ok and result or nil
+end
+
 --- Detect coverage format based on file extension and content
 ---@param file_path string
 ---@return string|nil -- 'lcov', 'llvm_json', 'cobertura', 'gcov', 'llvm_profdata', or nil
@@ -71,17 +88,23 @@ end
 
 function M.detect_format(file_path)
   local ext = file_path:match("%.([^.]+)$")
-  local lines = M.read_file(file_path)
 
-  if is_go_coverprofile(lines) then
-    return "go_coverprofile"
-  end
-
+  -- Extension-only shortcuts: no file reading needed for these formats
   if ext == "info" or ext == "lcov" then
     return "lcov"
-  elseif ext == "json" then
-    -- Check if it's LLVM JSON format
-    local lines = M.read_file(file_path)
+  elseif ext == "xml" then
+    return "cobertura"
+  elseif ext == "gcda" or ext == "gcno" then
+    return "gcov"
+  elseif ext == "profdata" then
+    return "llvm_profdata"
+  end
+
+  -- For remaining formats, read a small prefix for content-based detection.
+  -- 20 lines is enough to detect all supported formats reliably.
+  local lines = M.read_file_prefix(file_path, 20)
+
+  if ext == "json" then
     if lines and #lines > 0 then
       local first_line = lines[1]
       if first_line:match('"version"') and first_line:match('"data"') then
@@ -89,20 +112,19 @@ function M.detect_format(file_path)
       end
     end
     return "llvm_json" -- Default JSON to LLVM JSON
-  elseif ext == "xml" then
-    return "cobertura"
   elseif ext == "out" then
     if is_go_coverprofile(lines) then
       return "go_coverprofile"
     end
     return nil
-  elseif ext == "gcda" or ext == "gcno" then
-    return "gcov"
-  elseif ext == "profdata" then
-    return "llvm_profdata"
   end
 
-  -- Try content-based detection for text formats
+  -- No known extension: try content-based detection for extensionless or
+  -- non-standard-extension files (e.g., a plain "coverage" file).
+  if is_go_coverprofile(lines) then
+    return "go_coverprofile"
+  end
+
   if lines and #lines > 0 then
     local first_line = lines[1]
     if first_line:match("^TN:") or first_line:match("^FN:") or first_line:match("^DA:") then
