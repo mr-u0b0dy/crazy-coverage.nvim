@@ -12,10 +12,11 @@ function M.create_temp_coverage_file(format, content)
   local ext = format == "llvm" and "json" or format
   local filename = tmp_dir .. "/coverage." .. ext
   local file = io.open(filename, "w")
-  if file then
-    file:write(content)
-    file:close()
-  end
+  assert(file, "failed to create temporary coverage file: " .. filename)
+
+  local ok, err = file:write(content)
+  file:close()
+  assert(ok, "failed to write temporary coverage file: " .. filename .. " (" .. tostring(err) .. ")")
 
   return filename, tmp_dir
 end
