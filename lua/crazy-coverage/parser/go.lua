@@ -6,7 +6,7 @@ local utils = require("crazy-coverage.utils")
 ---@param path_to_mod string Path to directory containing go.mod
 ---@return string|nil  Module name (e.g., "example.com/crazy-coverage-go")
 local function extract_module_name(path_to_mod)
-  if not path_to_mod or not vim.fn.isdirectory(path_to_mod) == 1 then
+  if not path_to_mod or vim.fn.isdirectory(path_to_mod) ~= 1 then
     return nil
   end
 
