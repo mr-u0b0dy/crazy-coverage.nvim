@@ -55,7 +55,7 @@ Load in crazy-coverage.nvim:
 
 ## Directory Structure
 
-```
+```text
 go/
 ├── Makefile              # Coverage workflow
 ├── README.md             # This file
