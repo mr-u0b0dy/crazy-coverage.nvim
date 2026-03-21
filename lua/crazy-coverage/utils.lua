@@ -44,36 +44,103 @@ function M.read_file(file_path)
   return ok and result or nil
 end
 
+--- Read only a prefix of a file (line-based)
+---@param file_path string
+---@param max_lines number|nil
+---@return string[]|nil
+function M.read_file_prefix(file_path, max_lines)
+  if not file_path or file_path == "" then
+    return nil
+  end
+
+  if not M.file_exists(file_path) then
+    return nil
+  end
+
+  local limit = max_lines or 10
+  local ok, result = pcall(vim.fn.readfile, file_path, "", limit)
+  return ok and result or nil
+end
+
 --- Detect coverage format based on file extension and content
 ---@param file_path string
----@return string|nil -- 'lcov', 'llvm_json', 'cobertura', 'gcov', 'llvm_profdata', or nil
+---@return string|nil -- 'lcov', 'llvm_json', 'cobertura', 'gcov', 'llvm_profdata', 'go_coverprofile', or nil
+local function is_go_coverprofile(lines)
+  if not lines or #lines < 1 then
+    return false
+  end
+
+  local header = lines[1]
+  if not header or not header:match("^mode:%s*[%a_]+$") then
+    return false
+  end
+
+  -- Track whether we saw any non-empty lines and any valid record lines
+  local has_nonempty_after_header = false
+  local has_valid_record = false
+
+  for i = 2, #lines do
+    local line = lines[i]
+    -- Treat lines with any non-whitespace as non-empty
+    if line and line:match("%S") then
+      has_nonempty_after_header = true
+      if line:match("^.+:%d+%.%d+,%d+%.%d+%s+%d+%s+%d+$") then
+        has_valid_record = true
+      end
+    end
+  end
+
+  -- Valid if we have at least one record, or if the file is header-only
+  if has_valid_record or not has_nonempty_after_header then
+    return true
+  end
+  return false
+end
+
 function M.detect_format(file_path)
+  if not file_path or file_path == "" then
+    return nil
+  end
+
   local ext = file_path:match("%.([^.]+)$")
 
   if ext == "info" or ext == "lcov" then
     return "lcov"
-  elseif ext == "json" then
-    -- Check if it's LLVM JSON format
-    local lines = M.read_file(file_path)
-    if lines and #lines > 0 then
-      local first_line = lines[1]
+  elseif ext == "gcda" or ext == "gcno" then
+    return "gcov"
+  elseif ext == "profdata" then
+    return "llvm_profdata"
+  elseif ext == "xml" then
+    return "cobertura"
+  end
+
+  local lines
+  local function get_lines()
+    if lines == nil then
+      lines = M.read_file_prefix(file_path, 10)
+    end
+    return lines
+  end
+
+  local prefix_lines = get_lines()
+  if is_go_coverprofile(prefix_lines) then
+    return "go_coverprofile"
+  end
+
+  if ext == "json" then
+    -- Reuse already-read prefix lines instead of re-reading the file.
+    if prefix_lines and #prefix_lines > 0 then
+      local first_line = prefix_lines[1]
       if first_line:match('"version"') and first_line:match('"data"') then
         return "llvm_json"
       end
     end
     return "llvm_json" -- Default JSON to LLVM JSON
-  elseif ext == "xml" then
-    return "cobertura"
-  elseif ext == "gcda" or ext == "gcno" then
-    return "gcov"
-  elseif ext == "profdata" then
-    return "llvm_profdata"
   end
 
   -- Try content-based detection for text formats
-  local lines = M.read_file(file_path)
-  if lines and #lines > 0 then
-    local first_line = lines[1]
+  if prefix_lines and #prefix_lines > 0 then
+    local first_line = prefix_lines[1]
     if first_line:match("^TN:") or first_line:match("^FN:") or first_line:match("^DA:") then
       return "lcov"
     elseif first_line:match("^{") then

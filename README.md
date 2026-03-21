@@ -4,7 +4,7 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 
 ## Features
 
-- **Multi-Format Support**: LCOV, LLVM JSON, Cobertura XML, GCOV, LLVM Profdata
+- **Multi-Format Support**: LCOV, LLVM JSON, Cobertura XML, Go Coverprofile, GCOV, LLVM Profdata
 - **Smart Toggle**: Single command auto-loads coverage and watches for changes
 - **Flexible Display**: Show hit counts via virtual text or sign column
 - **Branch/Region Overlays**: Inspect branch and LLVM region hit details at cursor
@@ -29,6 +29,7 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 ## Supported Languages
 
 - **C/C++** - GCC (gcov/lcov), LLVM/Clang
+- **Go** - Native `go test -coverprofile` (`coverage.out`)
 - **Any Language** - Via LCOV, Cobertura XML, or LLVM JSON formats
 
 The plugin supports any language that can generate coverage in one of the supported formats.
@@ -91,6 +92,7 @@ The plugin intelligently finds your coverage file automatically. It:
    - Finds LCOV files (even if not named `*.lcov`)
    - Finds JSON coverage reports (even with custom names)
    - Finds Cobertura XML files (regardless of filename)
+   - Finds Go coverprofile files (`coverage.out`)
    - Finds GCOV/LLVM Profdata binary files
 
 3. **Supports Any Filename**:
@@ -191,7 +193,7 @@ See [Usage Guide](doc/usage.md) for keybindings and navigation.
 - **[Usage Guide](doc/usage.md)** - Commands, keybindings, and workflows
 - **[Configuration Reference](doc/configuration.md)** - All config options
 - **[Supported Formats](doc/formats.md)** - Coverage format details
-- **[Coverage Examples](coverage-examples/)** - C/C++ examples with GCC/LLVM
+- **[Coverage Examples](coverage-examples/)** - C/C++/Go examples with GCC/LLVM/Go tools
 - **[Architecture](doc/architecture.md)** - Plugin design guide
 - **[Development](doc/development.md)** - Testing and contributing
 

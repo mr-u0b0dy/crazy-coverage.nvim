@@ -66,6 +66,7 @@ local M = {
   coverage_patterns = {
     c = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
     cpp = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
+    go = { "coverage.out", "*.lcov", "*.info", "coverage.json", "coverage.xml" },
   },
 
   -- Directories to search for coverage files (relative to project root)
@@ -78,7 +79,7 @@ local M = {
   },
 
   -- Project root patterns (for finding coverage files)
-  project_markers = { ".git", "CMakeLists.txt", "Makefile", "compile_commands.json" },
+  project_markers = { ".git", "CMakeLists.txt", "Makefile", "compile_commands.json", "go.mod" },
 
   -- Cache settings
   cache_enabled = true,
@@ -166,6 +167,8 @@ local function is_coverage_file(file_path)
     "^TN:", "^FN:", "^DA:", "end_of_record",  -- LCOV
     '"version".*"data"', '"data".*{',         -- LLVM JSON
     "<coverage", "<package", "<class", "<line", -- Cobertura XML
+    "^mode:%s*[%a_]+$",                           -- Go coverprofile header
+    ".+:%d+%.%d+,%d+%.%d+%s+%d+%s+%d+",         -- Go coverprofile records
   }
   
   for _, pattern in ipairs(patterns) do
@@ -179,6 +182,7 @@ local function is_coverage_file(file_path)
   local valid_exts = {
     lcov = true, info = true, json = true, xml = true,
     profdata = true, gcda = true, gcno = true,
+    out = true,
   }
   
   return valid_exts[ext] or false

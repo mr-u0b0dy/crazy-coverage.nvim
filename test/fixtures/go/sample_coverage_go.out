@@ -1,0 +1,10 @@
+mode: count
+example.com/test-module/main.go:5.20,7.2 1 3
+example.com/test-module/math_utils.go:3.24,5.2 1 5
+example.com/test-module/math_utils.go:7.29,9.2 1 0
+example.com/test-module/math_utils.go:11.26,13.2 1 4
+example.com/test-module/math_utils.go:17.25,19.2 1 2
+example.com/test-module/math_utils.go:21.29,23.2 1 3
+example.com/test-module/math_utils.go:24.12,26.3 1 1
+example.com/test-module/math_utils.go:27.14,29.3 1 1
+example.com/test-module/math_utils.go:30.2,30.14 1 0

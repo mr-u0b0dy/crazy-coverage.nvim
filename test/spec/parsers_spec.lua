@@ -332,6 +332,52 @@ describe("Cobertura Parser", function()
       end
       assert.is_true(found_absolute)
     end)
+
+    it("should resolve module-qualified filenames via go.mod source root", function()
+      temp_file, temp_dir = helpers.create_temp_coverage_file("xml", "")
+
+      local content = [[
+<?xml version="1.0" ?>
+<coverage version="5.4" timestamp="1234567890">
+  <sources>
+    <source>]] .. temp_dir .. [[</source>
+  </sources>
+  <packages>
+    <package name="example.com/test-module">
+      <classes>
+        <class filename="example.com/test-module/main.go" line-rate="1.0">
+          <lines>
+            <line number="10" hits="5"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+]]
+
+      local gomod = io.open(temp_dir .. "/go.mod", "w")
+      assert.is_not_nil(gomod)
+      gomod:write("module example.com/test-module\n")
+      gomod:close()
+
+      local src = io.open(temp_dir .. "/main.go", "w")
+      assert.is_not_nil(src)
+      src:write("package main\n")
+      src:close()
+
+      local f = io.open(temp_file, "w")
+      assert.is_not_nil(f)
+      f:write(content)
+      f:close()
+
+      local result = cobertura_parser.parse(temp_file)
+      assert.is_not_nil(result)
+
+      local expected = require("crazy-coverage.utils").normalize_path(temp_dir .. "/main.go")
+      assert.is_not_nil(result[expected])
+      assert.is_true(#(result[expected].lines or {}) > 0)
+    end)
   end)
 
   describe("line coverage extraction", function()
@@ -385,6 +431,89 @@ describe("Cobertura Parser", function()
         end
       end
       assert.is_true(covered_count >= 2)
+    end)
+
+    it("should not duplicate line entries from method and class sections", function()
+      local content = [[
+<?xml version="1.0" ?>
+<coverage version="5.4" timestamp="1234567890">
+  <packages>
+    <package name="test">
+      <classes>
+        <class filename="main.go" line-rate="1.0">
+          <methods>
+            <method name="main" signature="" line-rate="1.0">
+              <lines>
+                <line number="10" hits="2"/>
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="2"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("xml", content)
+
+      local result = cobertura_parser.parse(temp_file, temp_dir)
+      assert.is_not_nil(result)
+
+      local _, file_data = next(result)
+      assert.is_not_nil(file_data)
+
+      local count_line_10 = 0
+      for _, line_data in ipairs(file_data.lines or {}) do
+        if line_data.line == 10 then
+          count_line_10 = count_line_10 + 1
+        end
+      end
+      assert.equals(1, count_line_10)
+    end)
+
+    it("should merge coverage from multiple class blocks with the same filename", function()
+      local content = [[
+<?xml version="1.0" ?>
+<coverage version="5.4" timestamp="1234567890">
+  <packages>
+    <package name="test">
+      <classes>
+        <class filename="main.go" line-rate="1.0">
+          <lines>
+            <line number="10" hits="2"/>
+          </lines>
+        </class>
+        <class filename="main.go" line-rate="1.0">
+          <lines>
+            <line number="12" hits="4" branch="true" condition-coverage="50% (1/2)"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("xml", content)
+
+      local result = cobertura_parser.parse(temp_file, temp_dir)
+      assert.is_not_nil(result)
+
+      local _, file_data = next(result)
+      assert.is_not_nil(file_data)
+
+      local hits_by_line = {}
+      for _, line_data in ipairs(file_data.lines or {}) do
+        hits_by_line[line_data.line] = line_data.hits
+      end
+
+      assert.equals(2, hits_by_line[10])
+      assert.equals(4, hits_by_line[12])
+
+      -- condition-coverage="50% (1/2)" should synthesize two branches.
+      assert.equals(2, #(file_data.branches or {}))
     end)
   end)
 
@@ -494,6 +623,71 @@ end_of_record
       end
       assert.equals(2, file_count)
     end)
+
+    it("should resolve module-qualified SF paths via go.mod", function()
+      local content = [[
+TN:test
+SF:example.com/test-module/main.go
+DA:10,2
+end_of_record
+]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
+
+      local gomod = io.open(temp_dir .. "/go.mod", "w")
+      assert.is_not_nil(gomod)
+      gomod:write("module example.com/test-module\n")
+      gomod:close()
+
+      local src = io.open(temp_dir .. "/main.go", "w")
+      assert.is_not_nil(src)
+      src:write("package main\n")
+      src:close()
+
+      local result = lcov_parser.parse(temp_file)
+
+      assert.is_not_nil(result)
+      local expected = require("crazy-coverage.utils").normalize_path(temp_dir .. "/main.go")
+      assert.is_not_nil(result[expected])
+      assert.is_true(#(result[expected].lines or {}) > 0)
+    end)
+
+    it("should resolve project-prefixed SF paths emitted by gcov2lcov", function()
+      temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", "")
+
+      local go_dir = temp_dir .. "/coverage-examples/go"
+      assert.equals(1, vim.fn.mkdir(go_dir, "p"))
+
+      local gomod = io.open(go_dir .. "/go.mod", "w")
+      assert.is_not_nil(gomod)
+      gomod:write("module example.com/test-module\n")
+      gomod:close()
+
+      local src = io.open(go_dir .. "/math_utils.go", "w")
+      assert.is_not_nil(src)
+      src:write("package main\n")
+      src:close()
+
+      local lcov_content = [[
+TN:
+SF:coverage-examples/go/math_utils.go
+DA:3,1
+DA:4,0
+end_of_record
+]]
+
+      local f = io.open(temp_file, "w")
+      assert.is_not_nil(f)
+      f:write(lcov_content)
+      f:close()
+
+      local result = lcov_parser.parse(temp_file, go_dir)
+      assert.is_not_nil(result)
+
+      local expected = require("crazy-coverage.utils").normalize_path(go_dir .. "/math_utils.go")
+      local entry = result[expected]
+      assert.is_not_nil(entry)
+      assert.equals(2, #(entry.lines or {}))
+    end)
   end)
 
   describe("line data parsing", function()
@@ -546,6 +740,33 @@ end_of_record
       end
       assert.is_true(covered_count >= 2)
     end)
+
+    it("should merge duplicate DA lines", function()
+      local content = [[
+TN:test
+SF:../main.c
+DA:10,1
+DA:10,3
+end_of_record
+]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
+
+      local result = lcov_parser.parse(temp_file, temp_dir)
+      local _, file_data = next(result)
+
+      assert.is_not_nil(file_data)
+      local count_line_10 = 0
+      local hits_line_10 = nil
+      for _, line_data in ipairs(file_data.lines or {}) do
+        if line_data.line == 10 then
+          count_line_10 = count_line_10 + 1
+          hits_line_10 = line_data.hits
+        end
+      end
+
+      assert.equals(1, count_line_10)
+      assert.equals(3, hits_line_10)
+    end)
   end)
 
   describe("branch data parsing", function()
@@ -568,6 +789,74 @@ end_of_record
       assert.equals(2, #file_data.branches)
       assert.equals(0, file_data.branches[1].id)
       assert.equals(1, file_data.branches[2].id)
+    end)
+  end)
+end)
+
+describe("Go Coverprofile Parser", function()
+  local go_parser = require("crazy-coverage.parser.go")
+  local go_fixture_dir = "test/fixtures/go"
+  local go_profile = go_fixture_dir .. "/sample_coverage_go.out"
+  local go_profile_empty = go_fixture_dir .. "/sample_coverage_go_empty.out"
+  local go_profile_invalid = go_fixture_dir .. "/sample_coverage_go_invalid.out"
+
+  describe("line coverage parsing", function()
+    it("should parse valid Go coverprofile records", function()
+      local result = go_parser.parse(go_profile, go_fixture_dir)
+
+      assert.is_not_nil(result)
+      assert.is_table(result)
+
+      local file_count = 0
+      for _, _ in pairs(result) do
+        file_count = file_count + 1
+      end
+      assert.is_true(file_count >= 2)
+    end)
+
+    it("should include covered and uncovered line entries", function()
+      local result = go_parser.parse(go_profile, go_fixture_dir)
+      assert.is_not_nil(result)
+
+      local covered_found = false
+      local uncovered_found = false
+      for _, file_data in pairs(result) do
+        for _, line_data in ipairs(file_data.lines or {}) do
+          if line_data.hits > 0 then
+            covered_found = true
+          end
+          if line_data.hits == 0 then
+            uncovered_found = true
+          end
+        end
+      end
+
+      assert.is_true(covered_found)
+      assert.is_true(uncovered_found)
+    end)
+
+    it("should reject files without Go coverprofile header", function()
+      local result = go_parser.parse("test/fixtures/sample_coverage.lcov", go_fixture_dir)
+      assert.is_nil(result)
+    end)
+
+    it("should ignore malformed records and keep valid ones", function()
+      local result = go_parser.parse(go_profile_invalid, go_fixture_dir)
+      assert.is_not_nil(result)
+
+      local has_lines = false
+      for _, file_data in pairs(result) do
+        if file_data.lines and #file_data.lines > 0 then
+          has_lines = true
+        end
+      end
+      assert.is_true(has_lines)
+    end)
+
+    it("should return an empty map for header-only files", function()
+      local result = go_parser.parse(go_profile_empty, go_fixture_dir)
+      assert.is_not_nil(result)
+      assert.is_nil(next(result))
     end)
   end)
 end)
@@ -607,6 +896,13 @@ describe("Parser Dispatcher", function()
       
       local result = parser_dispatcher.parse(temp_file)
       
+      assert.is_not_nil(result)
+      assert.is_table(result)
+    end)
+
+    it("should detect Go coverprofile format", function()
+      local result = parser_dispatcher.parse("test/fixtures/go/sample_coverage_go.out", "test/fixtures/go")
+
       assert.is_not_nil(result)
       assert.is_table(result)
     end)
