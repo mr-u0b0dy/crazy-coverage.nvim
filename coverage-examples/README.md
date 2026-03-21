@@ -13,19 +13,19 @@ coverage-examples/
 │   ├── math_utils.c
 │   └── math_utils.h
 │
-└── cpp/                  # C++ examples
-    ├── Makefile          # GCC/LLVM build targets
-    ├── README.md         # C++-specific documentation
-    ├── main.cpp
-    ├── math_utils.cpp
-    └── math_utils.hpp
-
+├── cpp/                  # C++ examples
+│   ├── Makefile          # GCC/LLVM build targets
+│   ├── README.md         # C++-specific documentation
+│   ├── main.cpp
+│   ├── math_utils.cpp
+│   └── math_utils.hpp
+│
 └── go/                   # Go examples
-  ├── Makefile          # Go coverage and conversion targets
-  ├── README.md         # Go-specific documentation
-  ├── main.go
-  ├── math_utils.go
-  └── math_utils_test.go
+    ├── Makefile          # Go coverage and conversion targets
+    ├── README.md         # Go-specific documentation
+    ├── main.go
+    ├── math_utils.go
+    └── math_utils_test.go
 ```
 
 ## Quick Start
