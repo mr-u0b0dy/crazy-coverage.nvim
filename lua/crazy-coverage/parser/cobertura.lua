@@ -227,7 +227,8 @@ end
 ---@param attr_name string
 ---@return string|nil
 local function get_attr(attrs, attr_name)
-  local pattern = attr_name .. '="([^"]*)"'
+  local escaped_name = attr_name:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1")
+  local pattern = escaped_name .. '="([^"]*)"'
   local match = attrs:match(pattern)
   return match
 end

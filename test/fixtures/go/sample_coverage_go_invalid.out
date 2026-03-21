@@ -1,3 +1,4 @@
 mode: count
 not-a-valid-go-profile-line
+math_utils.go:1.1,1.20 1 1
 math_utils.go:not-valid
