@@ -332,6 +332,52 @@ describe("Cobertura Parser", function()
       end
       assert.is_true(found_absolute)
     end)
+
+    it("should resolve module-qualified filenames via go.mod source root", function()
+      temp_file, temp_dir = helpers.create_temp_coverage_file("xml", "")
+
+      local content = [[
+<?xml version="1.0" ?>
+<coverage version="5.4" timestamp="1234567890">
+  <sources>
+    <source>]] .. temp_dir .. [[</source>
+  </sources>
+  <packages>
+    <package name="example.com/test-module">
+      <classes>
+        <class filename="example.com/test-module/main.go" line-rate="1.0">
+          <lines>
+            <line number="10" hits="5"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+]]
+
+      local gomod = io.open(temp_dir .. "/go.mod", "w")
+      assert.is_not_nil(gomod)
+      gomod:write("module example.com/test-module\n")
+      gomod:close()
+
+      local src = io.open(temp_dir .. "/main.go", "w")
+      assert.is_not_nil(src)
+      src:write("package main\n")
+      src:close()
+
+      local f = io.open(temp_file, "w")
+      assert.is_not_nil(f)
+      f:write(content)
+      f:close()
+
+      local result = cobertura_parser.parse(temp_file)
+      assert.is_not_nil(result)
+
+      local expected = require("crazy-coverage.utils").normalize_path(temp_dir .. "/main.go")
+      assert.is_not_nil(result[expected])
+      assert.is_true(#(result[expected].lines or {}) > 0)
+    end)
   end)
 
   describe("line coverage extraction", function()
@@ -385,6 +431,89 @@ describe("Cobertura Parser", function()
         end
       end
       assert.is_true(covered_count >= 2)
+    end)
+
+    it("should not duplicate line entries from method and class sections", function()
+      local content = [[
+<?xml version="1.0" ?>
+<coverage version="5.4" timestamp="1234567890">
+  <packages>
+    <package name="test">
+      <classes>
+        <class filename="main.go" line-rate="1.0">
+          <methods>
+            <method name="main" signature="" line-rate="1.0">
+              <lines>
+                <line number="10" hits="2"/>
+              </lines>
+            </method>
+          </methods>
+          <lines>
+            <line number="10" hits="2"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("xml", content)
+
+      local result = cobertura_parser.parse(temp_file, temp_dir)
+      assert.is_not_nil(result)
+
+      local file_data = next(result)
+      assert.is_not_nil(file_data)
+
+      local count_line_10 = 0
+      for _, line_data in ipairs(file_data.lines or {}) do
+        if line_data.line == 10 then
+          count_line_10 = count_line_10 + 1
+        end
+      end
+      assert.equals(1, count_line_10)
+    end)
+
+    it("should merge coverage from multiple class blocks with the same filename", function()
+      local content = [[
+<?xml version="1.0" ?>
+<coverage version="5.4" timestamp="1234567890">
+  <packages>
+    <package name="test">
+      <classes>
+        <class filename="main.go" line-rate="1.0">
+          <lines>
+            <line number="10" hits="2"/>
+          </lines>
+        </class>
+        <class filename="main.go" line-rate="1.0">
+          <lines>
+            <line number="12" hits="4" branch="true" condition-coverage="50% (1/2)"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
+]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("xml", content)
+
+      local result = cobertura_parser.parse(temp_file, temp_dir)
+      assert.is_not_nil(result)
+
+      local _, file_data = next(result)
+      assert.is_not_nil(file_data)
+
+      local hits_by_line = {}
+      for _, line_data in ipairs(file_data.lines or {}) do
+        hits_by_line[line_data.line] = line_data.hits
+      end
+
+      assert.equals(2, hits_by_line[10])
+      assert.equals(4, hits_by_line[12])
+
+      -- condition-coverage="50% (1/2)" should synthesize two branches.
+      assert.equals(2, #(file_data.branches or {}))
     end)
   end)
 
