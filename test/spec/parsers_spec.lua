@@ -462,7 +462,7 @@ describe("Cobertura Parser", function()
       local result = cobertura_parser.parse(temp_file, temp_dir)
       assert.is_not_nil(result)
 
-      local file_data = next(result)
+      local _, file_data = next(result)
       assert.is_not_nil(file_data)
 
       local count_line_10 = 0
@@ -752,7 +752,7 @@ end_of_record
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
 
       local result = lcov_parser.parse(temp_file, temp_dir)
-      local file_data = next(result)
+      local _, file_data = next(result)
 
       assert.is_not_nil(file_data)
       local count_line_10 = 0
