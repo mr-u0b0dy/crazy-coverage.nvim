@@ -75,15 +75,27 @@ local function is_go_coverprofile(lines)
     return false
   end
 
+  -- Track whether we saw any non-empty lines and any valid record lines
+  local has_nonempty_after_header = false
+  local has_valid_record = false
+
   for i = 2, #lines do
     local line = lines[i]
     if line and line ~= "" then
+      has_nonempty_after_header = true
       if line:match("^.+:%d+%.%d+,%d+%.%d+%s+%d+%s+%d+$") then
-        return true
+        has_valid_record = true
+      else
+        -- Non-empty line that doesn't match Go coverprofile record format
+        return false
       end
     end
   end
 
+  -- Valid if we have at least one record, or if the file is header-only
+  if has_valid_record or not has_nonempty_after_header then
+    return true
+  end
   return false
 end
 
