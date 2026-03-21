@@ -47,8 +47,35 @@ end
 --- Detect coverage format based on file extension and content
 ---@param file_path string
 ---@return string|nil -- 'lcov', 'llvm_json', 'cobertura', 'gcov', 'llvm_profdata', or nil
+local function is_go_coverprofile(lines)
+  if not lines or #lines < 1 then
+    return false
+  end
+
+  local header = lines[1]
+  if not header or not header:match("^mode:%s*[%a_]+$") then
+    return false
+  end
+
+  for i = 2, #lines do
+    local line = lines[i]
+    if line and line ~= "" then
+      if line:match("^.+:%d+%.%d+,%d+%.%d+%s+%d+%s+%d+$") then
+        return true
+      end
+    end
+  end
+
+  return false
+end
+
 function M.detect_format(file_path)
   local ext = file_path:match("%.([^.]+)$")
+  local lines = M.read_file(file_path)
+
+  if is_go_coverprofile(lines) then
+    return "go_coverprofile"
+  end
 
   if ext == "info" or ext == "lcov" then
     return "lcov"
@@ -64,6 +91,11 @@ function M.detect_format(file_path)
     return "llvm_json" -- Default JSON to LLVM JSON
   elseif ext == "xml" then
     return "cobertura"
+  elseif ext == "out" then
+    if is_go_coverprofile(lines) then
+      return "go_coverprofile"
+    end
+    return nil
   elseif ext == "gcda" or ext == "gcno" then
     return "gcov"
   elseif ext == "profdata" then
@@ -71,7 +103,6 @@ function M.detect_format(file_path)
   end
 
   -- Try content-based detection for text formats
-  local lines = M.read_file(file_path)
   if lines and #lines > 0 then
     local first_line = lines[1]
     if first_line:match("^TN:") or first_line:match("^FN:") or first_line:match("^DA:") then
