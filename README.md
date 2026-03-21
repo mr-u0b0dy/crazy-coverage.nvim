@@ -204,7 +204,7 @@ See [Usage Guide](doc/usage.md) for keybindings and navigation.
 
 ## License
 
-Apache License 2.0 - Copyright © 2025 mr-u0b0dy
+Apache License 2.0 - Copyright © 2026 mr-u0b0dy
 
 ## Contributing
 
