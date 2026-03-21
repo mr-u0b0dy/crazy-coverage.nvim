@@ -184,7 +184,8 @@ function M.parse(file_path, project_root)
           local hit_count = tonumber(count) or 0
           if start_num and end_num then
             for line_num = start_num, end_num do
-              per_file[line_num] = (per_file[line_num] or 0) + hit_count
+              local prev = per_file[line_num] or 0
+              per_file[line_num] = math.max(prev, hit_count)
             end
           end
 
