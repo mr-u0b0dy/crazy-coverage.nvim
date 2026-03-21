@@ -19,6 +19,13 @@ coverage-examples/
     ├── main.cpp
     ├── math_utils.cpp
     └── math_utils.hpp
+
+└── go/                   # Go examples
+  ├── Makefile          # Go coverage and conversion targets
+  ├── README.md         # Go-specific documentation
+  ├── main.go
+  ├── math_utils.go
+  └── math_utils_test.go
 ```
 
 ## Quick Start
@@ -39,6 +46,15 @@ cd cpp
 make help           # Show available targets
 make lcov           # Build with GCC and generate LCOV coverage
 # Then load in Neovim: :CoverageLoad build/coverage/coverage.lcov
+```
+
+### Go Examples
+
+```bash
+cd go
+make cover          # Generate native Go coverprofile
+make lcov           # Convert to LCOV report
+# Then load in Neovim: :CoverageLoad build/coverage.out
 ```
 
 ## Available Coverage Tools
@@ -77,6 +93,8 @@ make llvm-report    # Build, run, and generate JSON report
 |--------|----------|------|--------------|
 | LCOV | `build/coverage/coverage.lcov` | GCC/LLVM | `:CoverageLoad build/coverage/coverage.lcov` |
 | JSON | `build/coverage/coverage.json` | LLVM | `:CoverageLoad build/coverage/coverage.json` |
+| Go Coverprofile | `build/coverage.out` | Go test | `:CoverageLoad build/coverage.out` |
+| Cobertura XML | `build/coverage/coverage.xml` | Go/C/C++ | `:CoverageLoad build/coverage/coverage.xml` |
 
 ## Build Commands Summary
 
@@ -104,6 +122,18 @@ make run            # Run program (generates coverage data)
 make clean          # Remove build artifacts
 ```
 
+### Go Example
+
+```bash
+cd go
+make test           # Run Go tests
+make cover          # Generate native Go coverage profile
+make lcov           # Convert coverprofile to LCOV
+make cobertura      # Convert coverprofile to Cobertura XML
+make html           # Generate HTML report with go tool cover
+make clean          # Remove build artifacts
+```
+
 ## Features
 
 - **Multi-language support**: C and C++ examples
@@ -126,6 +156,16 @@ For LLVM:
 sudo apt-get install clang llvm    # Ubuntu/Debian
 sudo yum install clang llvm        # RHEL/CentOS
 brew install llvm                  # macOS
+```
+
+For Go tools:
+```bash
+sudo apt-get install golang-go     # Ubuntu/Debian
+sudo yum install golang            # RHEL/CentOS
+brew install go                    # macOS
+
+# Optional (for Cobertura conversion in Go example)
+go install github.com/boumenot/gocover-cobertura@latest
 ```
 
 ## Notes
