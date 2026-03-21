@@ -572,6 +572,74 @@ end_of_record
   end)
 end)
 
+describe("Go Coverprofile Parser", function()
+  local go_parser = require("crazy-coverage.parser.go")
+  local go_fixture_dir = "test/fixtures/go"
+  local go_profile = go_fixture_dir .. "/sample_coverage_go.out"
+  local go_profile_empty = go_fixture_dir .. "/sample_coverage_go_empty.out"
+  local go_profile_invalid = go_fixture_dir .. "/sample_coverage_go_invalid.out"
+
+  describe("line coverage parsing", function()
+    it("should parse valid Go coverprofile records", function()
+      local result = go_parser.parse(go_profile, go_fixture_dir)
+
+      assert.is_not_nil(result)
+      assert.is_table(result)
+
+      local file_count = 0
+      for _, _ in pairs(result) do
+        file_count = file_count + 1
+      end
+      assert.is_true(file_count >= 2)
+    end)
+
+    it("should include covered and uncovered line entries", function()
+      local result = go_parser.parse(go_profile, go_fixture_dir)
+      assert.is_not_nil(result)
+
+      local covered_found = false
+      local uncovered_found = false
+      for _, file_data in pairs(result) do
+        for _, line_data in ipairs(file_data.lines or {}) do
+          if line_data.hits > 0 then
+            covered_found = true
+          end
+          if line_data.hits == 0 then
+            uncovered_found = true
+          end
+        end
+      end
+
+      assert.is_true(covered_found)
+      assert.is_true(uncovered_found)
+    end)
+
+    it("should reject files without Go coverprofile header", function()
+      local result = go_parser.parse("test/fixtures/sample_coverage.lcov", go_fixture_dir)
+      assert.is_nil(result)
+    end)
+
+    it("should ignore malformed records and keep valid ones", function()
+      local result = go_parser.parse(go_profile_invalid, go_fixture_dir)
+      assert.is_not_nil(result)
+
+      local has_lines = false
+      for _, file_data in pairs(result) do
+        if file_data.lines and #file_data.lines > 0 then
+          has_lines = true
+        end
+      end
+      assert.is_true(has_lines)
+    end)
+
+    it("should return an empty map for header-only files", function()
+      local result = go_parser.parse(go_profile_empty, go_fixture_dir)
+      assert.is_not_nil(result)
+      assert.is_nil(next(result))
+    end)
+  end)
+end)
+
 describe("Parser Dispatcher", function()
   local parser_dispatcher = require("crazy-coverage.parser.init")
   local temp_file, temp_dir
@@ -607,6 +675,13 @@ describe("Parser Dispatcher", function()
       
       local result = parser_dispatcher.parse(temp_file)
       
+      assert.is_not_nil(result)
+      assert.is_table(result)
+    end)
+
+    it("should detect Go coverprofile format", function()
+      local result = parser_dispatcher.parse("test/fixtures/go/sample_coverage_go.out", "test/fixtures/go")
+
       assert.is_not_nil(result)
       assert.is_table(result)
     end)

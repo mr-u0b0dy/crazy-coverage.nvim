@@ -15,9 +15,9 @@ function M.create_temp_coverage_file(format, content)
   if file then
     file:write(content)
     file:close()
-    return filename, tmp_dir
   end
-  return nil
+
+  return filename, tmp_dir
 end
 
 -- Clean up temporary directories
