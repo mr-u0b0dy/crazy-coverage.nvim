@@ -623,6 +623,71 @@ end_of_record
       end
       assert.equals(2, file_count)
     end)
+
+    it("should resolve module-qualified SF paths via go.mod", function()
+      local content = [[
+TN:test
+SF:example.com/test-module/main.go
+DA:10,2
+end_of_record
+]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
+
+      local gomod = io.open(temp_dir .. "/go.mod", "w")
+      assert.is_not_nil(gomod)
+      gomod:write("module example.com/test-module\n")
+      gomod:close()
+
+      local src = io.open(temp_dir .. "/main.go", "w")
+      assert.is_not_nil(src)
+      src:write("package main\n")
+      src:close()
+
+      local result = lcov_parser.parse(temp_file)
+
+      assert.is_not_nil(result)
+      local expected = require("crazy-coverage.utils").normalize_path(temp_dir .. "/main.go")
+      assert.is_not_nil(result[expected])
+      assert.is_true(#(result[expected].lines or {}) > 0)
+    end)
+
+    it("should resolve project-prefixed SF paths emitted by gcov2lcov", function()
+      temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", "")
+
+      local go_dir = temp_dir .. "/coverage-examples/go"
+      assert.equals(1, vim.fn.mkdir(go_dir, "p"))
+
+      local gomod = io.open(go_dir .. "/go.mod", "w")
+      assert.is_not_nil(gomod)
+      gomod:write("module example.com/test-module\n")
+      gomod:close()
+
+      local src = io.open(go_dir .. "/math_utils.go", "w")
+      assert.is_not_nil(src)
+      src:write("package main\n")
+      src:close()
+
+      local lcov_content = [[
+TN:
+SF:coverage-examples/go/math_utils.go
+DA:3,1
+DA:4,0
+end_of_record
+]]
+
+      local f = io.open(temp_file, "w")
+      assert.is_not_nil(f)
+      f:write(lcov_content)
+      f:close()
+
+      local result = lcov_parser.parse(temp_file, go_dir)
+      assert.is_not_nil(result)
+
+      local expected = require("crazy-coverage.utils").normalize_path(go_dir .. "/math_utils.go")
+      local entry = result[expected]
+      assert.is_not_nil(entry)
+      assert.equals(2, #(entry.lines or {}))
+    end)
   end)
 
   describe("line data parsing", function()
@@ -674,6 +739,33 @@ end_of_record
         end
       end
       assert.is_true(covered_count >= 2)
+    end)
+
+    it("should merge duplicate DA lines", function()
+      local content = [[
+TN:test
+SF:../main.c
+DA:10,1
+DA:10,3
+end_of_record
+]]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
+
+      local result = lcov_parser.parse(temp_file, temp_dir)
+      local file_data = next(result)
+
+      assert.is_not_nil(file_data)
+      local count_line_10 = 0
+      local hits_line_10 = nil
+      for _, line_data in ipairs(file_data.lines or {}) do
+        if line_data.line == 10 then
+          count_line_10 = count_line_10 + 1
+          hits_line_10 = line_data.hits
+        end
+      end
+
+      assert.equals(1, count_line_10)
+      assert.equals(3, hits_line_10)
     end)
   end)
 
