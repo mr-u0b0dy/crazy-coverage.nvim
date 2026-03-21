@@ -81,13 +81,11 @@ local function is_go_coverprofile(lines)
 
   for i = 2, #lines do
     local line = lines[i]
-    if line and line ~= "" then
+    -- Treat lines with any non-whitespace as non-empty
+    if line and line:match("%S") then
       has_nonempty_after_header = true
       if line:match("^.+:%d+%.%d+,%d+%.%d+%s+%d+%s+%d+$") then
         has_valid_record = true
-      else
-        -- Non-empty line that doesn't match Go coverprofile record format
-        return false
       end
     end
   end
