@@ -407,10 +407,17 @@ function M.parse(file_path, project_root)
         module_root
       )
 
-      current_file = new_file_entry()
-      coverage_data[file_path] = current_file
-      current_file_line_hits = {}
-      functions_map = {}
+      if file_path and file_path ~= "" then
+        current_file = new_file_entry()
+        coverage_data[file_path] = current_file
+        current_file_line_hits = {}
+        functions_map = {}
+      else
+        -- Skip SF records that cannot be resolved
+        current_file = nil
+        current_file_line_hits = nil
+        functions_map = nil
+      end
 
     elseif line:match("^DA:") and current_file and current_file_line_hits then
       parse_line_coverage(line, current_file_line_hits)
