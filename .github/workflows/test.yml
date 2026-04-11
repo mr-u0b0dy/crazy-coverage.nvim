@@ -26,7 +26,7 @@ jobs:
           path: build/mini.test
 
       - name: Install Neovim ${{ matrix.nvim-version }}
-        uses: rhysd/action-setup-vim@v1
+        uses: rhysd/action-setup-vim@febef33995d6649302e9d88dda81e071b68f16a7
         with:
           neovim: true
           version: ${{ matrix.nvim-version }}
