@@ -16,7 +16,7 @@ return {
           display = "eol",               -- Display mode: 'eol', 'inline', 'overlay', 'right_align', or 'sign'
           show_by_default = true,        -- Show hit counts by default when overlay is enabled
         },
-        
+
         -- Other display options
         branch_overlay = {
           border = "rounded",
@@ -37,7 +37,7 @@ return {
     keys = {
       -- Coverage overlay toggle (auto-loads and watches for file changes)
       { "<Leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle overlay" },
-      
+
       -- Hit count display toggle (enable/disable)
       { "<Leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle hit count display" },
 
@@ -56,10 +56,10 @@ return {
       -- Navigation: coverage lines
       { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next covered line" },
       { "[cc", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev covered line" },
-      
+
       { "]cp", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next partial line" },
       { "[cp", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev partial line" },
-      
+
       { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next uncovered line" },
       { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev uncovered line" },
     },

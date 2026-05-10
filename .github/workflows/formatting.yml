@@ -1,0 +1,24 @@
+name: Formatting
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  editorconfig:
+    name: EditorConfig Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check formatting with EditorConfig
+        uses: editorconfig-checker/action-editorconfig-checker@d2ed4fd072ae6f887e9407c909af0f585d2ad9f4
+
+      - name: Run editorconfig-checker
+        run: editorconfig-checker
