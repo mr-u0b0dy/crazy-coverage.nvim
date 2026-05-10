@@ -141,29 +141,29 @@ AstroVim uses lazy.nvim under the hood. Place the configuration in `~/.config/nv
 
 return {
   "mr-u0b0dy/crazy-coverage.nvim",
-  
+
   -- Optional: Use local development version
   -- dev = true,
   -- dir = "/home/your-username/crazy-coverage.nvim",
-  
+
   keys = {
     -- Main commands
     { "<leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle (Auto-load + Watch)" },
     { "<leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
-    
+
     -- Navigation: Covered lines
     { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered Line" },
     { "[cc", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev Covered Line" },
-    
+
     -- Navigation: Partially covered lines
     { "]cp", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next Partial Line" },
     { "[cp", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev Partial Line" },
-    
+
     -- Navigation: Uncovered lines
     { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered Line" },
     { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered Line" },
   },
-  
+
   opts = {
     virt_text_pos = "right_align",
     default_show_hit_count = true,
@@ -241,7 +241,7 @@ Coverage generation tools (choose based on your toolchain):
 - **GCC/GNU Toolchain**:
   - `gcc` with `--coverage` flag
   - `lcov` for LCOV format generation
-  
+
 - **LLVM Toolchain**:
   - `clang` with `-fprofile-instr-generate -fcoverage-mapping`
   - `llvm-profdata` for profdata merging

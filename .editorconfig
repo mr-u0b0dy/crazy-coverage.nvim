@@ -7,25 +7,57 @@ charset = utf-8
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
-indent_size = 4
-indent_style = tab
-tab_width = 4
+indent_size = 2
+indent_style = space
 
 [*.md]
 trim_trailing_whitespace = false
+indent_size = unset
+
+[LICENSE]
+indent_size = unset
 
 [*.{yml,yaml}]
 indent_size = 2
 indent_style = space
 
+[*.lua]
+indent_size = 2
+indent_style = space
+
 [*.{c,h,cpp,hpp,py,sh}]
 indent_size = 4
-indent_style = tab
+indent_style = space
 
 [*.{go,mod}]
 indent_size = 4
+indent_style = space
+
+# Example source files have intentional varied indentation for demo
+[coverage-examples/**/main.c]
+indent_size = unset
+indent_style = unset
+
+[coverage-examples/**/math_utils.c]
+indent_size = unset
+indent_style = unset
+
+[coverage-examples/**/main.cpp]
+indent_size = unset
+indent_style = unset
+
+[coverage-examples/**/math_utils.cpp]
+indent_size = unset
+indent_style = unset
+
+[coverage-examples/**/*.go]
+indent_size = unset
+indent_style = unset
+
+# Go test fixtures use tabs (Go convention)
+[test/fixtures/go/**/*.go]
+indent_size = 4
 indent_style = tab
-tab_width = 4
 
 [Makefile]
 indent_style = tab

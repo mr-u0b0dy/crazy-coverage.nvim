@@ -102,7 +102,7 @@ describe("MyFormat Parser", function()
     assert.is_not_nil(data)
     assert.equal(1, #data.files)
   end)
-  
+
   it("handles line coverage", function()
     local data = parser.parse("test/fixtures/sample.myformat")
     local f = data.files[1]

@@ -50,18 +50,18 @@ local examples = {
 -- Load and display each example (one file at a time with 5s delay)
 for idx, example in ipairs(examples) do
   print('\n=== ' .. example.name .. ' ===')
-  
+
   -- Load coverage
   local ok = coverage.load_coverage(example.coverage_file)
   if not ok then
     print('✗ Failed to load coverage: ' .. example.coverage_file)
   else
     print('✓ Loaded coverage: ' .. example.coverage_file)
-    
+
     -- Get coverage data from plugin state
     local state = coverage.get_state()
     local coverage_data = state.coverage_data
-    
+
     -- Open source files one at a time
     for _, filepath in ipairs(example.source_files) do
       -- Check if file exists
@@ -69,11 +69,11 @@ for idx, example in ipairs(examples) do
         -- Open the file
         vim.cmd('edit ' .. vim.fn.fnameescape(filepath))
         print('✓ Opened: ' .. filepath)
-        
+
         -- Get current buffer
         local buf = vim.api.nvim_get_current_buf()
         local buf_name = vim.api.nvim_buf_get_name(buf)
-        
+
         -- Find matching file entry in coverage data
         local file_entry = nil
         if coverage_data and coverage_data.files then
@@ -84,7 +84,7 @@ for idx, example in ipairs(examples) do
             end
           end
         end
-        
+
         -- Render coverage for this file
         if file_entry then
           renderer.render_file(buf, file_entry)
@@ -92,14 +92,14 @@ for idx, example in ipairs(examples) do
         else
           print('  ⚠ No coverage data for this file')
         end
-        
+
         -- Redraw to show the buffer
         vim.cmd('redraw')
-        
+
         -- Get extmarks with details
         local marks = vim.api.nvim_buf_get_extmarks(buf, renderer.namespace, 0, -1, { details = true })
         print('  Coverage lines found: ' .. tostring(#marks))
-        
+
         -- Print sample of coverage annotations
         if #marks > 0 then
           local sample_count = math.min(5, #marks)
@@ -120,10 +120,10 @@ for idx, example in ipairs(examples) do
             print(string.format('    ... and %d more lines', #marks - sample_count))
           end
         end
-        
+
         -- Wait for 5 seconds
         vim.wait(5000, function() return false end)
-        
+
         -- Close the buffer
         vim.cmd('bdelete')
         print('  Closed: ' .. filepath)

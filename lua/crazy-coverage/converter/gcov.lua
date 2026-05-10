@@ -31,7 +31,7 @@ end
 ---@return string|nil -- Path to generated LCOV file, or nil on error
 function M.parse(gcda_or_dir)
   local work_dir = gcda_or_dir
-  
+
   -- If file, use its directory
   if utils.file_exists(gcda_or_dir) and not vim.fn.isdirectory(gcda_or_dir) then
     work_dir = vim.fn.fnamemodify(gcda_or_dir, ":p:h")

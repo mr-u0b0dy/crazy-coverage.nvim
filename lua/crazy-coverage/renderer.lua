@@ -56,7 +56,7 @@ local function get_highlight_group(line_info, branches, branch_total, branch_tak
       return config.covered_hl  -- All branches taken
     end
   end
-  
+
   -- Fall back to line coverage (hits > 0 means covered)
   local is_covered = (line_info.hits or 0) > 0
   return is_covered and config.covered_hl or config.uncovered_hl
@@ -76,7 +76,7 @@ local function format_sign_text(sign_text)
   if text == "" then
     return nil
   end
-  
+
   if display_width(text) <= 2 then
     return text
   end
@@ -104,7 +104,7 @@ local function format_sign_text(sign_text)
     end
     truncated = next_text
   end
-  
+
   return truncated ~= "" and truncated or nil
 end
 
@@ -165,7 +165,7 @@ function M.render(coverage_data, project_root)
   if not coverage_data then
     error("coverage_data is required")
   end
-  
+
   if type(coverage_data) ~= "table" then
     error("coverage_data must be a table")
   end
@@ -179,9 +179,9 @@ function M.render(coverage_data, project_root)
   for _ in pairs(coverage_data) do
     file_count = file_count + 1
   end
-  
+
   notify(string.format("RENDER: Starting render for %d files", file_count), vim.log.levels.DEBUG)
-  
+
   for file_path, file_entry in pairs(coverage_data) do
     if file_entry then
       notify(string.format("RENDER: File path: %s (lines: %d)", file_path, #(file_entry.lines or {})), vim.log.levels.DEBUG)
@@ -199,7 +199,7 @@ function M.render(coverage_data, project_root)
       end
     end
   end
-  
+
   return rendered_count
 end
 
@@ -210,21 +210,21 @@ function M.render_file(buf, file_entry)
   if not buf or not vim.api.nvim_buf_is_valid(buf) then
     error("Invalid buffer")
   end
-  
+
   if not file_entry or type(file_entry) ~= "table" then
     error("file_entry must be a table")
   end
-  
+
   -- Require at least line data or branch data
   if (not file_entry.lines or type(file_entry.lines) ~= "table" or #file_entry.lines == 0) and
-     (not file_entry.branches or type(file_entry.branches) ~= "table" or #file_entry.branches == 0) then
+    (not file_entry.branches or type(file_entry.branches) ~= "table" or #file_entry.branches == 0) then
     notify("No line or branch data for " .. (file_entry.path or "unknown"), vim.log.levels.WARN)
     return -- No data at all, skip silently
   end
 
   -- Clear previous marks for this buffer
   M.clear_buffer(buf)
-  
+
   -- Track partial coverage statistics
   local partial_lines = {}
 
@@ -248,20 +248,20 @@ function M.render_file(buf, file_entry)
   -- Collect all lines to render (from both line data and branch data)
   local lines_to_render = {}
   local rendered_lines = {}
-  
+
   -- Add lines from line coverage data
   for _, line_info in ipairs(file_entry.lines or {}) do
     table.insert(lines_to_render, line_info)
     rendered_lines[line_info.line] = true
   end
-  
+
   -- Add lines from branch coverage that don't have line data
   for line_num, _ in pairs(branch_map) do
     if not rendered_lines[line_num] then
       -- Create synthetic line entry for branch-only coverage
       local branches = branch_map[line_num]
       local total, taken = calculate_branch_stats(branches)
-      
+
       table.insert(lines_to_render, {
         line = line_num,
         hits = nil,  -- No line hit count, only branch info
@@ -274,18 +274,18 @@ function M.render_file(buf, file_entry)
     local line_num = line_info.line
     local hit_count = line_info.hits
     local branches = branch_map[line_num]
-    
+
     -- Calculate branch statistics
     local branch_total, branch_taken = calculate_branch_stats(branches)
-    
+
     -- Determine highlight group
     local hl_group = get_highlight_group(line_info, branches, branch_total, branch_taken)
-    
+
     -- Track partial coverage for summary
     if branches and branch_total > 0 and branch_taken > 0 and branch_taken < branch_total then
       table.insert(partial_lines, { line = line_num, taken = branch_taken, total = branch_total })
       notify(
-        string.format("PARTIAL: Line %d in %s has partial branch coverage (%d/%d branches taken)", 
+        string.format("PARTIAL: Line %d in %s has partial branch coverage (%d/%d branches taken)",
           line_num, file_entry.path or "unknown", branch_taken, branch_total),
         vim.log.levels.DEBUG
       )
@@ -304,14 +304,14 @@ function M.render_file(buf, file_entry)
 
     -- Place extmark on line with virtual text, line highlighting, and sign text
     local should_render = #virt_text > 0 or config.enable_line_hl or (hit_count_display == "sign" and hit_count)
-    
+
     if should_render then
       local extmark_opts = {
         priority = 200,
         hl_eol = false,
         strict = false,
       }
-      
+
       -- Add virtual text if present
       if #virt_text > 0 then
         extmark_opts.virt_text = virt_text
@@ -323,12 +323,12 @@ function M.render_file(buf, file_entry)
           extmark_opts.virt_text_pos = "eol"
         end
       end
-      
+
       -- Add line highlighting if enabled
       if config.enable_line_hl then
         extmark_opts.line_hl_group = hl_group
       end
-      
+
       -- Add sign text with hit count in sign column (left gutter)
       if hit_count_display == "sign" and hit_count then
         local sign_text
@@ -347,21 +347,21 @@ function M.render_file(buf, file_entry)
           extmark_opts.sign_hl_group = hl_group
         end
       end
-      
+
       local ok, err = pcall(vim.api.nvim_buf_set_extmark, buf, M.namespace, line_num - 1, 0, extmark_opts)
       if not ok then
         notify("Failed to set extmark on line " .. line_num .. ": " .. tostring(err), vim.log.levels.ERROR)
       end
     end
   end
-  
+
   -- Report partial coverage summary
   if #partial_lines > 0 then
     local lines_str = {}
     for _, info in ipairs(partial_lines) do
       table.insert(lines_str, string.format("%d(%d/%d)", info.line, info.taken, info.total))
     end
-    notify(string.format("PARTIAL COVERAGE: %s has %d lines with partial branch coverage: %s", 
+    notify(string.format("PARTIAL COVERAGE: %s has %d lines with partial branch coverage: %s",
       file_entry.path or "unknown", #partial_lines, table.concat(lines_str, ", ")), vim.log.levels.DEBUG)
   end
 end
@@ -435,7 +435,7 @@ function M.render_summary(summary)
 
   -- Save previous summary BEFORE closing (which would clear it)
   local prev_summary = _summary_popup.previous_summary
-  
+
   close_summary_popup()
 
   local cfg = config.summary or {}
@@ -449,7 +449,7 @@ function M.render_summary(summary)
 
   local totals = summary.totals or {}
   local percent = totals.percent or 0
-  
+
   -- Build stats lines with inline highlights
   if totals.total_files then
     table.insert(lines, string.format("Files: %d  Total Lines: %d", totals.total_files, totals.total_lines or 0))
@@ -458,15 +458,15 @@ function M.render_summary(summary)
     table.insert(lines, string.format("Total Lines: %d", totals.total_lines or 0))
     table.insert(highlights, {})
   end
-  
+
   table.insert(lines, "")
   table.insert(highlights, {})
-  
+
   -- Coverage breakdown with colored percentages on separate lines
   local covered_pct = totals.total_lines > 0 and (totals.covered_lines / totals.total_lines * 100) or 0
   local uncovered_pct = totals.total_lines > 0 and (totals.uncovered_lines / totals.total_lines * 100) or 0
   local partial_pct = totals.total_lines > 0 and (totals.partial_lines / totals.total_lines * 100) or 0
-  
+
   -- Covered line
   local covered_line = string.format("  Covered:   %3d lines (%.1f%%)", totals.covered_lines or 0, covered_pct)
   table.insert(lines, covered_line)
@@ -477,7 +477,7 @@ function M.render_summary(summary)
   else
     table.insert(highlights, {})
   end
-  
+
   -- Uncovered line
   local uncovered_line = string.format("  Uncovered: %3d lines (%.1f%%)", totals.uncovered_lines or 0, uncovered_pct)
   table.insert(lines, uncovered_line)
@@ -488,7 +488,7 @@ function M.render_summary(summary)
   else
     table.insert(highlights, {})
   end
-  
+
   -- Partial line
   local partial_line = string.format("  Partial:   %3d lines (%.1f%%)", totals.partial_lines or 0, partial_pct)
   table.insert(lines, partial_line)
@@ -499,10 +499,10 @@ function M.render_summary(summary)
   else
     table.insert(highlights, {})
   end
-  
+
   table.insert(lines, "")
   table.insert(highlights, {})
-  
+
   table.insert(lines, string.format("Overall Coverage: %.2f%%", percent))
   table.insert(highlights, {{ hl = pick_percent_hl(percent, cfg.thresholds), col_start = 18, col_end = -1 }})
 
@@ -591,11 +591,11 @@ function M.render_summary(summary)
       end
     end
   end
-  
+
   -- Store summary data and file offset for interactivity
   vim.b[summary_buf].coverage_summary = summary
   vim.b[summary_buf].file_line_offset = file_line_offset
-  
+
   -- Manage previous summary for back navigation
   if summary.from_project and prev_summary then
     -- Viewing file details from project: keep the previous (project) summary
@@ -660,13 +660,13 @@ function M.render_summary(summary)
   vim.keymap.set("n", "q", function()
     M.close_summary()
   end, { buffer = summary_buf, silent = true, nowait = true })
-  
+
   vim.keymap.set("n", "<CR>", function()
     if not vim.api.nvim_win_is_valid(summary_win) then return end
     local line_num = vim.api.nvim_win_get_cursor(summary_win)[1]
     local offset = vim.b[summary_buf].file_line_offset or 0
     local summary_data = vim.b[summary_buf].coverage_summary
-    
+
     if summary_data and summary_data.scope == "project" and summary_data.files then
       local file_idx = line_num - offset - 2  -- -2 for header lines
       if file_idx >= 1 and file_idx <= #summary_data.files then
@@ -690,7 +690,7 @@ function M.render_summary(summary)
       end
     end
   end, { buffer = summary_buf, silent = true, nowait = true })
-  
+
   vim.keymap.set("n", "b", function()
     local prev = _summary_popup.previous_summary
     if prev then
@@ -838,11 +838,11 @@ function M.render_branch_overlay(buf, file_entry)
   local win_height = vim.api.nvim_win_get_height(cur_win)
   local win_top_line = vim.fn.line("w0")
   local cursor_screen_row = cursor_line - win_top_line
-  
+
   -- Calculate space above and below cursor
   local space_above = cursor_screen_row  -- rows from top to cursor
   local space_below = win_height - cursor_screen_row - 1  -- rows from cursor+1 to bottom
-  
+
   local row
   if space_below >= height then
     -- Place below the cursor line (cursor_screen_row + 1)
@@ -876,7 +876,7 @@ function M.render_branch_overlay(buf, file_entry)
     cursor_line = cursor_line,
     augroup = augroup_name,
   }
-  
+
   -- Auto-close overlay when cursor moves or the source window loses focus
   vim.api.nvim_create_augroup(augroup_name, { clear = true })
   vim.api.nvim_create_autocmd("CursorMoved", {

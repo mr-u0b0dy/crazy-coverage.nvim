@@ -17,9 +17,9 @@ describe("LLVM JSON Parser", function()
       -- Create temp coverage file with relative path
       local content = helpers.sample_llvm_coverage()
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       assert.is_table(result)
       -- Verify paths are resolved relative to coverage file location
@@ -43,9 +43,9 @@ describe("LLVM JSON Parser", function()
 }
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       -- Should contain the absolute path unchanged
       local found_absolute = false
@@ -70,9 +70,9 @@ describe("LLVM JSON Parser", function()
 }
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       -- All .. segments should be resolved
       for file_path, _ in pairs(result) do
@@ -88,17 +88,17 @@ describe("LLVM JSON Parser", function()
   describe("segments parsing", function()
     it("should extract line numbers and execution counts from segments", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", helpers.sample_llvm_coverage())
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       local _, file_data = next(result)
       assert.is_not_nil(file_data)
       assert.is_table(file_data.lines)
-      
+
       -- Should have line coverage data
       assert.is_true(#file_data.lines > 0)
-      
+
       -- Check specific lines from sample data
       local has_line_10, has_line_11, has_line_12 = false, false, false
       for _, line_data in ipairs(file_data.lines) do
@@ -111,10 +111,10 @@ describe("LLVM JSON Parser", function()
 
     it("should mark lines with zero execution count as uncovered", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", helpers.sample_llvm_coverage())
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
       local _, file_data = next(result)
-      
+
       -- Line 11 in sample has count=0
       local line_11_data
       for _, line_data in ipairs(file_data.lines) do
@@ -123,7 +123,7 @@ describe("LLVM JSON Parser", function()
           break
         end
       end
-      
+
       if line_11_data then
         assert.equals(0, line_11_data.hits)
       end
@@ -131,10 +131,10 @@ describe("LLVM JSON Parser", function()
 
     it("should mark lines with non-zero count as covered", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", helpers.sample_llvm_coverage())
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
       local _, file_data = next(result)
-      
+
       -- Lines 10 and 12 in sample have count > 0
       local covered_count = 0
       for _, line_data in ipairs(file_data.lines) do
@@ -142,7 +142,7 @@ describe("LLVM JSON Parser", function()
           covered_count = covered_count + 1
         end
       end
-      
+
       assert.is_true(covered_count > 0)
     end)
   end)
@@ -163,20 +163,20 @@ describe("LLVM JSON Parser", function()
   }]
 }]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       local _, file_data = next(result)
       assert.is_not_nil(file_data)
       assert.equals(3, #file_data.lines)
-      
+
       -- Check line 5 is covered
       assert.equals(10, file_data.lines[1].hits)
-      
+
       -- Check line 6 is uncovered
       assert.equals(0, file_data.lines[2].hits)
-      
+
       -- Check line 7 is covered
       assert.equals(5, file_data.lines[3].hits)
     end)
@@ -201,17 +201,17 @@ describe("LLVM JSON Parser", function()
   }]
 }]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       local _, file_data = next(result)
       assert.equals(1, #file_data.lines)
       assert.equals(2, #file_data.branches)
-      
+
       -- Check line coverage
       assert.equals(5, file_data.lines[1].hits)
-      
+
       -- Check branch coverage from regions
       assert.equals(5, file_data.branches[1].hits)
       assert.equals(2, file_data.branches[2].hits)
@@ -236,9 +236,9 @@ describe("LLVM JSON Parser", function()
   }]
 }]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       local _, file_data = next(result)
       assert.equals(1, #file_data.lines)
@@ -260,9 +260,9 @@ describe("LLVM JSON Parser", function()
   }]
 }]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", content)
-      
+
       local result = llvm_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       local _, file_data = next(result)
 
@@ -288,9 +288,9 @@ describe("Cobertura Parser", function()
   describe("path resolution", function()
     it("should resolve relative filenames from coverage_dir", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
-      
+
       local result = cobertura_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       assert.is_table(result)
       -- Verify relative paths are resolved
@@ -319,9 +319,9 @@ describe("Cobertura Parser", function()
 </coverage>
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", content)
-      
+
       local result = cobertura_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       -- Should preserve absolute path
       local found_absolute = false
@@ -383,14 +383,14 @@ describe("Cobertura Parser", function()
   describe("line coverage extraction", function()
     it("should extract line numbers and hit counts", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
-      
+
       local result = cobertura_parser.parse(temp_file, temp_dir)
       local _, file_data = next(result)
-      
+
       assert.is_not_nil(file_data)
       assert.is_table(file_data.lines)
       assert.is_true(#file_data.lines > 0)
-      
+
       -- Check that lines have proper structure
       for _, line_data in ipairs(file_data.lines) do
         assert.is_number(line_data.line)
@@ -402,10 +402,10 @@ describe("Cobertura Parser", function()
 
     it("should mark uncovered lines with zero hits", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
-      
+
       local result = cobertura_parser.parse(temp_file, temp_dir)
       local _, file_data = next(result)
-      
+
       -- Sample has line 11 with hits=0
       local has_uncovered = false
       for _, line_data in ipairs(file_data.lines) do
@@ -419,10 +419,10 @@ describe("Cobertura Parser", function()
 
     it("should mark covered lines with non-zero hits", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
-      
+
       local result = cobertura_parser.parse(temp_file, temp_dir)
       local _, file_data = next(result)
-      
+
       -- Sample has lines 10 and 12 with hits > 0
       local covered_count = 0
       for _, line_data in ipairs(file_data.lines) do
@@ -540,9 +540,9 @@ describe("Cobertura Parser", function()
 </coverage>
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", content)
-      
+
       local result = cobertura_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       -- Parser should handle branch data without errors
       local _, file_data = next(result)
@@ -565,9 +565,9 @@ describe("LCOV Parser", function()
   describe("source file path resolution", function()
     it("should resolve SF: entries with relative paths", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
-      
+
       local result = lcov_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       assert.is_table(result)
       -- Verify paths are resolved
@@ -587,9 +587,9 @@ DA:11,0
 end_of_record
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
-      
+
       local result = lcov_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       -- Should preserve absolute path
       local found_absolute = false
@@ -612,9 +612,9 @@ DA:20,3
 end_of_record
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
-      
+
       local result = lcov_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       -- Should have multiple files
       local file_count = 0
@@ -693,14 +693,14 @@ end_of_record
   describe("line data parsing", function()
     it("should parse DA: (line data) entries", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
-      
+
       local result = lcov_parser.parse(temp_file, temp_dir)
       local _, file_data = next(result)
-      
+
       assert.is_not_nil(file_data)
       assert.is_table(file_data.lines)
       assert.is_true(#file_data.lines > 0)
-      
+
       -- Each line should have line number and hit count
       for _, line_data in ipairs(file_data.lines) do
         assert.is_number(line_data.line)
@@ -710,10 +710,10 @@ end_of_record
 
     it("should mark uncovered lines (DA:line,0)", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
-      
+
       local result = lcov_parser.parse(temp_file, temp_dir)
       local _, file_data = next(result)
-      
+
       -- Sample has line 11 with 0 hits
       local has_uncovered = false
       for _, line_data in ipairs(file_data.lines) do
@@ -727,10 +727,10 @@ end_of_record
 
     it("should mark covered lines (DA:line,count)", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
-      
+
       local result = lcov_parser.parse(temp_file, temp_dir)
       local _, file_data = next(result)
-      
+
       -- Sample has lines with hits > 0
       local covered_count = 0
       for _, line_data in ipairs(file_data.lines) do
@@ -780,9 +780,9 @@ BRDA:10,0,1,2
 end_of_record
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
-      
+
       local result = lcov_parser.parse(temp_file, temp_dir)
-      
+
       assert.is_not_nil(result)
       local _, file_data = next(result)
       assert.is_not_nil(file_data)
@@ -875,27 +875,27 @@ describe("Parser Dispatcher", function()
   describe("format detection", function()
     it("should detect LLVM JSON format", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("llvm", helpers.sample_llvm_coverage())
-      
+
       local result = parser_dispatcher.parse(temp_file)
-      
+
       assert.is_not_nil(result)
       assert.is_table(result)
     end)
 
     it("should detect Cobertura XML format", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
-      
+
       local result = parser_dispatcher.parse(temp_file)
-      
+
       assert.is_not_nil(result)
       assert.is_table(result)
     end)
 
     it("should detect LCOV format", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
-      
+
       local result = parser_dispatcher.parse(temp_file)
-      
+
       assert.is_not_nil(result)
       assert.is_table(result)
     end)
@@ -910,9 +910,9 @@ describe("Parser Dispatcher", function()
     it("should return nil for unknown format", function()
       local content = "This is not a valid coverage format"
       temp_file, temp_dir = helpers.create_temp_coverage_file("txt", content)
-      
+
       local result = parser_dispatcher.parse(temp_file)
-      
+
       -- Unknown format should return nil or empty table
       assert.is_true(result == nil or next(result) == nil)
     end)
@@ -921,19 +921,19 @@ describe("Parser Dispatcher", function()
   describe("project_root parameter", function()
     it("should accept project_root parameter", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
-      
+
       -- Should not error when passing project_root
       local result = parser_dispatcher.parse(temp_file, "/some/project/root")
-      
+
       assert.is_not_nil(result)
     end)
 
     it("should work without project_root parameter", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", helpers.sample_lcov_coverage())
-      
+
       -- Should auto-detect or use fallback
       local result = parser_dispatcher.parse(temp_file)
-      
+
       assert.is_not_nil(result)
     end)
   end)
@@ -941,7 +941,7 @@ describe("Parser Dispatcher", function()
   describe("error handling", function()
     it("should handle non-existent files", function()
       local result = parser_dispatcher.parse("/non/existent/file.lcov")
-      
+
       -- Should return nil or empty table without crashing
       assert.is_true(result == nil or next(result) == nil)
     end)
@@ -949,12 +949,12 @@ describe("Parser Dispatcher", function()
     it("should handle malformed coverage files", function()
       local content = "TN:test\nSF:main.c\nINVALID_LINE\nend_of_record"
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
-      
+
       -- Should not crash on malformed data
       local ok = pcall(function()
         parser_dispatcher.parse(temp_file)
       end)
-      
+
       assert.is_true(ok)
     end)
   end)
@@ -967,7 +967,7 @@ describe("Edge Cases", function()
     it("should handle excessive .. segments", function()
       local path = "/home/project/a/b/c/../../../../../../../../main.c"
       local result = utils.normalize_path(path)
-      
+
       -- Should not crash and should return valid path
       assert.is_not_nil(result)
       assert.is_string(result)
@@ -976,7 +976,7 @@ describe("Edge Cases", function()
     it("should handle mixed ./ and .. segments", function()
       local path = "/home/project/./build/../main.c"
       local result = utils.normalize_path(path)
-      
+
       assert.is_not_nil(result)
       assert.equals("/home/project/main.c", result)
     end)
@@ -984,7 +984,7 @@ describe("Edge Cases", function()
     it("should handle paths with spaces", function()
       local path = "/home/my project/main file.c"
       local result = utils.normalize_path(path)
-      
+
       assert.is_not_nil(result)
       assert.matches("my project", result)
       assert.matches("main file%.c", result)
@@ -993,7 +993,7 @@ describe("Edge Cases", function()
     it("should handle empty path components", function()
       local path = "/home//project///main.c"
       local result = utils.normalize_path(path)
-      
+
       assert.is_not_nil(result)
       -- Should reduce to single slashes
       assert.is_falsy(result:match("//"))
@@ -1012,12 +1012,12 @@ describe("Edge Cases", function()
 
     it("should handle empty coverage files", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", "")
-      
+
       local parser = require("crazy-coverage.parser.init")
       local ok = pcall(function()
         parser.parse(temp_file)
       end)
-      
+
       -- Should not crash on empty file
       assert.is_true(ok)
     end)
@@ -1029,10 +1029,10 @@ SF:../main.c
 end_of_record
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
-      
+
       local parser = require("crazy-coverage.parser.init")
       local result = parser.parse(temp_file)
-      
+
       assert.is_not_nil(result)
       -- File should be in result but with empty or no lines
       local _, file_data = next(result)
@@ -1049,14 +1049,14 @@ DA:10,999999999
 end_of_record
 ]=]
       temp_file, temp_dir = helpers.create_temp_coverage_file("lcov", content)
-      
+
       local parser = require("crazy-coverage.parser.init")
       local result = parser.parse(temp_file)
-      
+
       assert.is_not_nil(result)
       local _, file_data = next(result)
       assert.is_not_nil(file_data)
-      
+
       -- Should handle large numbers correctly
       if file_data.lines and #file_data.lines > 0 then
         assert.is_true(file_data.lines[1].hits >= 999999999)
@@ -1067,13 +1067,13 @@ end_of_record
   describe("buffer matching edge cases", function()
     it("should handle nil buffer path", function()
       local result = utils.get_buffer_by_path(nil)
-      
+
       assert.is_nil(result)
     end)
 
     it("should handle empty buffer path", function()
       local result = utils.get_buffer_by_path("")
-      
+
       assert.is_nil(result)
     end)
 
@@ -1081,10 +1081,10 @@ end_of_record
       -- This tests that paths are normalized consistently
       local path1 = "/home/project/./main.c"
       local path2 = "/home/project/main.c"
-      
+
       local norm1 = utils.normalize_path(path1)
       local norm2 = utils.normalize_path(path2)
-      
+
       assert.equals(norm1, norm2)
     end)
   end)
@@ -1134,20 +1134,20 @@ describe("Path Resolution", function()
     it("matches buffer path with normalized coverage path", function()
       local coverage_path = "/home/user/project/build/../main.c"
       local buffer_path = "/home/user/project/main.c"
-      
+
       local norm_coverage = utils.normalize_path(coverage_path)
       local norm_buffer = utils.normalize_path(buffer_path)
-      
+
       assert.equals(norm_coverage, norm_buffer)
     end)
 
     it("detects mismatched paths", function()
       local coverage_path = "/home/user/project/main.c"
       local buffer_path = "/home/user/different/main.c"
-      
+
       local norm_coverage = utils.normalize_path(coverage_path)
       local norm_buffer = utils.normalize_path(buffer_path)
-      
+
       assert.not_equals(norm_coverage, norm_buffer)
     end)
   end)
@@ -1226,7 +1226,7 @@ describe("Coverage File Caching", function()
         project_root = "/path/to/project",
         format = "lcov",
       }
-      
+
       assert.is_not_nil(info.path)
       assert.is_not_nil(info.project_root)
       assert.is_not_nil(info.format)
@@ -1237,7 +1237,7 @@ describe("Coverage File Caching", function()
         project_root = "/path/to/project",
         format = "lcov",
       }
-      
+
       assert.is_nil(info.path)
     end)
   end)

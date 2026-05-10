@@ -8,7 +8,7 @@ local utils = require("crazy-coverage.utils")
 local function normalize_path(path)
   -- Try vim.fn.fnamemodify first
   local normalized = vim.fn.fnamemodify(path, ":p")
-  
+
   -- If the path doesn't exist, manually resolve .. segments
   local parts = {}
   for part in normalized:gmatch("[^/]+") do
@@ -18,7 +18,7 @@ local function normalize_path(path)
       table.insert(parts, part)
     end
   end
-  
+
   return "/" .. table.concat(parts, "/")
 end
 
@@ -46,7 +46,7 @@ function M.parse(file_path, project_root)
   -- Use coverage file directory as base for relative path resolution
   -- Relative paths in coverage files are relative to the coverage file location
   local coverage_dir = vim.fn.fnamemodify(file_path, ":p:h")
-  
+
   -- Project root can be used for context, but coverage file directory is the base
   if not project_root then
     project_root = vim.fn.fnamemodify(file_path, ":p:h:h")
@@ -69,7 +69,7 @@ function M.parse(file_path, project_root)
           -- Normalize to absolute path (resolve .. and .)
           source_file_path = normalize_path(source_file_path)
         end
-        
+
         local file_entry = {
           lines = {},
           branches = {},
@@ -90,13 +90,13 @@ function M.parse(file_path, project_root)
           for _, line_data in ipairs(file_data.lines) do
             local line_num = line_data.line_number
             local count = line_data.count or 0
-            
+
             if line_num then
               table.insert(file_entry.lines, {
                 line = line_num,
                 hits = count,
               })
-              
+
               -- Parse regions as branch coverage if present
               if line_data.regions and #line_data.regions > 0 then
                 for _, region in ipairs(line_data.regions) do
@@ -110,12 +110,12 @@ function M.parse(file_path, project_root)
               end
             end
           end
-          
+
           -- Log success if debug is enabled
           local config = require("crazy-coverage.config")
           if config.debug_notifications then
             vim.notify(
-              string.format("LLVM JSON: Parsed %d lines (Format A) from %s", 
+              string.format("LLVM JSON: Parsed %d lines (Format A) from %s",
                 #file_entry.lines, source_file_path),
               vim.log.levels.DEBUG
             )
@@ -124,19 +124,19 @@ function M.parse(file_path, project_root)
         elseif file_data.segments and #file_data.segments > 0 then
           local line_coverage = {}  -- Map line_num -> max hit count
           local region_count = 0    -- Track parsed regions for debug logging
-          
+
           for _, segment in ipairs(file_data.segments) do
             local line_num = segment[1]
             local col_start = segment[2]
             local count = segment[3] or 0
             local has_count = segment[4]
             local is_gap_region = segment[6]    -- Gap region (no code)
-            
+
             -- Skip gap regions as they represent areas without code
             if is_gap_region then
               goto continue
             end
-            
+
             -- Process segments that have execution counts - they're regions/branches!
             if line_num then
               -- Track line coverage (max hit count for the line)
@@ -145,7 +145,7 @@ function M.parse(file_path, project_root)
                   line_coverage[line_num] = count
                 end
               end
-              
+
               -- Add each segment as a branch/region entry
               -- This preserves fine-grained coverage data (column level)
               region_count = region_count + 1
@@ -156,10 +156,10 @@ function M.parse(file_path, project_root)
                 hits = count,
               })
             end
-            
+
             ::continue::
           end
-          
+
           -- Convert line coverage map to array
           for line_num, hit_count in pairs(line_coverage) do
             table.insert(file_entry.lines, {
@@ -167,12 +167,12 @@ function M.parse(file_path, project_root)
               hits = hit_count,
             })
           end
-          
+
           -- Log success if debug is enabled
           local config = require("crazy-coverage.config")
           if config.debug_notifications then
             vim.notify(
-              string.format("LLVM JSON: Parsed %d lines (Format B) and %d regions from %s", 
+              string.format("LLVM JSON: Parsed %d lines (Format B) and %d regions from %s",
                 #file_entry.lines, region_count, source_file_path),
               vim.log.levels.DEBUG
             )
@@ -186,7 +186,7 @@ function M.parse(file_path, project_root)
             -- Branch format: [line, col, endLine, endCol, folded, count, ...]
             local line_num = branch[1]
             local count = branch[6] or 0
-            
+
             if line_num then
               table.insert(file_entry.branches, {
                 line = line_num,

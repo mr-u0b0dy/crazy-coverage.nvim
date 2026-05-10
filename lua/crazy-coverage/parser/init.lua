@@ -21,7 +21,7 @@ function M.parse(file_path, project_root)
   if not file_path or file_path == "" then
     return nil, "File path is required"
   end
-  
+
   if not utils.file_exists(file_path) then
     return nil, "File does not exist: " .. file_path
   end
@@ -41,7 +41,7 @@ function M.parse(file_path, project_root)
   if not parser then
     return nil, "Parser not implemented for format: " .. format
   end
-  
+
   if not parser.parse or type(parser.parse) ~= "function" then
     return nil, "Invalid parser for format: " .. format
   end
@@ -54,7 +54,7 @@ function M.parse(file_path, project_root)
   if not result then
     return nil, "Parser returned nil for file: " .. file_path
   end
-  
+
   -- Validate result structure: should be {file_path: {lines: [...], branches: [...]}}
   if type(result) ~= "table" then
     return nil, "Parser returned invalid data structure (not a table)"
@@ -70,15 +70,15 @@ function M.register_parser(format, parser_module)
   if not format or format == "" then
     error("Format name is required")
   end
-  
+
   if not parser_module or type(parser_module) ~= "table" then
     error("Parser module must be a table")
   end
-  
+
   if not parser_module.parse or type(parser_module.parse) ~= "function" then
     error("Parser module must have a 'parse' function")
   end
-  
+
   M.parsers[format] = parser_module
 end
 

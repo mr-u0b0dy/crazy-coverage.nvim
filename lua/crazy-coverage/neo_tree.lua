@@ -2,7 +2,7 @@
 local M = {}
 
 local config = require("crazy-coverage.config")
-	  local utils = require("crazy-coverage.utils")
+local utils = require("crazy-coverage.utils")
 
 
 M.namespace = vim.api.nvim_create_namespace("crazy-coverage.neo-tree")

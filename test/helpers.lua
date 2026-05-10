@@ -8,7 +8,7 @@ vim.opt.rtp:append(vim.fn.getcwd())
 function M.create_temp_coverage_file(format, content)
   local tmp_dir = "/tmp/crazy-coverage-test-" .. os.time()
   os.execute("mkdir -p " .. tmp_dir)
-  
+
   local ext = format == "llvm" and "json" or format
   local filename = tmp_dir .. "/coverage." .. ext
   local file = io.open(filename, "w")

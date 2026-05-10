@@ -54,9 +54,9 @@ cover: $(BUILD_DIR)
 lcov: cover
 	@echo "Converting coverprofile to LCOV..."
 	@command -v gcov2lcov >/dev/null 2>&1 || \
-		(echo "gcov2lcov is required"; \
-		 echo "Install with: go install github.com/jandelgado/gcov2lcov@latest"; \
-		 exit 1)
+		echo "gcov2lcov is required"; \
+		echo "Install with: go install github.com/jandelgado/gcov2lcov@latest"; \
+		exit 1
 	@GOROOT=$$($(GO) env GOROOT) gcov2lcov -infile=$(COVERPROFILE) -outfile=$(LCOV_FILE)
 	@echo "✓ LCOV report generated: $(LCOV_FILE)"
 	@echo ""
@@ -66,9 +66,9 @@ lcov: cover
 cobertura: cover
 	@echo "Converting coverprofile to Cobertura XML..."
 	@command -v gocover-cobertura >/dev/null 2>&1 || \
-		(echo "gocover-cobertura is required"; \
-		 echo "Install with: go install github.com/boumenot/gocover-cobertura@latest"; \
-		 exit 1)
+		echo "gocover-cobertura is required"; \
+		echo "Install with: go install github.com/boumenot/gocover-cobertura@latest"; \
+		exit 1
 	@gocover-cobertura < $(COVERPROFILE) > $(COBERTURA_FILE)
 	@echo "✓ Cobertura XML report generated: $(COBERTURA_FILE)"
 	@echo ""

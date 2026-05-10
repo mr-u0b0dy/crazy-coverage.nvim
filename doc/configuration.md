@@ -27,8 +27,8 @@ If called without arguments, all options use their default values.
 
 ### `virt_text_pos`
 
-**Type:** `string`  
-**Default:** `"eol"`  
+**Type:** `string`
+**Default:** `"eol"`
 **Options:** `"eol"`, `"inline"`, `"overlay"`, `"right_align"`
 
 Position of virtual text showing coverage information.
@@ -44,7 +44,7 @@ virt_text_pos = "eol"
 
 ### `default_show_hit_count`
 
-**Type:** `boolean`  
+**Type:** `boolean`
 **Default:** `true`
 
 Controls whether hit counts are shown by default when the coverage overlay is enabled via `:CoverageToggle`. Set to `false` if you prefer to manually toggle hit counts each time using `<leader>lh`.
@@ -55,7 +55,7 @@ default_show_hit_count = true  -- Hit counts visible when overlay enabled
 
 ### `show_hit_count`
 
-**Type:** `boolean`  
+**Type:** `boolean`
 **Default:** `true`
 
 Current state of hit count display. This is the runtime state that gets toggled with `:CoverageToggleHitCount`.
@@ -66,7 +66,7 @@ show_hit_count = true
 
 ### `show_percentage`
 
-**Type:** `boolean`  
+**Type:** `boolean`
 **Default:** `false`
 
 Display coverage percentage for each line. When enabled, shows the percentage of execution count relative to the maximum in the file.
@@ -77,7 +77,7 @@ show_percentage = false
 
 ### `show_branch_summary`
 
-**Type:** `boolean`  
+**Type:** `boolean`
 **Default:** `true`
 
 Show the branch summary line in branch overlay header.
@@ -93,7 +93,7 @@ show_branch_summary = true
 
 ### `enable_line_hl`
 
-**Type:** `boolean`  
+**Type:** `boolean`
 **Default:** `true`
 
 Enable line highlighting with background colors. When enabled, covered lines get a green background, uncovered lines get red, and partially covered lines get orange.
@@ -104,7 +104,7 @@ enable_line_hl = true
 
 ### `summary`
 
-**Type:** `table`  
+**Type:** `table`
 **Default:** see below
 
 Configure the coverage summary popup and auto-display behavior.
@@ -236,7 +236,7 @@ require("crazy-coverage").setup({
 
 ### `auto_adapt_colors`
 
-**Type:** `boolean`  
+**Type:** `boolean`
 **Default:** `true`
 
 Automatically adapt coverage colors based on your current colorscheme. When enabled, the plugin detects whether you're using a dark or light theme and adjusts the coverage highlight colors accordingly.
@@ -264,7 +264,7 @@ require("crazy-coverage").setup({
 
 ### `colors`
 
-**Type:** `table`  
+**Type:** `table`
 **Default:** `{ covered = nil, uncovered = nil, partial = nil }`
 
 Manual color overrides for coverage highlighting. Each color can be:
@@ -297,7 +297,7 @@ colors = {
 
 ### `covered_hl`
 
-**Type:** `string`  
+**Type:** `string`
 **Default:** `"CoverageCovered"`
 
 Highlight group name for covered lines. The plugin creates this highlight group automatically based on `auto_adapt_colors` and `colors` settings.
@@ -314,7 +314,7 @@ require("crazy-coverage").setup({
 
 ### `uncovered_hl`
 
-**Type:** `string`  
+**Type:** `string`
 **Default:** `"CoverageUncovered"`
 
 Highlight group name for uncovered lines.
@@ -325,7 +325,7 @@ uncovered_hl = "CoverageUncovered"
 
 ### `partial_hl`
 
-**Type:** `string`  
+**Type:** `string`
 **Default:** `"CoveragePartial"`
 
 Highlight group name for partially covered lines (lines with branch coverage where some branches were taken and others weren't).
@@ -420,7 +420,7 @@ These colors are automatically re-applied when the colorscheme changes.
 
 ### `coverage_dirs`
 
-**Type:** `table`  
+**Type:** `table`
 **Default:**
 ```lua
 {
@@ -473,7 +473,7 @@ coverage_dirs = {
 
 ### `coverage_patterns`
 
-**Type:** `table`  
+**Type:** `table`
 **Default:**
 ```lua
 {
@@ -497,7 +497,7 @@ coverage_patterns = {
 
 ### `project_markers`
 
-**Type:** `table`  
+**Type:** `table`
 **Default:** `{ ".git", "CMakeLists.txt", "Makefile", "compile_commands.json" }`
 
 List of files/directories that indicate the project root. The plugin searches upward from the current file location until it finds one of these markers.
@@ -517,7 +517,7 @@ project_markers = {
 
 ### `cache_enabled`
 
-**Type:** `boolean`  
+**Type:** `boolean`
 **Default:** `true`
 
 Enable caching of parsed coverage data to improve performance when reloading the same coverage file.
@@ -528,7 +528,7 @@ cache_enabled = true
 
 ### `cache_dir`
 
-**Type:** `string`  
+**Type:** `string`
 **Default:** `vim.fn.stdpath("cache") .. "/crazy-coverage.nvim"`
 
 Directory where cached coverage data is stored. On most systems, this defaults to:
@@ -542,7 +542,7 @@ cache_dir = vim.fn.stdpath("cache") .. "/crazy-coverage.nvim"
 
 ### `auto_load`
 
-**Type:** `boolean`  
+**Type:** `boolean`
 **Default:** `true`
 
 **Deprecated:** This option is deprecated in favor of using `:CoverageToggle` which provides smarter auto-loading with file watching.
@@ -568,7 +568,7 @@ require("crazy-coverage").setup({
   show_hit_count = true,
   show_percentage = false,
   enable_line_hl = true,
-  
+
   -- Colors
   auto_adapt_colors = true,
   colors = {
@@ -579,7 +579,7 @@ require("crazy-coverage").setup({
   covered_hl = "CoverageCovered",
   uncovered_hl = "CoverageUncovered",
   partial_hl = "CoveragePartial",
-  
+
   -- File detection
   coverage_dirs = {
     "build/coverage",
@@ -592,11 +592,11 @@ require("crazy-coverage").setup({
     cpp = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
   },
   project_markers = { ".git", "CMakeLists.txt", "Makefile", "compile_commands.json" },
-  
+
   -- Cache
   cache_enabled = true,
   cache_dir = vim.fn.stdpath("cache") .. "/crazy-coverage.nvim",
-  
+
   -- Deprecated
   auto_load = true,  -- Use :CoverageToggle instead
 })

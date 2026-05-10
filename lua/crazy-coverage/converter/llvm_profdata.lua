@@ -9,7 +9,7 @@ local utils = require("crazy-coverage.utils")
 local function find_binary_file(profdata_file)
   local profdata_dir = vim.fn.fnamemodify(profdata_file, ":p:h")
   local project_root = profdata_dir
-  
+
   -- Try to find project root by looking for common markers
   local markers = { ".git", "CMakeLists.txt", "Makefile", "compile_commands.json" }
   for i = 1, 5 do  -- Search up to 5 levels
@@ -21,7 +21,7 @@ local function find_binary_file(profdata_file)
     project_root = vim.fn.fnamemodify(project_root, ":h")
   end
   ::found_root::
-  
+
   -- Search patterns for binary files in common locations
   local search_patterns = {
     profdata_dir .. "/*",  -- Same directory as profdata
@@ -32,7 +32,7 @@ local function find_binary_file(profdata_file)
     project_root .. "/target/debug/*",
     project_root .. "/target/release/*",
   }
-  
+
   for _, pattern in ipairs(search_patterns) do
     local files = vim.fn.glob(pattern, false, true)
     for _, file in ipairs(files) do
@@ -40,15 +40,15 @@ local function find_binary_file(profdata_file)
       local stat = vim.loop.fs_stat(file)
       if stat and stat.type == "file" then
         -- Check if file is executable and not a known non-binary extension
-        if vim.fn.executable(file) == 1 and 
-           not file:match("%.[^/]+$") or
-           file:match("%.out$") or file:match("%.[eo]$") then
+        if vim.fn.executable(file) == 1 and
+          not file:match("%.[^/]+$") or
+          file:match("%.out$") or file:match("%.[eo]$") then
           return file
         end
       end
     end
   end
-  
+
   return nil
 end
 
@@ -62,13 +62,13 @@ function M.convert_profdata_to_json(profdata_file, binary_file)
   end
 
   local output_file = vim.fn.fnamemodify(profdata_file, ":p:h") .. "/coverage_llvm.json"
-  
+
   -- Check if llvm-cov is available
   if vim.fn.executable("llvm-cov") == 0 then
     vim.notify("llvm-cov command not found. Install LLVM tools.", vim.log.levels.ERROR)
     return nil
   end
-  
+
   -- Get or auto-detect binary file
   if not binary_file or not utils.file_exists(binary_file) then
     -- Try config option first
@@ -79,7 +79,7 @@ function M.convert_profdata_to_json(profdata_file, binary_file)
       binary_file = find_binary_file(profdata_file)
     end
   end
-  
+
   if not binary_file or not utils.file_exists(binary_file) then
     vim.notify(
       "Cannot find instrumented binary for profdata. Set config.llvm_binary_file or place binary in build directory.",
@@ -87,7 +87,7 @@ function M.convert_profdata_to_json(profdata_file, binary_file)
     )
     return nil
   end
-  
+
   -- Build llvm-cov command
   local cmd = string.format(
     "llvm-cov export -instr-profile=%s -branch-coverage %s > %s 2>&1",
@@ -98,7 +98,7 @@ function M.convert_profdata_to_json(profdata_file, binary_file)
 
   local result = vim.fn.system(cmd)
   local exit_code = vim.v.shell_error
-  
+
   if exit_code ~= 0 then
     vim.notify(
       string.format("llvm-cov export failed (exit %d): %s", exit_code, result),
@@ -106,7 +106,7 @@ function M.convert_profdata_to_json(profdata_file, binary_file)
     )
     return nil
   end
-  
+
   if utils.file_exists(output_file) then
     local content = table.concat(utils.read_file(output_file), "")
     if content:match("^%s*{") then

@@ -121,7 +121,7 @@ describe("LLVM JSON Parser", function()
     it("should resolve relative paths", function() ... end)
     it("should preserve absolute paths", function() ... end)
   end)
-  
+
   describe("segments parsing", function()
     it("should extract execution counts", function() ... end)
   end)

@@ -8,13 +8,13 @@ function M.normalize_path(path)
   if not path or path == "" then
     return nil
   end
-  
+
   -- Use vim.fn.fnamemodify to get absolute path
   local normalized = vim.fn.fnamemodify(path, ":p")
   if normalized == "" then
     return nil
   end
-  
+
   -- Manually resolve .. and . segments (important for non-existent files)
   local parts = {}
   for part in normalized:gmatch("[^/]+") do
@@ -24,7 +24,7 @@ function M.normalize_path(path)
       table.insert(parts, part)
     end
   end
-  
+
   return "/" .. table.concat(parts, "/")
 end
 
@@ -35,11 +35,11 @@ function M.read_file(file_path)
   if not file_path or file_path == "" then
     return nil
   end
-  
+
   if not M.file_exists(file_path) then
     return nil
   end
-  
+
   local ok, result = pcall(vim.fn.readfile, file_path)
   return ok and result or nil
 end
@@ -165,7 +165,7 @@ function M.get_buffer_by_path(file_path)
   if not file_path or file_path == "" then
     return nil
   end
-  
+
   local config = require("crazy-coverage.config")
   local normalized_path = M.normalize_path(file_path)
   if not normalized_path then
@@ -174,11 +174,11 @@ function M.get_buffer_by_path(file_path)
     end
     return nil
   end
-  
+
   if config.debug_notifications then
     vim.notify(string.format("GET_BUF: Looking for normalized: %s", normalized_path), vim.log.levels.DEBUG)
   end
-  
+
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
       local buf_path = vim.api.nvim_buf_get_name(buf)
@@ -196,7 +196,7 @@ function M.get_buffer_by_path(file_path)
       end
     end
   end
-  
+
   if config.debug_notifications then
     vim.notify(string.format("GET_BUF: ✗ No matching buffer found"), vim.log.levels.DEBUG)
   end

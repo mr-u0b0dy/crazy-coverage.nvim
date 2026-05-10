@@ -212,7 +212,7 @@ local function split_string(str, delimiter)
   if not str or str == "" then
     return {}
   end
-  
+
   local parts = {}
   for part in string.gmatch(str, "[^" .. delimiter .. "]+") do
     table.insert(parts, part)
@@ -249,14 +249,14 @@ local function parse_branch_coverage(line, current_file)
     local block_id = parts[2]
     local branch_id = parts[3]
     local taken_str = parts[4]
-    
+
     if line_num and block_id and block_id ~= "" and branch_id and branch_id ~= "" then
       -- Handle "-" as 0 hits (branch not taken / not instrumented)
       local taken = 0
       if taken_str ~= "-" then
         taken = tonumber(taken_str) or 0
       end
-      
+
       table.insert(current_file.branches, {
         line = line_num,
         id = tonumber(branch_id) or branch_id,
@@ -374,7 +374,7 @@ function M.parse(file_path, project_root)
   -- Use coverage file directory as base for relative path resolution
   -- Relative paths in coverage files are relative to the coverage file location
   local coverage_dir = vim.fn.fnamemodify(file_path, ":p:h")
-  
+
   -- Project root can be used for context, but coverage file directory is the base
   if not project_root then
     -- Prefer inferred module root from coverage location before generic fallbacks.

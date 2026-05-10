@@ -103,7 +103,7 @@ function M.setup(user_config)
 
   -- Auto-render coverage when switching/opening buffers
   setup_autocmds()
-  
+
   state.is_initialized = true
 end
 
@@ -191,22 +191,22 @@ start_file_watcher = function()
   if state.file_watcher then
     return -- Already watching
   end
-  
+
   if not state.coverage_file or not utils.file_exists(state.coverage_file) then
     return
   end
-  
+
   -- Get initial file stats
   local stat = vim.loop.fs_stat(state.coverage_file)
   if stat then
     state.last_modified = stat.mtime.sec * 1e9 + stat.mtime.nsec  -- Use nanosecond precision
     state.last_size = stat.size
   end
-  
+
   local config = require("crazy-coverage.config")
   local debounce_timer = nil
   local pending_reload = false
-  
+
   -- Handle file change events
   local function on_change(err, filename, events)
     if err then
@@ -216,7 +216,7 @@ start_file_watcher = function()
       end)
       return
     end
-    
+
     -- File was deleted or renamed
     if events and events.rename then
       vim.schedule(function()
@@ -231,18 +231,18 @@ start_file_watcher = function()
       end)
       return
     end
-    
+
     -- Debounce rapid changes (file being written)
     if debounce_timer then
       debounce_timer:stop()
     end
-    
+
     if not debounce_timer then
       debounce_timer = vim.loop.new_timer()
     end
-    
+
     pending_reload = true
-    
+
     -- Wait for file to stabilize before reloading
     local debounce_ms = config.watch_debounce_ms or 200
     debounce_timer:start(debounce_ms, 0, vim.schedule_wrap(function()
@@ -250,7 +250,7 @@ start_file_watcher = function()
         return
       end
       pending_reload = false
-      
+
       -- Check if file actually changed (mtime + size)
       local new_stat = vim.loop.fs_stat(state.coverage_file)
       if not new_stat then
@@ -261,18 +261,18 @@ start_file_watcher = function()
         stop_file_watcher()
         return
       end
-      
+
       local new_mtime = new_stat.mtime.sec * 1e9 + new_stat.mtime.nsec
       local new_size = new_stat.size
-      
+
       -- Only reload if file actually changed
       if new_mtime > state.last_modified or new_size ~= state.last_size then
         notify("Coverage file updated, reloading...", vim.log.levels.INFO)
-        
+
         -- Clear old coverage data before reload to avoid confusion
         local old_data = state.coverage_data
         state.coverage_data = nil
-        
+
         -- Pass cached project_root to maintain path resolution consistency
         if M.load_coverage(state.coverage_file, state.project_root) then
           state.last_modified = new_mtime
@@ -285,16 +285,16 @@ start_file_watcher = function()
       end
     end))
   end
-  
+
   -- Create fs_event watcher for the file
   state.file_watcher = vim.loop.new_fs_event()
   local watch_flags = { recursive = false }
-  
+
   -- Watch the file directly
   local ok, watch_err = pcall(function()
     state.file_watcher:start(state.coverage_file, watch_flags, on_change)
   end)
-  
+
   if not ok then
     notify("Failed to start file watcher: " .. tostring(watch_err), vim.log.levels.WARN)
     state.file_watcher = nil
@@ -425,7 +425,7 @@ local function compute_file_stats(file_entry)
         hit_count = line_info.hits
       end
       hit_count = hit_count or 0
-      
+
       -- Check branch coverage
       local branches = branch_map[line_num]
       if branches and branches.total > 0 then
@@ -582,7 +582,7 @@ function M.toggle()
   else
     -- Enable: reuse cached file info or find new coverage file
     local coverage_file, project_root
-    
+
     if state.coverage_file_info then
       -- Reuse previously identified file
       coverage_file = state.coverage_file_info.path
@@ -597,7 +597,7 @@ function M.toggle()
       end
       project_root = config.find_project_root(coverage_file)
     end
-    
+
     local hit_count_cfg = config.hit_count
     if type(hit_count_cfg) == "table" and hit_count_cfg.show_by_default == false and hit_count_cfg.display ~= "" then
       state.last_enabled_display = hit_count_cfg.display
@@ -668,7 +668,7 @@ local function get_buffer_coverage(buf)
 
   -- Normalize path for comparison
   file_path = vim.fn.fnamemodify(file_path, ":p")
-  
+
   -- Debug: Log what we're looking for
   notify(string.format("DEBUG: Looking for coverage of: %s", file_path), vim.log.levels.DEBUG)
   local file_count = 0
@@ -990,7 +990,7 @@ function M.next_covered()
       if line_info.hit_count == 0 then
         return false  -- Not executed
       end
-      
+
       -- If branches exist, all must be taken
       if branches and #branches > 0 then
         local taken = 0
@@ -1001,7 +1001,7 @@ function M.next_covered()
         end
         return taken == #branches  -- All branches must be taken
       end
-      
+
       return true  -- Executed with no branches = covered
     end)
   end
@@ -1016,7 +1016,7 @@ function M.prev_covered()
       if line_info.hit_count == 0 then
         return false  -- Not executed
       end
-      
+
       -- If branches exist, all must be taken
       if branches and #branches > 0 then
         local taken = 0
@@ -1027,7 +1027,7 @@ function M.prev_covered()
         end
         return taken == #branches  -- All branches must be taken
       end
-      
+
       return true  -- Executed with no branches = covered
     end)
   end
@@ -1098,7 +1098,7 @@ end
 function M.toggle_hitcount()
   local current_config = config.get_config()
   local current_display = current_config.hit_count.display
-  
+
   if current_display == "" then
     -- Enable: restore the last enabled display mode
     current_config.hit_count.display = state.last_enabled_display
@@ -1107,14 +1107,14 @@ function M.toggle_hitcount()
     state.last_enabled_display = current_display
     current_config.hit_count.display = ""
   end
-  
+
   config.set_config(current_config)
-  
+
   -- Re-render if coverage is enabled
   if state.is_enabled and state.coverage_data then
     renderer.render(state.coverage_data, state.project_root)
   end
-  
+
   local status = current_config.hit_count.display ~= "" and "enabled (" .. current_config.hit_count.display .. ")" or "disabled"
   vim.notify("Hit count display: " .. status, vim.log.levels.INFO)
 end
@@ -1188,7 +1188,7 @@ function M.create_commands()
     end
     M.show_summary(scope)
   end, { nargs = "?" })
-  
+
   -- Load coverage from specific file
   vim.api.nvim_create_user_command("CoverageLoad", function(opts)
     local file = opts.args
@@ -1230,7 +1230,7 @@ function M.create_commands()
   vim.api.nvim_create_user_command("CoveragePrevPartial", function()
     M.prev_partial()
   end, {})
-  
+
   vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
     M.toggle_hitcount()
   end, {})

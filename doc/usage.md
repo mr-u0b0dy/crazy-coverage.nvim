@@ -88,7 +88,7 @@ See [File Discovery](file-discovery.md) for details on configuration and custom 
 ### When Enabled
 
 1. **Auto-detects** coverage file in standard directories
-2. **Loads** coverage data automatically  
+2. **Loads** coverage data automatically
 3. **Displays** overlay with line highlighting
 4. **Shows** hit counts (if `default_show_hit_count = true`)
 5. **Watches** coverage file for changes (polls every 2 seconds)
@@ -183,15 +183,15 @@ keys = {
   -- Main commands
   { "<leader>lt", "<cmd>CoverageToggle<cr>", desc = "Coverage: Toggle" },
   { "<leader>lh", "<cmd>CoverageToggleHitCount<cr>", desc = "Coverage: Toggle Hit Count" },
-  
+
   -- Navigate covered lines
   { "]cc", "<cmd>CoverageNextCovered<cr>", desc = "Coverage: Next Covered" },
   { "[cc", "<cmd>CoveragePrevCovered<cr>", desc = "Coverage: Prev Covered" },
-  
+
   -- Navigate partial lines
   { "]cp", "<cmd>CoverageNextPartial<cr>", desc = "Coverage: Next Partial" },
   { "[cp", "<cmd>CoveragePrevPartial<cr>", desc = "Coverage: Prev Partial" },
-  
+
   -- Navigate uncovered lines
   { "]cu", "<cmd>CoverageNextUncovered<cr>", desc = "Coverage: Next Uncovered" },
   { "[cu", "<cmd>CoveragePrevUncovered<cr>", desc = "Coverage: Prev Uncovered" },
@@ -418,7 +418,7 @@ require("crazy-coverage").setup({
       show_hit_count = true,
       show_branch_summary = true,
     })
-    
+
     -- Set custom keymaps
     vim.keymap.set("n", "<leader>ll", "<cmd>CoverageLoad<CR>")
     vim.keymap.set("n", "<leader>lt", "<cmd>CoverageToggle<CR>")

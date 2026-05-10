@@ -136,14 +136,14 @@ end
 1. Create `lua/coverage/parser/myformat.lua`:
    ```lua
    local M = {}
-   
+
    function M.parse(file_path)
      -- Read and parse file
      local coverage_data = { files = {} }
      -- ... parsing logic
      return coverage_data
    end
-   
+
    return M
    ```
 
@@ -169,7 +169,7 @@ Converters wrap external tools to transform binary formats:
 function M.parse(file_path)
   -- 1. Convert binary to text format
   local temp_file = convert_to_text(file_path)
-  
+
   -- 2. Parse using existing parser
   local parser = require("crazy-coverage.parser.lcov")
   return parser.parse(temp_file)
@@ -183,7 +183,7 @@ Wraps `lcov` tool:
 ```lua
 -- lua/coverage/converter/gcov.lua
 function M.convert_gcov_to_lcov(work_dir)
-  local cmd = "lcov --directory " .. work_dir .. 
+  local cmd = "lcov --directory " .. work_dir ..
               " --capture --output-file coverage_gcov.lcov"
   vim.fn.system(cmd)
   return "coverage_gcov.lcov"
@@ -195,16 +195,16 @@ end
 1. Create `lua/coverage/converter/myformat.lua`:
    ```lua
    local M = {}
-   
+
    function M.parse(file_path)
      -- Convert to intermediate format
      local json_file = convert_to_json(file_path)
-     
+
      -- Use existing JSON parser
      local json_parser = require("crazy-coverage.parser.llvm_json")
      return json_parser.parse(json_file)
    end
-   
+
    return M
    ```
 
@@ -221,12 +221,12 @@ renderer.clear_all()
 -- 2. For each file in coverage data
 for _, file_entry in ipairs(coverage_data.files) do
   local buf = utils.get_buffer_by_path(file_entry.path)
-  
+
   -- 3. Render lines
   for _, line_info in ipairs(file_entry.lines) do
     local hl = line_info.covered and "CoverageCovered" or "CoverageUncovered"
     local virt_text = { {" " .. line_info.hit_count, hl} }
-    
+
     -- 4. Place extmark
     vim.api.nvim_buf_set_extmark(buf, namespace, line_info.line_num - 1, 0, {
       virt_text = virt_text,
@@ -270,7 +270,7 @@ function M.parse(file_path)
   -- Use Python to export .coverage to JSON
   local json_file = "/tmp/coverage.json"
   vim.fn.system("coverage json -o " .. json_file)
-  
+
   -- Parse JSON
   local json_parser = require("crazy-coverage.parser.llvm_json")
   return json_parser.parse(json_file)
@@ -297,12 +297,12 @@ local M = {
   virt_text_pos = "eol",
   show_hit_count = true,
   show_percentage = false,
-  
+
   -- Highlights
   covered_hl = "CoverageCovered",
   uncovered_hl = "CoverageUncovered",
   partial_hl = "CoveragePartial",
-  
+
   -- Auto-loading
   auto_load = true,
   coverage_patterns = { ... },

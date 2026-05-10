@@ -426,7 +426,7 @@ function M.parse(file_path, project_root)
   -- Use coverage file directory as base for relative path resolution
   -- Relative paths in coverage files are relative to the coverage file location
   local coverage_dir = vim.fn.fnamemodify(file_path, ":p:h")
-  
+
   -- Project root can be used for context, but coverage file directory is the base
   if not project_root then
     project_root = vim.fn.fnamemodify(file_path, ":p:h:h")

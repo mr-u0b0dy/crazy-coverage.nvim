@@ -255,10 +255,10 @@ LDFLAGS_COV = -lgcov
 
 # Coverage target
 coverage:
-	$(CC) $(CFLAGS) $(CFLAGS_COV) -o program program.c $(LDFLAGS_COV)
-	./program
-	lcov --directory . --capture --output-file coverage.lcov
-	@echo "Load coverage.lcov in Neovim"
+    $(CC) $(CFLAGS) $(CFLAGS_COV) -o program program.c $(LDFLAGS_COV)
+    ./program
+    lcov --directory . --capture --output-file coverage.lcov
+    @echo "Load coverage.lcov in Neovim"
 
 .PHONY: coverage
 ```

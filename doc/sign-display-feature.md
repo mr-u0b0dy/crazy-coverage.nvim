@@ -21,10 +21,10 @@ Colorizes line numbers based on coverage status (covered/uncovered/partial).
 require("crazy-coverage").setup({
   -- Show hit count in sign column (e.g., "3" or "9+")
   show_hit_count_in_sign = false,
-  
+
   -- Highlight line numbers based on coverage
   highlight_line_numbers = true,
-  
+
   -- Custom format for sign text (max 2 chars recommended)
   sign_text_format = function(hit_count)
     if hit_count >= 10 then

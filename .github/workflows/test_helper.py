@@ -10,7 +10,7 @@ import subprocess
 def run_tests():
     """Run the full test suite."""
     print("Testing crazy-coverage.nvim...")
-    
+
     # Run legacy tests first (no plenary dependency)
     result = subprocess.run([
         "nvim",
@@ -19,7 +19,7 @@ def run_tests():
         "+lua dofile('test/run_tests.lua')",
         "+qa"
     ], cwd=os.getcwd())
-    
+
     return result.returncode == 0
 
 if __name__ == "__main__":

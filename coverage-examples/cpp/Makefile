@@ -1,6 +1,6 @@
 # Makefile for C++ Coverage Examples
 # Demonstrates coverage generation with different tools
-# 
+#
 # Build targets:
 #   make gcov           - Build with GCC coverage (gcov)
 #   make lcov           - Build with GCC coverage and generate LCOV report
@@ -11,7 +11,7 @@
 
 CXX = g++
 CXXFLAGS = -Wall -Wextra -g -O0 -std=c++11
-LDFLAGS = 
+LDFLAGS =
 
 # Build directory
 BUILD_DIR = build
@@ -99,9 +99,9 @@ cobertura: lcov
 	@echo ""
 	@echo "Converting LCOV to Cobertura XML..."
 	cd $(BUILD_DIR) && python3 -m lcov_cobertura coverage.lcov -o coverage.xml 2>/dev/null || \
-		(echo "Note: python3-lcov-cobertura not installed"; \
-		 echo "Install with: pip install lcov-cobertura"; \
-		 exit 1)
+		echo "Note: python3-lcov-cobertura not installed"; \
+		echo "Install with: pip install lcov-cobertura"; \
+		exit 1
 	@rm -f $(BUILD_DIR)/coverage.lcov
 	@echo "✓ Cobertura XML report generated: $(BUILD_DIR)/coverage.xml"
 	@echo ""

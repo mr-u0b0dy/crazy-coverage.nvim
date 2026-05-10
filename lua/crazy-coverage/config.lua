@@ -23,10 +23,10 @@ local M = {
     -- 'sign' displays hit count in the sign column (left gutter)
     -- Other values display as virtual text at the specified position
     display = "eol",
-    
+
     -- Show hit count by default when toggling overlay on
     show_by_default = true,
-    
+
     -- Format function for sign text (hit count display in sign column)
     -- Only used when display = 'sign'
     -- Takes hit_count (number) and returns string
@@ -35,7 +35,7 @@ local M = {
       return tostring(hit_count)
     end,
   },
-  
+
   -- Show percentage for lines
   show_percentage = false,
 
@@ -57,7 +57,7 @@ local M = {
   -- LLVM profdata: path to instrumented binary (if not auto-detected)
   -- Example: "build/my_test" or "cmake-build-debug/my_app"
   llvm_binary_file = nil,
-  
+
   -- File watch debounce in milliseconds (wait after file change before reloading)
   -- Prevents multiple reloads when file is being written
   watch_debounce_ms = 200,
@@ -84,7 +84,7 @@ local M = {
   -- Cache settings
   cache_enabled = true,
   cache_dir = vim.fn.stdpath("cache") .. "/crazy-coverage.nvim",
-  
+
   -- Development convenience flag: when true, enables debug notifications
   dev = false,
 
@@ -154,14 +154,14 @@ local function is_coverage_file(file_path)
   if vim.fn.filereadable(file_path) ~= 1 then
     return false
   end
-  
+
   local lines = vim.fn.readfile(file_path, '', 10)
   if not lines or #lines == 0 then
     return false
   end
-  
+
   local content = table.concat(lines, "\n")
-  
+
   -- Format detection patterns (LCOV, LLVM JSON, Cobertura XML)
   local patterns = {
     "^TN:", "^FN:", "^DA:", "end_of_record",  -- LCOV
@@ -170,13 +170,13 @@ local function is_coverage_file(file_path)
     "^mode:%s*[%a_]+$",                           -- Go coverprofile header
     ".+:%d+%.%d+,%d+%.%d+%s+%d+%s+%d+",         -- Go coverprofile records
   }
-  
+
   for _, pattern in ipairs(patterns) do
     if content:match(pattern) then
       return true
     end
   end
-  
+
   -- Extension-based fallback
   local ext = file_path:match("%.([^.]+)$")
   local valid_exts = {
@@ -184,7 +184,7 @@ local function is_coverage_file(file_path)
     profdata = true, gcda = true, gcno = true,
     out = true,
   }
-  
+
   return valid_exts[ext] or false
 end
 
@@ -239,7 +239,7 @@ function M.get_coverage_file(buf)
   -- Search for files with supported extensions
   for _, dir in ipairs(M.coverage_dirs) do
     local search_dir = project_root .. "/" .. dir
-    
+
     if vim.fn.isdirectory(search_dir) == 1 then
       local candidates, seen = {}, {}
 
@@ -284,7 +284,7 @@ function M.get_coverage_file(buf)
     table.concat(patterns, ", ")
   )
   vim.notify(msg, vim.log.levels.INFO)
-  
+
   return nil
 end
 
@@ -295,7 +295,7 @@ function M.find_project_root(start_path)
   if not start_path or start_path == "" then
     return nil
   end
-  
+
   local path = vim.fn.fnamemodify(start_path, ":p:h")
 
   for _ = 1, 10 do
@@ -319,14 +319,14 @@ end
 ---@return table colors Table with bg and fg from current Normal highlight
 local function detect_theme_colors()
   local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
-  
+
   local bg = normal_hl.bg or 0x000000
   local fg = normal_hl.fg or 0xFFFFFF
-  
+
   -- Convert to hex strings
   local bg_hex = string.format("#%06X", bg)
   local fg_hex = string.format("#%06X", fg)
-  
+
   return { bg = bg_hex, fg = fg_hex }
 end
 
@@ -336,16 +336,16 @@ end
 local function get_luminance(hex)
   local r, g, b = hex:match("#(%x%x)(%x%x)(%x%x)")
   if not r then return 0.5 end
-  
+
   r, g, b = tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255
-  
+
   -- Convert to linear RGB
   local function to_linear(c)
     return c <= 0.03928 and c / 12.92 or math.pow((c + 0.055) / 1.055, 2.4)
   end
-  
+
   r, g, b = to_linear(r), to_linear(g), to_linear(b)
-  
+
   -- Calculate relative luminance
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 end
@@ -357,13 +357,13 @@ end
 local function adjust_brightness(hex, factor)
   local r, g, b = hex:match("#(%x%x)(%x%x)(%x%x)")
   if not r then return hex end
-  
+
   r, g, b = tonumber(r, 16), tonumber(g, 16), tonumber(b, 16)
-  
+
   r = math.min(255, math.floor(r * factor))
   g = math.min(255, math.floor(g * factor))
   b = math.min(255, math.floor(b * factor))
-  
+
   return string.format("#%02X%02X%02X", r, g, b)
 end
 
@@ -373,9 +373,9 @@ end
 local function generate_adaptive_colors(theme_colors)
   local bg_luminance = get_luminance(theme_colors.bg)
   local is_dark_theme = bg_luminance < 0.5
-  
+
   local colors = {}
-  
+
   if is_dark_theme then
     -- Dark theme: use lighter, pastel colors
     colors.covered = { bg = "#1a4d1a", fg = "NONE" }
@@ -387,19 +387,19 @@ local function generate_adaptive_colors(theme_colors)
     colors.uncovered = { bg = "#f0d4d4", fg = "NONE" }
     colors.partial = { bg = "#f5e6cc", fg = "NONE" }
   end
-  
+
   return colors
 end
 
 --- Setup highlight groups
 function M.setup_highlights()
   local colors
-  
+
   if M.auto_adapt_colors then
     -- Auto-detect theme and adapt colors
     local theme_colors = detect_theme_colors()
     colors = generate_adaptive_colors(theme_colors)
-    
+
     -- Allow manual overrides even with auto-adaptation
     if M.colors.covered then
       colors.covered = M.colors.covered
@@ -418,7 +418,7 @@ function M.setup_highlights()
       partial = M.colors.partial or { bg = "#FFAA00", fg = "#000000" },
     }
   end
-  
+
   -- Normalize color format (support both string and table formats)
   local function normalize_color(color)
     if type(color) == "string" then
@@ -428,11 +428,11 @@ function M.setup_highlights()
     end
     return { bg = "#00AA00", fg = "NONE" }
   end
-  
+
   local covered_color = normalize_color(colors.covered)
   local uncovered_color = normalize_color(colors.uncovered)
   local partial_color = normalize_color(colors.partial)
-  
+
   -- Define highlights in global namespace (0)
   vim.api.nvim_set_hl(0, M.covered_hl, {
     bg = covered_color.bg,
@@ -499,7 +499,7 @@ function M.set_config(user_config)
       end
     end
   end
-  
+
   -- Whitelist of valid config keys
   local valid_keys = {
     covered_hl = true,
@@ -530,7 +530,7 @@ function M.set_config(user_config)
     nvim_tree = true,
     neo_tree = true,
   }
-  
+
   for key, value in pairs(user_config) do
     if valid_keys[key] then
       -- Special handling: dev implies enabling debug notifications
