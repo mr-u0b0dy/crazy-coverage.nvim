@@ -64,3 +64,12 @@ indent_style = tab
 
 [*.mk]
 indent_style = tab
+
+# Generated build files should not be checked
+[coverage-examples/**/build/**]
+indent_size = unset
+indent_style = unset
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset

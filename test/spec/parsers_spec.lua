@@ -1258,3 +1258,65 @@ describe("Coverage File Caching", function()
     end)
   end)
 end)
+
+describe("Rust Coverage Support", function()
+  local parser_dispatcher = require("crazy-coverage.parser")
+  local config = require("crazy-coverage.config")
+
+  it("parses Rust LCOV fixtures through dispatcher", function()
+    local result = parser_dispatcher.parse("test/fixtures/sample_coverage_rust.lcov", "test/fixtures")
+
+    assert.is_not_nil(result)
+    assert.is_table(result)
+
+    local file_count = 0
+    for _, _ in pairs(result) do
+      file_count = file_count + 1
+    end
+    assert.equals(1, file_count)
+  end)
+
+  it("includes Rust defaults in coverage patterns", function()
+    assert.is_table(config.coverage_patterns.rust)
+    assert.is_true(vim.tbl_contains(config.coverage_patterns.rust, "*.lcov"))
+    assert.is_true(vim.tbl_contains(config.coverage_patterns.rust, "*.info"))
+  end)
+
+  it("detects Cargo.toml when finding project root", function()
+    local root = config.find_project_root("test/fixtures/rust/src/main.rs")
+    assert.is_not_nil(root)
+    assert.matches("test/fixtures/rust$", root)
+  end)
+
+  it("discovers Rust LCOV report from build/coverage", function()
+    local temp_dir = vim.fn.tempname()
+    assert.equals(1, vim.fn.mkdir(temp_dir, "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/src", "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/build/coverage", "p"))
+
+    local cargo = io.open(temp_dir .. "/Cargo.toml", "w")
+    assert.is_not_nil(cargo)
+    cargo:write("[package]\nname = \"tmp-rust\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+    cargo:close()
+
+    local src = io.open(temp_dir .. "/src/main.rs", "w")
+    assert.is_not_nil(src)
+    src:write("fn main() {}\n")
+    src:close()
+
+    local lcov = io.open(temp_dir .. "/build/coverage/coverage.lcov", "w")
+    assert.is_not_nil(lcov)
+    lcov:write("TN:tmp\nSF:src/main.rs\nDA:1,1\nend_of_record\n")
+    lcov:close()
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(buf, temp_dir .. "/src/main.rs")
+
+    local found = config.get_coverage_file(buf)
+    assert.is_not_nil(found)
+    assert.matches("build/coverage/coverage%.lcov$", found)
+
+    vim.api.nvim_buf_delete(buf, { force = true })
+    helpers.cleanup_temp_dir(temp_dir)
+  end)
+end)
