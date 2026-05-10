@@ -20,12 +20,19 @@ coverage-examples/
 │   ├── math_utils.cpp
 │   └── math_utils.hpp
 │
-└── go/                   # Go examples
-    ├── Makefile          # Go coverage and conversion targets
-    ├── README.md         # Go-specific documentation
-    ├── main.go
-    ├── math_utils.go
-    └── math_utils_test.go
+├── go/                   # Go examples
+│   ├── Makefile          # Go coverage and conversion targets
+│   ├── README.md         # Go-specific documentation
+│   ├── main.go
+│   ├── math_utils.go
+│   └── math_utils_test.go
+│
+└── rust/                 # Rust examples
+    ├── Makefile          # Rust coverage targets
+    ├── README.md         # Rust-specific documentation
+    ├── Cargo.toml
+    ├── src/
+    └── tests/
 ```
 
 ## Quick Start
@@ -55,6 +62,15 @@ cd go
 make cover          # Generate native Go coverprofile
 make lcov           # Convert to LCOV report
 # Then load in Neovim: :CoverageLoad build/coverage.out
+```
+
+### Rust Examples
+
+```bash
+cd rust
+make test           # Run Rust tests
+make lcov           # Generate LCOV report with cargo tarpaulin
+# Then load in Neovim: :CoverageLoad build/coverage/coverage.lcov
 ```
 
 ## Available Coverage Tools
@@ -134,9 +150,18 @@ make html           # Generate HTML report with go tool cover
 make clean          # Remove build artifacts
 ```
 
+### Rust Example
+
+```bash
+cd rust
+make test           # Run Rust tests
+make lcov           # Generate LCOV report with cargo tarpaulin
+make clean          # Remove build artifacts
+```
+
 ## Features
 
-- **Multi-language support**: C and C++ examples
+- **Multi-language support**: C, C++, Go, and Rust examples
 - **Multiple coverage tools**: GCC (LCOV) and LLVM (JSON)
 - **Clean build system**: Artifacts in `build/` directory only
 - **Intentional gaps**: Some code paths are intentionally untested to demonstrate visualization
@@ -166,6 +191,12 @@ brew install go                    # macOS
 
 # Optional (for Cobertura conversion in Go example)
 go install github.com/boumenot/gocover-cobertura@latest
+```
+
+For Rust tools:
+```bash
+rustup toolchain install stable
+cargo install cargo-tarpaulin
 ```
 
 ## Notes

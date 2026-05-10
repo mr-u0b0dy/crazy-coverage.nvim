@@ -66,6 +66,7 @@ local M = {
   coverage_patterns = {
     c = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
     cpp = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
+    rust = { "*.lcov", "*.info", "coverage.json", "coverage.xml" },
     go = { "coverage.out", "*.lcov", "*.info", "coverage.json", "coverage.xml" },
   },
 
@@ -79,7 +80,7 @@ local M = {
   },
 
   -- Project root patterns (for finding coverage files)
-  project_markers = { ".git", "CMakeLists.txt", "Makefile", "compile_commands.json", "go.mod" },
+  project_markers = { ".git", "CMakeLists.txt", "Makefile", "compile_commands.json", "go.mod", "Cargo.toml" },
 
   -- Cache settings
   cache_enabled = true,

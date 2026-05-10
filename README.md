@@ -30,6 +30,7 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 
 - **C/C++** - GCC (gcov/lcov), LLVM/Clang
 - **Go** - Native `go test -coverprofile` (`coverage.out`)
+- **Rust** - LCOV via `cargo tarpaulin`
 - **Any Language** - Via LCOV, Cobertura XML, or LLVM JSON formats
 
 The plugin supports any language that can generate coverage in one of the supported formats.
@@ -193,7 +194,7 @@ See [Usage Guide](doc/usage.md) for keybindings and navigation.
 - **[Usage Guide](doc/usage.md)** - Commands, keybindings, and workflows
 - **[Configuration Reference](doc/configuration.md)** - All config options
 - **[Supported Formats](doc/formats.md)** - Coverage format details
-- **[Coverage Examples](coverage-examples/)** - C/C++/Go examples with GCC/LLVM/Go tools
+- **[Coverage Examples](coverage-examples/)** - C/C++/Go/Rust examples with GCC/LLVM/Go/Rust tools
 - **[Architecture](doc/architecture.md)** - Plugin design guide
 - **[Development](doc/development.md)** - Testing and contributing
 
