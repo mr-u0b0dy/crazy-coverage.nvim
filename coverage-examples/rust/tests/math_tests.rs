@@ -16,6 +16,7 @@ fn test_multiply() {
 #[test]
 fn test_divide() {
     assert_eq!(divide(10, 2), 5);
+    assert_eq!(divide(10, 0), 0);
 }
 
 #[test]

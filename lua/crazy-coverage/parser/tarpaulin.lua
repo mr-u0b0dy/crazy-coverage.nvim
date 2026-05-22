@@ -6,17 +6,12 @@ local json_utils = require("crazy-coverage.parser.json")
 
 --- Parse Tarpaulin JSON format
 ---@param file_path string
----@param project_root string|nil -- Project root for better path resolution
 ---@return table|nil -- Coverage data keyed by file path, or nil on error
-function M.parse(file_path, project_root)
+function M.parse(file_path)
   local json_data = json_utils.read(file_path)
 
   if not json_data or not json_data.traces or type(json_data.traces) ~= "table" then
     return nil
-  end
-
-  if not project_root then
-    project_root = vim.fn.fnamemodify(file_path, ":p:h:h")
   end
 
   local coverage_data = {}
