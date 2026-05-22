@@ -39,3 +39,4 @@ function M.sort_lines(file_entry)
 end
 
 return M
+

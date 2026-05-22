@@ -13,7 +13,7 @@ local function lines_contain_markers(lines, markers)
   for _, marker in ipairs(markers) do
     local found = false
     for _, line in ipairs(lines) do
-      if line and line:match(marker) then
+      if line and line:find(marker, 1, true) then
         found = true
         break
       end
