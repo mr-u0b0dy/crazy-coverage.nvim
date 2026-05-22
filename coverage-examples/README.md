@@ -85,6 +85,7 @@ make lcov           # Build, run, and generate LCOV report
 ```
 
 **Advantages:**
+
 - Works with most C/C++ compilers
 - Fast coverage generation
 - Industry standard format
@@ -99,6 +100,7 @@ make llvm-report    # Build, run, and generate JSON report
 ```
 
 **Advantages:**
+
 - More detailed branch coverage
 - JSON format for programmatic access
 - Modern tooling
@@ -155,7 +157,7 @@ make clean          # Remove build artifacts
 ```bash
 cd rust
 make test           # Run Rust tests
-make lcov           # Generate LCOV report with cargo tarpaulin
+make llvm-cov-lcov  # Generate LCOV report with cargo-llvm-cov
 make clean          # Remove build artifacts
 ```
 
@@ -170,6 +172,7 @@ make clean          # Remove build artifacts
 ## Requirements
 
 For GCC/LCOV:
+
 ```bash
 sudo apt-get install gcc g++ lcov  # Ubuntu/Debian
 sudo yum install gcc gcc-c++ lcov  # RHEL/CentOS
@@ -177,6 +180,7 @@ brew install gcc lcov              # macOS
 ```
 
 For LLVM:
+
 ```bash
 sudo apt-get install clang llvm    # Ubuntu/Debian
 sudo yum install clang llvm        # RHEL/CentOS
@@ -184,6 +188,7 @@ brew install llvm                  # macOS
 ```
 
 For Go tools:
+
 ```bash
 sudo apt-get install golang-go     # Ubuntu/Debian
 sudo yum install golang            # RHEL/CentOS
@@ -194,9 +199,11 @@ go install github.com/boumenot/gocover-cobertura@latest
 ```
 
 For Rust tools:
+
 ```bash
 rustup toolchain install stable
 cargo install cargo-tarpaulin
+cargo install cargo-llvm-cov
 ```
 
 ## Notes
@@ -225,12 +232,14 @@ After generating coverage:
 ### Smart Toggle Features
 
 When you enable coverage with `:CoverageToggle`:
+
 - ✓ Automatically finds and loads coverage file in project
 - ✓ Watches coverage file for changes and auto-reloads
 - ✓ Shows notification when coverage file is updated
 - ✓ Enables overlay with hit counts (configurable default)
 
 When you disable with `:CoverageToggle`:
+
 - ✓ Clears all coverage overlays
 - ✓ Stops file watching
 - ✓ Cleans up all resources
@@ -240,10 +249,12 @@ When you disable with `:CoverageToggle`:
 With the AstroVim configuration (see [configs/astrovim-config.lua](../configs/astrovim-config.lua)):
 
 **Coverage Management** (`<leader>c` prefix):
+
 - `<leader>ct` - Toggle coverage overlay (auto-loads, watches for changes)
 - `<leader>ch` - Toggle hit count display
 
 **Navigation** (`[/]` then `c` then `c/p/u`):
+
 - `]cc` / `[cc` - Next/Previous covered line
 - `]cp` / `[cp` - Next/Previous partially covered line
 - `]cu` / `[cu` - Next/Previous uncovered line

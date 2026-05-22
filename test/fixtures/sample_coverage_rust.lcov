@@ -3,4 +3,6 @@ SF:rust/src/main.rs
 DA:1,1
 DA:2,1
 DA:3,0
+BRDA:2,0,0,1
+BRDA:2,0,1,0
 end_of_record

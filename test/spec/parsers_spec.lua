@@ -274,6 +274,69 @@ describe("LLVM JSON Parser", function()
   end)
 end)
 
+describe("Tarpaulin JSON Parser", function()
+  local tarpaulin_parser = require("crazy-coverage.parser.tarpaulin")
+  local parser_dispatcher = require("crazy-coverage.parser.init")
+  local temp_file, temp_dir
+
+  after_each(function()
+    if temp_dir then
+      helpers.cleanup_temp_dir(temp_dir)
+      temp_file, temp_dir = nil, nil
+    end
+  end)
+
+  it("should parse tarpaulin traces into line coverage", function()
+    local content = [=[
+{
+  "traces": {
+    "/tmp/example.rs": [
+      {"line": 10, "stats": {"Line": 1}},
+      {"line": 10, "stats": {"Line": 4}},
+      {"line": 11, "stats": {"Line": 0}}
+    ]
+  },
+  "functions": {},
+  "settings": []
+}
+]=]
+    temp_file, temp_dir = helpers.create_temp_coverage_file("json", content)
+
+    local result = tarpaulin_parser.parse(temp_file)
+
+    assert.is_not_nil(result)
+    assert.is_table(result)
+
+    local file_data = result["/tmp/example.rs"]
+    assert.is_not_nil(file_data)
+    assert.equals(2, #file_data.lines)
+    assert.equals(4, file_data.lines[1].hits)
+    assert.equals(0, file_data.lines[2].hits)
+  end)
+
+  it("should detect tarpaulin JSON through the parser dispatcher", function()
+    local content = [=[
+{
+  "traces": {
+    "/tmp/example.rs": [
+      {"line": 12, "stats": {"Line": 7}}
+    ]
+  },
+  "functions": {},
+  "settings": []
+}
+]=]
+    temp_file, temp_dir = helpers.create_temp_coverage_file("json", content)
+
+    local result = parser_dispatcher.parse(temp_file)
+
+    assert.is_not_nil(result)
+    assert.is_not_nil(result["/tmp/example.rs"])
+    assert.equals(1, #result["/tmp/example.rs"].lines)
+    assert.equals(7, result["/tmp/example.rs"].lines[1].hits)
+  end)
+end)
+
 describe("Cobertura Parser", function()
   local cobertura_parser = require("crazy-coverage.parser.cobertura")
   local temp_file, temp_dir
@@ -882,6 +945,26 @@ describe("Parser Dispatcher", function()
       assert.is_table(result)
     end)
 
+    it("should detect Tarpaulin JSON format", function()
+      local content = [=[
+{
+  "traces": {
+    "/tmp/example.rs": [
+      {"line": 12, "stats": {"Line": 7}}
+    ]
+  },
+  "functions": {},
+  "settings": []
+}
+]=]
+      temp_file, temp_dir = helpers.create_temp_coverage_file("json", content)
+
+      local result = parser_dispatcher.parse(temp_file)
+
+      assert.is_not_nil(result)
+      assert.is_not_nil(result["/tmp/example.rs"])
+    end)
+
     it("should detect Cobertura XML format", function()
       temp_file, temp_dir = helpers.create_temp_coverage_file("xml", helpers.sample_cobertura_coverage())
 
@@ -1274,6 +1357,14 @@ describe("Rust Coverage Support", function()
       file_count = file_count + 1
     end
     assert.equals(1, file_count)
+
+    local expected_path = vim.fn.fnamemodify("test/fixtures/rust/src/main.rs", ":p")
+    local file_data = result[expected_path]
+    assert.is_not_nil(file_data)
+    assert.equals(3, #file_data.lines)
+    assert.equals(2, #file_data.branches)
+    assert.equals(1, file_data.branches[1].hits)
+    assert.equals(0, file_data.branches[2].hits)
   end)
 
   it("includes Rust defaults in coverage patterns", function()
@@ -1315,6 +1406,70 @@ describe("Rust Coverage Support", function()
     local found = config.get_coverage_file(buf)
     assert.is_not_nil(found)
     assert.matches("build/coverage/coverage%.lcov$", found)
+
+    vim.api.nvim_buf_delete(buf, { force = true })
+    helpers.cleanup_temp_dir(temp_dir)
+  end)
+
+  it("discovers Rust tarpaulin LCOV report from target/tarpaulin", function()
+    local temp_dir = vim.fn.tempname()
+    assert.equals(1, vim.fn.mkdir(temp_dir, "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/src", "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/target/tarpaulin", "p"))
+
+    local cargo = io.open(temp_dir .. "/Cargo.toml", "w")
+    assert.is_not_nil(cargo)
+    cargo:write("[package]\nname = \"tmp-rust\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+    cargo:close()
+
+    local src = io.open(temp_dir .. "/src/main.rs", "w")
+    assert.is_not_nil(src)
+    src:write("fn main() {}\n")
+    src:close()
+
+    local lcov = io.open(temp_dir .. "/target/tarpaulin/coverage-tarpaulin.lcov", "w")
+    assert.is_not_nil(lcov)
+    lcov:write("TN:tmp\nSF:src/main.rs\nDA:1,1\nend_of_record\n")
+    lcov:close()
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(buf, temp_dir .. "/src/main.rs")
+
+    local found = config.get_coverage_file(buf)
+    assert.is_not_nil(found)
+    assert.matches("target/tarpaulin/coverage%-tarpaulin%.lcov$", found)
+
+    vim.api.nvim_buf_delete(buf, { force = true })
+    helpers.cleanup_temp_dir(temp_dir)
+  end)
+
+  it("discovers Rust llvm-cov LCOV report from target/coverage", function()
+    local temp_dir = vim.fn.tempname()
+    assert.equals(1, vim.fn.mkdir(temp_dir, "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/src", "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/target/coverage", "p"))
+
+    local cargo = io.open(temp_dir .. "/Cargo.toml", "w")
+    assert.is_not_nil(cargo)
+    cargo:write("[package]\nname = \"tmp-rust\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+    cargo:close()
+
+    local src = io.open(temp_dir .. "/src/main.rs", "w")
+    assert.is_not_nil(src)
+    src:write("fn main() {}\n")
+    src:close()
+
+    local lcov = io.open(temp_dir .. "/target/coverage/coverage-llvm-cov.lcov", "w")
+    assert.is_not_nil(lcov)
+    lcov:write("TN:tmp\nSF:src/main.rs\nDA:1,1\nend_of_record\n")
+    lcov:close()
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(buf, temp_dir .. "/src/main.rs")
+
+    local found = config.get_coverage_file(buf)
+    assert.is_not_nil(found)
+    assert.matches("target/coverage/coverage%-llvm%-cov%.lcov$", found)
 
     vim.api.nvim_buf_delete(buf, { force = true })
     helpers.cleanup_temp_dir(temp_dir)

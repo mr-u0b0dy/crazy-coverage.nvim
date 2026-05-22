@@ -1,6 +1,7 @@
 -- LLVM JSON format parser
 local M = {}
 local utils = require("crazy-coverage.utils")
+local json_utils = require("crazy-coverage.parser.json")
 
 --- Normalize path by resolving .. and . segments
 ---@param path string
@@ -27,17 +28,7 @@ end
 ---@param project_root string|nil -- Project root for better path resolution
 ---@return table|nil -- Coverage data keyed by file path, or nil on error
 function M.parse(file_path, project_root)
-  if not utils.file_exists(file_path) then
-    return nil
-  end
-
-  local lines = utils.read_file(file_path)
-  if not lines then
-    return nil
-  end
-
-  local json_str = table.concat(lines, "\n")
-  local json_data = utils.parse_json(json_str)
+  local json_data = json_utils.read(file_path)
 
   if not json_data or not json_data.data then
     return nil
@@ -70,11 +61,7 @@ function M.parse(file_path, project_root)
           source_file_path = normalize_path(source_file_path)
         end
 
-        local file_entry = {
-          lines = {},
-          branches = {},
-          source_format = "llvm_json",
-        }
+        local file_entry = json_utils.new_file_entry("llvm_json")
 
         -- Track branch IDs per line so overlay numbering stays local to each source line
         local line_branch_counters = {}
@@ -202,9 +189,7 @@ function M.parse(file_path, project_root)
 
         if source_file_path then
           -- Sort by line number
-          table.sort(file_entry.lines, function(a, b)
-            return a.line < b.line
-          end)
+          json_utils.sort_lines(file_entry)
 
           coverage_data[source_file_path] = file_entry
         end

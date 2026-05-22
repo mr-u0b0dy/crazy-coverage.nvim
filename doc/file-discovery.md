@@ -16,6 +16,7 @@ The plugin uses a multi-level approach to automatically find your coverage file:
 ### Step 1: Find Project Root
 
 The plugin searches upward from the current file location for project markers:
+
 - `.git` - Git repository
 - `CMakeLists.txt` - CMake project
 - `Makefile` - Make project
@@ -25,10 +26,15 @@ The plugin searches upward from the current file location for project markers:
 ### Step 2: Search Coverage Directories
 
 Default search order (relative to project root):
+
 1. `build/coverage/` - CMake standard build directory
 2. `coverage/` - Standard coverage directory
 3. `build/` - Build directory root
 4. `.` - Project root
+
+Note for Rust projects: the plugin also searches Rust's common `target/` locations such as
+`target/tarpaulin/` and `target/coverage/` (these are searched before the generic build/coverage
+locations). This covers outputs from `cargo tarpaulin` and similar tooling.
 
 ### Step 3: Verify File is Coverage Format
 
