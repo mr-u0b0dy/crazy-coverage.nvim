@@ -30,8 +30,8 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 
 - **C/C++** - GCC (gcov/lcov), LLVM/Clang
 - **Go** - Native `go test -coverprofile` (`coverage.out`)
-- **Rust** - LCOV via `cargo tarpaulin`
-- **Any Language** - Via LCOV, Cobertura XML, or LLVM JSON formats
+- **Rust** - LCOV or JSON via `cargo tarpaulin` or `cargo llvm-cov`
+- **Any Language** - Via LCOV, Cobertura XML, Tarpaulin JSON, or LLVM JSON formats
 
 The plugin supports any language that can generate coverage in one of the supported formats.
 
@@ -73,6 +73,7 @@ See [Installation Guide](doc/installation.md) for other plugin managers and Astr
 ```
 
 **What the toggle does:**
+
 - Finds and loads coverage file automatically
 - Enables overlay with line highlighting  
 - Watches file for changes (auto-reloads)
@@ -97,6 +98,7 @@ The plugin intelligently finds your coverage file automatically. It:
    - Finds GCOV/LLVM Profdata binary files
 
 3. **Supports Any Filename**:
+
    ```
    ✓ build/coverage_report              (no extension)
    ✓ coverage_2025_01_09.json           (custom name)

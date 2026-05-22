@@ -66,13 +66,15 @@ local M = {
   coverage_patterns = {
     c = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
     cpp = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
-    rust = { "*.lcov", "*.info", "coverage.json", "coverage.xml" },
+    rust = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "coverage-tarpaulin.lcov", "coverage-tarpaulin.json", "coverage-tarpaulin.xml" },
     go = { "coverage.out", "*.lcov", "*.info", "coverage.json", "coverage.xml" },
   },
 
   -- Directories to search for coverage files (relative to project root)
   -- Search order: standard directories first, then custom directories
   coverage_dirs = {
+    "target/tarpaulin", -- Rust tarpaulin default output
+    "target/coverage",  -- Rust/other tooling coverage output
     "build/coverage",  -- Standard CMake coverage output
     "coverage",        -- Standard coverage directory
     "build",           -- Build directory root

@@ -765,7 +765,17 @@ end
 local function is_region_overlay_supported(buf)
   local file_entry = get_buffer_coverage(buf)
   if file_entry and file_entry.source_format then
-    return file_entry.source_format == "llvm_json"
+    if file_entry.source_format == "llvm_json" then
+      return true
+    end
+
+    for _, branch in ipairs(file_entry.branches or {}) do
+      if type(branch.col) == "number" then
+        return true
+      end
+    end
+
+    return false
   end
 
   local format = state.coverage_file_info and state.coverage_file_info.format

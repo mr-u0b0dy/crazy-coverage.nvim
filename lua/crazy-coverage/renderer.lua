@@ -955,10 +955,22 @@ function M.is_branch_overlay_win(win)
 end
 
 local function get_llvm_region_at_cursor(file_entry, buf, cursor_line, cursor_col0)
-  if not file_entry or file_entry.source_format ~= "llvm_json" then
+  if not file_entry then
     return nil
   end
   if not buf or not vim.api.nvim_buf_is_valid(buf) then
+    return nil
+  end
+
+  local has_column_regions = false
+  for _, br in ipairs(file_entry.branches or {}) do
+    if type(br.col) == "number" then
+      has_column_regions = true
+      break
+    end
+  end
+
+  if not has_column_regions then
     return nil
   end
 

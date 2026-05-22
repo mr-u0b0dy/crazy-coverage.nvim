@@ -1,6 +1,31 @@
 -- Utility functions for the coverage plugin
 local M = {}
 
+--- Check whether any scanned lines contain all of the expected JSON markers.
+---@param lines string[]|nil
+---@param markers string[]
+---@return boolean
+local function lines_contain_markers(lines, markers)
+  if not lines or #lines == 0 then
+    return false
+  end
+
+  for _, marker in ipairs(markers) do
+    local found = false
+    for _, line in ipairs(lines) do
+      if line and line:match(marker) then
+        found = true
+        break
+      end
+    end
+    if not found then
+      return false
+    end
+  end
+
+  return true
+end
+
 --- Normalize file path to absolute path, resolving .. and . segments
 ---@param path string
 ---@return string|nil
@@ -129,11 +154,10 @@ function M.detect_format(file_path)
 
   if ext == "json" then
     -- Reuse already-read prefix lines instead of re-reading the file.
-    if prefix_lines and #prefix_lines > 0 then
-      local first_line = prefix_lines[1]
-      if first_line:match('"version"') and first_line:match('"data"') then
-        return "llvm_json"
-      end
+    if lines_contain_markers(prefix_lines, { '"traces"', '"functions"' }) then
+      return "tarpaulin"
+    elseif lines_contain_markers(prefix_lines, { '"version"', '"data"' }) then
+      return "llvm_json"
     end
     return "llvm_json" -- Default JSON to LLVM JSON
   end
