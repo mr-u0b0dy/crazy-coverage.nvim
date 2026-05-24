@@ -77,7 +77,7 @@ fn test_fibonacci_above_old_cutoff() {
     assert_eq!(fibonacci(51), 20_365_011_074);
 }
 
-// NOTE: fibonacci(n > 8) and overflow case n > 50 are NOT tested
+// NOTE: fibonacci base cases, small values, and n = 51 are tested; larger values remain untested
 
 // Sum range tests - intentionally incomplete coverage
 #[test]
