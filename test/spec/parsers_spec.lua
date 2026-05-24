@@ -1469,6 +1469,40 @@ describe("Rust Coverage Support", function()
     helpers.cleanup_temp_dir(temp_dir)
   end)
 
+  it("discovers extensionless Rust tarpaulin JSON reports during fallback scanning", function()
+    local temp_dir = vim.fn.tempname()
+    assert.equals(1, vim.fn.mkdir(temp_dir, "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/build/coverage", "p"))
+
+    local cargo = io.open(temp_dir .. "/Cargo.toml", "w")
+    assert.is_not_nil(cargo)
+    cargo:write("[package]\nname = \"tmp-rust\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+    cargo:close()
+
+    local src = io.open(temp_dir .. "/main.rs", "w")
+    assert.is_not_nil(src)
+    src:write("fn main() {}\n")
+    src:close()
+
+    local tarpaulin_json = io.open(temp_dir .. "/build/coverage/tarpaulin-report", "w")
+    assert.is_not_nil(tarpaulin_json)
+    tarpaulin_json:write([=[{
+  "traces": [],
+  "functions": []
+}]=])
+    tarpaulin_json:close()
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(buf, temp_dir .. "/main.rs")
+
+    local found = config.get_coverage_file(buf)
+    assert.is_not_nil(found)
+    assert.matches("build/coverage/tarpaulin%-report$", found)
+
+    vim.api.nvim_buf_delete(buf, { force = true })
+    helpers.cleanup_temp_dir(temp_dir)
+  end)
+
   it("falls back to a parent Rust workspace root when the nearest crate has no coverage", function()
     local temp_dir = vim.fn.tempname()
     assert.equals(1, vim.fn.mkdir(temp_dir, "p"))
