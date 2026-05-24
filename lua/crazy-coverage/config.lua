@@ -1,4 +1,5 @@
 -- Configuration for coverage plugin
+local utils = require("crazy-coverage.utils")
 local M = {
   -- Highlight groups
   covered_hl = "CoverageCovered",
@@ -158,26 +159,8 @@ local function is_coverage_file(file_path)
     return false
   end
 
-  local lines = vim.fn.readfile(file_path, '', 10)
-  if not lines or #lines == 0 then
-    return false
-  end
-
-  local content = table.concat(lines, "\n")
-
-  -- Format detection patterns (LCOV, LLVM JSON, Cobertura XML)
-  local patterns = {
-    "^TN:", "^FN:", "^DA:", "end_of_record",  -- LCOV
-    '"version".*"data"', '"data".*{',         -- LLVM JSON
-    "<coverage", "<package", "<class", "<line", -- Cobertura XML
-    "^mode:%s*[%a_]+$",                           -- Go coverprofile header
-    ".+:%d+%.%d+,%d+%.%d+%s+%d+%s+%d+",         -- Go coverprofile records
-  }
-
-  for _, pattern in ipairs(patterns) do
-    if content:match(pattern) then
-      return true
-    end
+  if utils.detect_format(file_path) then
+    return true
   end
 
   -- Extension-based fallback
@@ -332,7 +315,7 @@ function M.find_project_roots(start_path)
         break
       end
     end
-    local parent = vim.fn.fnamemodify(path, ":p:h:h")
+    local parent = vim.fn.fnamemodify(path, ":p:h")
     if parent == path or parent == "" then
       break
     end
