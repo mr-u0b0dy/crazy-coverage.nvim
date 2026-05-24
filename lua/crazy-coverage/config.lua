@@ -315,7 +315,12 @@ function M.find_project_roots(start_path)
         break
       end
     end
-    local parent = vim.fs.dirname(path)
+    local parent
+    if vim.fs and vim.fs.dirname then
+      parent = vim.fs.dirname(path)
+    else
+      parent = vim.fn.fnamemodify(path, ":h")
+    end
     if parent == path or parent == "" then
       break
     end
