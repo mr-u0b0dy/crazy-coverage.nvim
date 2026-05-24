@@ -109,7 +109,6 @@ end_of_record
 
 - Line coverage
 - Trace-level execution data from cargo tarpaulin
-- Detects coverage generated with `--out Json`
 - Detects Tarpaulin JSON output (`--out Json`)
 
 ## Cobertura XML
