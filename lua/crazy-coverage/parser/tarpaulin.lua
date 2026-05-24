@@ -77,7 +77,7 @@ function M.parse(file_path, project_root)
     end
   end
 
-  return coverage_data and next(coverage_data) and coverage_data or nil
+  return coverage_data
 end
 
 return M
