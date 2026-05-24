@@ -112,6 +112,9 @@ tarpaulin-lcov: $(TARGET_COVERAGE_DIR)
 		mv "$(TARGET_COVERAGE_DIR)/lcov.info" "$(TARPAULIN_LCOV)"; \
 	elif [ -f "$(TARGET_COVERAGE_DIR)/lcov" ]; then \
 		mv "$(TARGET_COVERAGE_DIR)/lcov" "$(TARPAULIN_LCOV)"; \
+	else \
+		echo "❌ Expected LCOV output not found in $(TARGET_COVERAGE_DIR)" >&2; \
+		exit 1; \
 	fi
 	@echo "✓ LCOV report generated: $(TARPAULIN_LCOV)"
 
@@ -126,6 +129,9 @@ tarpaulin-json: $(TARGET_COVERAGE_DIR)
 		mv "$(TARGET_COVERAGE_DIR)/coverage.json" "$(TARPAULIN_JSON)"; \
 	elif [ -f "$(TARGET_COVERAGE_DIR)/tarpaulin-report.json" ]; then \
 		mv "$(TARGET_COVERAGE_DIR)/tarpaulin-report.json" "$(TARPAULIN_JSON)"; \
+	else \
+		echo "❌ Expected JSON output not found in $(TARGET_COVERAGE_DIR)" >&2; \
+		exit 1; \
 	fi
 	@echo "✓ JSON report generated: $(TARPAULIN_JSON)"
 
@@ -138,6 +144,9 @@ tarpaulin-xml: $(TARGET_COVERAGE_DIR)
 	$(CARGO) tarpaulin --out Xml --output-dir $(TARGET_COVERAGE_DIR)
 	@if [ -f "$(TARGET_COVERAGE_DIR)/cobertura.xml" ]; then \
 		mv "$(TARGET_COVERAGE_DIR)/cobertura.xml" "$(TARPAULIN_XML)"; \
+	else \
+		echo "❌ Expected XML output not found in $(TARGET_COVERAGE_DIR)" >&2; \
+		exit 1; \
 	fi
 	@echo "✓ XML report generated: $(TARPAULIN_XML)"
 

@@ -224,8 +224,8 @@ function M.get_coverage_file(buf)
     return nil
   end
 
-  local project_root = M.find_project_root(buf_path)
-  if not project_root then
+  local project_roots = M.find_project_roots(buf_path)
+  if not project_roots or #project_roots == 0 then
     return nil
   end
 
@@ -239,48 +239,62 @@ function M.get_coverage_file(buf)
     end
   end
 
-  -- Search for files with supported extensions
-  for _, dir in ipairs(M.coverage_dirs) do
-    local search_dir = project_root .. "/" .. dir
+  local function search_coverage_in_root(project_root)
+    for _, dir in ipairs(M.coverage_dirs) do
+      local search_dir = project_root .. "/" .. dir
 
-    if vim.fn.isdirectory(search_dir) == 1 then
-      local candidates, seen = {}, {}
+      if vim.fn.isdirectory(search_dir) == 1 then
+        local candidates, seen = {}, {}
 
-      -- Pattern-based discovery
-      for _, pattern in ipairs(patterns) do
-        local files = vim.fn.glob(search_dir .. "/" .. pattern, false, true)
-        for _, file in ipairs(files or {}) do
-          if vim.fn.filereadable(file) == 1 and not seen[file] then
-            table.insert(candidates, file)
-            seen[file] = true
+        -- Pattern-based discovery
+        for _, pattern in ipairs(patterns) do
+          local files = vim.fn.glob(search_dir .. "/" .. pattern, false, true)
+          for _, file in ipairs(files or {}) do
+            if vim.fn.filereadable(file) == 1 and not seen[file] then
+              table.insert(candidates, file)
+              seen[file] = true
+            end
           end
         end
-      end
 
-      local file = find_first_valid_coverage_file(candidates, true)
-      if file then
-        return file
-      end
+        local file = find_first_valid_coverage_file(candidates, true)
+        if file then
+          return file
+        end
 
-      -- Fallback: scan all files in the directory once patterns didn't match
-      local entries = vim.fn.readdir(search_dir)
-      local fallback_candidates = {}
-      for _, name in ipairs(entries or {}) do
-        local file_path = search_dir .. "/" .. name
-        if vim.fn.filereadable(file_path) == 1 and not seen[file_path] then
-          table.insert(fallback_candidates, file_path)
+        -- Fallback: scan all files in the directory once patterns didn't match
+        local entries = vim.fn.readdir(search_dir)
+        local fallback_candidates = {}
+        for _, name in ipairs(entries or {}) do
+          local file_path = search_dir .. "/" .. name
+          if vim.fn.filereadable(file_path) == 1 and not seen[file_path] then
+            table.insert(fallback_candidates, file_path)
+          end
+        end
+
+        file = find_first_valid_coverage_file(fallback_candidates, false)
+        if file then
+          return file
         end
       end
+    end
 
-      file = find_first_valid_coverage_file(fallback_candidates, false)
-      if file then
-        return file
-      end
+    return nil
+  end
+
+  for _, project_root in ipairs(project_roots) do
+    local file = search_coverage_in_root(project_root)
+    if file then
+      return file
     end
   end
 
   -- No coverage file found - notify user
-  local searched_dirs = vim.tbl_map(function(d) return project_root .. "/" .. d end, M.coverage_dirs)
+  local searched_dirs = vim.tbl_flatten(vim.tbl_map(function(project_root)
+    return vim.tbl_map(function(d)
+      return project_root .. "/" .. d
+    end, M.coverage_dirs)
+  end, project_roots))
   local msg = string.format(
     "Coverage file not found.\n\nSearched directories:\n  %s\n\nSupported patterns: %s\n\nTo customize search directories, add to your config:\n  coverage_dirs = { 'your/custom/dir', ... }",
     table.concat(searched_dirs, "\n  "),
@@ -295,17 +309,27 @@ end
 ---@param start_path string
 ---@return string|nil
 function M.find_project_root(start_path)
+  local project_roots = M.find_project_roots(start_path)
+  return project_roots and project_roots[1] or nil
+end
+
+--- Find all candidate project root directories from nearest to farthest
+---@param start_path string
+---@return string[]
+function M.find_project_roots(start_path)
   if not start_path or start_path == "" then
-    return nil
+    return {}
   end
 
   local path = vim.fn.fnamemodify(start_path, ":p:h")
+  local roots = {}
 
   for _ = 1, 10 do
     for _, marker in ipairs(M.project_markers) do
       local marker_path = path .. "/" .. marker
       if vim.fn.isdirectory(marker_path) == 1 or vim.fn.filereadable(marker_path) == 1 then
-        return path
+        table.insert(roots, path)
+        break
       end
     end
     local parent = vim.fn.fnamemodify(path, ":p:h:h")
@@ -315,7 +339,7 @@ function M.find_project_root(start_path)
     path = parent
   end
 
-  return nil
+  return roots
 end
 
 --- Detect theme colors for auto-adaptation

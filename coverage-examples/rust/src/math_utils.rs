@@ -51,22 +51,26 @@ pub fn calculate_grade(score: i32) -> char {
     'F'
 }
 
-// Fibonacci with recursion and base cases
-// Demonstrates recursion with partial coverage
 pub fn fibonacci(n: u32) -> u64 {
-    if n == 0 {
-        return 0;
+    match n {
+        0 => 0,
+        1 | 2 => 1,
+        _ => {
+            let mut previous: u64 = 1;
+            let mut current: u64 = 1;
+
+            for _ in 3..=n {
+                let next = match previous.checked_add(current) {
+                    Some(value) => value,
+                    None => return 0,
+                };
+                previous = current;
+                current = next;
+            }
+
+            current
+        }
     }
-    if n == 1 {
-        return 1;
-    }
-    if n == 2 {
-        return 1;
-    }
-    if n > 50 {
-        return 0; // Prevent overflow
-    }
-    fibonacci(n - 1) + fibonacci(n - 2)
 }
 
 // Sum a range with conditional logic and early exit

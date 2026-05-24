@@ -1310,7 +1310,7 @@ function M.toggle_region_overlay()
 
   local buf = vim.api.nvim_get_current_buf()
   if not is_region_overlay_supported(buf) then
-    vim.notify("Region overlay is only supported for LLVM JSON coverage format", vim.log.levels.WARN)
+    vim.notify("Region overlay requires branch region data with column metadata", vim.log.levels.WARN)
     return
   end
 

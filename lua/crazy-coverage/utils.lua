@@ -165,6 +165,11 @@ function M.detect_format(file_path)
   -- Try content-based detection for text formats
   if prefix_lines and #prefix_lines > 0 then
     local first_line = prefix_lines[1]
+    if lines_contain_markers(prefix_lines, { '"traces"', '"functions"' }) then
+      return "tarpaulin"
+    elseif lines_contain_markers(prefix_lines, { '"version"', '"data"' }) then
+      return "llvm_json"
+    end
     if first_line:match("^TN:") or first_line:match("^FN:") or first_line:match("^DA:") then
       return "lcov"
     elseif first_line:match("^{") then

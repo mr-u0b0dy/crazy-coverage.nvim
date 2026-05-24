@@ -21,6 +21,8 @@ The plugin searches upward from the current file location for project markers:
 - `CMakeLists.txt` - CMake project
 - `Makefile` - Make project
 - `compile_commands.json` - Compilation database
+- `go.mod` - Go module root
+- `Cargo.toml` - Rust crate root
 - Custom markers can be configured
 
 ### Step 2: Search Coverage Directories

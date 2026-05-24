@@ -109,8 +109,8 @@ end_of_record
 
 - Line coverage
 - Trace-level execution data from cargo tarpaulin
-- Detects both coverage (`--out Json` or `--out Json`) formats
 - Detects coverage generated with `--out Json`
+- Detects Tarpaulin JSON output (`--out Json`)
 
 ## Cobertura XML
 
@@ -325,9 +325,8 @@ When auto-detecting format, the plugin uses this priority:
 1. **File extension** (`.lcov`, `.json`, `.xml`, `.gcda`, `.profdata`)
 2. **Content inspection** (for extensionless files)
    - Lines starting with `TN:`, `FN:`, `DA:` → LCOV
-
-- Header `mode:` + profile ranges (`file.go:start,end ...`) → Go Coverprofile
-- Lines starting with `{` → LLVM JSON
+    - Header `mode:` + profile ranges (`file.go:start,end ...`) → Go Coverprofile
+    - Lines starting with `{` → LLVM JSON
 
 ## Tips
 

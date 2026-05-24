@@ -335,6 +335,28 @@ describe("Tarpaulin JSON Parser", function()
     assert.equals(1, #result["/tmp/example.rs"].lines)
     assert.equals(7, result["/tmp/example.rs"].lines[1].hits)
   end)
+
+  it("should resolve relative tarpaulin trace paths with project_root", function()
+    local content = [=[
+{
+  "traces": {
+    "src/example.rs": [
+      {"line": 8, "stats": {"Line": 3}}
+    ]
+  },
+  "functions": {},
+  "settings": []
+}
+]=]
+    temp_file, temp_dir = helpers.create_temp_coverage_file("json", content)
+
+    local result = tarpaulin_parser.parse(temp_file, temp_dir)
+
+    assert.is_not_nil(result)
+    assert.is_not_nil(result[temp_dir .. "/src/example.rs"])
+    assert.equals(1, #result[temp_dir .. "/src/example.rs"].lines)
+    assert.equals(3, result[temp_dir .. "/src/example.rs"].lines[1].hits)
+  end)
 end)
 
 describe("Cobertura Parser", function()
@@ -1292,6 +1314,10 @@ describe("Format Detection", function()
     assert.equal("llvm_json", utils.detect_format("coverage.json"))
   end)
 
+  it("detects Tarpaulin JSON format without extension", function()
+    assert.equal("tarpaulin", utils.detect_format("test/fixtures/sample_coverage_tarpaulin"))
+  end)
+
   it("detects GCOV format", function()
     assert.equal("gcov", utils.detect_format("file.gcda"))
   end)
@@ -1438,6 +1464,43 @@ describe("Rust Coverage Support", function()
     local found = config.get_coverage_file(buf)
     assert.is_not_nil(found)
     assert.matches("target/tarpaulin/coverage%-tarpaulin%.lcov$", found)
+
+    vim.api.nvim_buf_delete(buf, { force = true })
+    helpers.cleanup_temp_dir(temp_dir)
+  end)
+
+  it("falls back to a parent Rust workspace root when the nearest crate has no coverage", function()
+    local temp_dir = vim.fn.tempname()
+    assert.equals(1, vim.fn.mkdir(temp_dir, "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/crate/src", "p"))
+    assert.equals(1, vim.fn.mkdir(temp_dir .. "/build/coverage", "p"))
+
+    local makefile = io.open(temp_dir .. "/Makefile", "w")
+    assert.is_not_nil(makefile)
+    makefile:write("all:\n\t@echo ok\n")
+    makefile:close()
+
+    local cargo = io.open(temp_dir .. "/crate/Cargo.toml", "w")
+    assert.is_not_nil(cargo)
+    cargo:write("[package]\nname = \"tmp-rust\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+    cargo:close()
+
+    local src = io.open(temp_dir .. "/crate/src/main.rs", "w")
+    assert.is_not_nil(src)
+    src:write("fn main() {}\n")
+    src:close()
+
+    local lcov = io.open(temp_dir .. "/build/coverage/coverage.lcov", "w")
+    assert.is_not_nil(lcov)
+    lcov:write("TN:tmp\nSF:crate/src/main.rs\nDA:1,1\nend_of_record\n")
+    lcov:close()
+
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.api.nvim_buf_set_name(buf, temp_dir .. "/crate/src/main.rs")
+
+    local found = config.get_coverage_file(buf)
+    assert.is_not_nil(found)
+    assert.matches("build/coverage/coverage%.lcov$", found)
 
     vim.api.nvim_buf_delete(buf, { force = true })
     helpers.cleanup_temp_dir(temp_dir)

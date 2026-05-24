@@ -46,7 +46,7 @@ rust/
 │   └── math_utils.rs    # Functions under test
 ├── tests/
 │   └── math_tests.rs    # Test cases (intentional coverage gaps)
-└── build/               # Build output (created by make)
+└── target/              # Build output (created by make)
     └── coverage/
         ├── coverage-tarpaulin.lcov # Tarpaulin LCOV report
         └── coverage-llvm-cov.lcov  # llvm-cov LCOV report
