@@ -315,7 +315,7 @@ function M.find_project_roots(start_path)
         break
       end
     end
-    local parent = vim.fn.fnamemodify(path, ":p:h")
+    local parent = vim.fs.dirname(path)
     if parent == path or parent == "" then
       break
     end
