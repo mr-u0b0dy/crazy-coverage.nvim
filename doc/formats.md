@@ -325,8 +325,9 @@ When auto-detecting format, the plugin uses this priority:
 1. **File extension** (`.lcov`, `.json`, `.xml`, `.gcda`, `.profdata`)
 2. **Content inspection** (for extensionless files)
    - Lines starting with `TN:`, `FN:`, `DA:` → LCOV
-    - Header `mode:` + profile ranges (`file.go:start,end ...`) → Go Coverprofile
-    - Lines starting with `{` → LLVM JSON
+   - Header `mode:` + profile ranges (`file.go:start,end ...`) → Go Coverprofile
+   - JSON-like files with `"traces"`/`"functions"` markers → Tarpaulin JSON
+   - Otherwise, lines starting with `{` → LLVM JSON
 
 ## Tips
 
