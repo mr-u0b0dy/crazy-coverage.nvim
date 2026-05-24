@@ -16,6 +16,10 @@ fn test_multiply() {
 #[test]
 fn test_divide() {
     assert_eq!(divide(10, 2), 5);
+}
+
+#[test]
+fn test_divide_by_zero() {
     assert_eq!(divide(10, 0), 0);
 }
 
@@ -66,6 +70,11 @@ fn test_fibonacci_small() {
     assert_eq!(fibonacci(3), 2);
     assert_eq!(fibonacci(4), 3);
     assert_eq!(fibonacci(5), 5);
+}
+
+#[test]
+fn test_fibonacci_above_old_cutoff() {
+    assert_eq!(fibonacci(51), 20_365_011_074);
 }
 
 // NOTE: fibonacci(n > 8) and overflow case n > 50 are NOT tested

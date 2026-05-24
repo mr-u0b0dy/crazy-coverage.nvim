@@ -68,9 +68,13 @@ make lcov           # Convert to LCOV report
 
 ```bash
 cd rust
-make test           # Run Rust tests
-make lcov           # Generate LCOV report with cargo tarpaulin
-# Then load in Neovim: :CoverageLoad build/coverage/coverage.lcov
+make test                   # Run Rust tests
+# Generate LCOV report using the Makefile targets (outputs to target/coverage/)
+make tarpaulin-lcov         # Generate LCOV report with cargo-tarpaulin
+# Or, using llvm-cov:
+# make llvm-cov-lcov        # Generate LCOV report with cargo-llvm-cov
+# Then load in Neovim: :CoverageLoad target/coverage/coverage-tarpaulin.lcov
+# For llvm-cov output use: :CoverageLoad target/coverage/coverage-llvm-cov.lcov
 ```
 
 ## Available Coverage Tools

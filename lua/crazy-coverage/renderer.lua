@@ -954,7 +954,7 @@ function M.is_branch_overlay_win(win)
   return false
 end
 
-local function get_llvm_region_at_cursor(file_entry, buf, cursor_line, cursor_col0)
+local function get_column_region_at_cursor(file_entry, buf, cursor_line, cursor_col0)
   if not file_entry then
     return nil
   end
@@ -1051,7 +1051,7 @@ function M.render_region_overlay(buf, file_entry)
   local cursor_line = cursor[1]
   local cursor_col0 = cursor[2] or 0
 
-  local region = get_llvm_region_at_cursor(file_entry, buf, cursor_line, cursor_col0)
+  local region = get_column_region_at_cursor(file_entry, buf, cursor_line, cursor_col0)
   if not region then
     M.close_region_overlay(cur_win)
     clear_region_highlight(buf)
