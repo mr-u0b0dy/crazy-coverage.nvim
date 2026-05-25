@@ -1129,6 +1129,21 @@ function M.toggle_hitcount()
   vim.notify("Hit count display: " .. status, vim.log.levels.INFO)
 end
 
+--- Toggle coverage display in the sign column
+function M.toggle_sign_column()
+  local current_config = config.get_config()
+  current_config.show_coverage_in_sign_column = not current_config.show_coverage_in_sign_column
+  config.set_config(current_config)
+
+  -- Re-render if coverage is enabled
+  if state.is_enabled and state.coverage_data then
+    renderer.render(state.coverage_data, state.project_root)
+  end
+
+  local status = current_config.show_coverage_in_sign_column and "enabled" or "disabled"
+  vim.notify("Coverage sign column: " .. status, vim.log.levels.INFO)
+end
+
 --- Toggle coverage display in NvimTree
 function M.toggle_nvim_tree()
   state.nvim_tree_enabled = not state.nvim_tree_enabled
@@ -1173,6 +1188,10 @@ function M.create_commands()
 
   vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
     M.toggle_hitcount()
+  end, {})
+
+  vim.api.nvim_create_user_command("CoverageToggleSignColumn", function()
+    M.toggle_sign_column()
   end, {})
 
   vim.api.nvim_create_user_command("CoverageToggleNvimTree", function()

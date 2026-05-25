@@ -6,7 +6,7 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 
 - **Multi-Format Support**: LCOV, LLVM JSON, Cobertura XML, Go Coverprofile, GCOV, LLVM Profdata
 - **Smart Toggle**: Single command auto-loads coverage and watches for changes
-- **Flexible Display**: Show hit counts via virtual text or sign column
+- **Flexible Display**: Show hit counts via virtual text and move coverage status into the sign column
 - **Branch/Region Overlays**: Inspect branch and LLVM region hit details at cursor
 - **Tree Integration**: Coverage in NvimTree and neo-tree (optional)
 - **Configurable**: Customize colors, display behavior, and summary popup
@@ -131,6 +131,7 @@ require("crazy-coverage").setup({
     show_by_default = true,        -- Show hit counts when coverage is enabled
     display = "eol",              -- "eol", "inline", "overlay", "right_align", "sign"
   },
+  show_coverage_in_sign_column = false,
   auto_adapt_colors = true,       -- Auto-adapt colors to your theme
 })
 ```
@@ -175,6 +176,7 @@ See [Configuration Reference](doc/configuration.md) for all 15+ options.
 |---------|-------------|
 | `:CoverageToggle` | Toggle coverage overlay (auto-loads, watches file) |
 | `:CoverageToggleHitCount` | Toggle hit count display |
+| `:CoverageToggleSignColumn` | Toggle coverage status in the sign column |
 | `:CoverageToggleBranchOverlay` | Toggle branch overlay at cursor |
 | `:CoverageToggleRegionOverlay` | Toggle LLVM region overlay at cursor |
 | `:CoverageToggleNvimTree` | Toggle coverage display in NvimTree |
