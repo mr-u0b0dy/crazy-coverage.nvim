@@ -113,6 +113,74 @@ M._format_sign_text = format_sign_text
 
 M.namespace = vim.api.nvim_create_namespace("coverage_plugin")
 M.region_overlay_namespace = vim.api.nvim_create_namespace("coverage_region_overlay")
+M.hit_count_namespace = vim.api.nvim_create_namespace("coverage_hitcount_signs")
+
+-- Helper: map line highlight group to sign-specific highlight group
+local function get_sign_hl_for_group(hl_group)
+  local covered_sign = config.covered_sign_hl or (config.covered_hl .. "Sign")
+  local uncovered_sign = config.uncovered_sign_hl or (config.uncovered_hl .. "Sign")
+  local partial_sign = config.partial_sign_hl or (config.partial_hl .. "Sign")
+  if hl_group == config.covered_hl then
+    return covered_sign
+  elseif hl_group == config.uncovered_hl then
+    return uncovered_sign
+  else
+    return partial_sign
+  end
+end
+
+-- Helper: build virt_text chunks and determine virt_text_pos
+local function build_virt_text(hit_count, hit_count_display, show_sign_column, hl_group)
+  local virt = {}
+  if hit_count_display ~= "sign" and hit_count_display ~= "" and hit_count then
+    local hit_text = tostring(hit_count)
+    if not show_sign_column then
+      hit_text = " " .. tostring(hit_count)
+    end
+    local vt_hl = show_sign_column and "Normal" or hl_group
+    table.insert(virt, { hit_text, vt_hl })
+  end
+
+  if config.show_percentage and hit_count and hit_count > 0 then
+    table.insert(virt, { " (hit)", hl_group })
+  end
+
+  local pos = nil
+  if hit_count_display == "eol" or hit_count_display == "inline" or hit_count_display == "overlay" or hit_count_display == "right_align" then
+    pos = hit_count_display
+  end
+
+  return virt, pos
+end
+
+-- Helper: place hit-count sign (returns sign_text and sign_hl for use when adding to extmark)
+local function get_hitcount_sign(buf, line_num, hit_count, hl_group, show_sign_column)
+  local hit_cfg = config.hit_count or {}
+  local sign_text
+  if type(hit_cfg.sign_text_format) == "function" then
+    sign_text = hit_cfg.sign_text_format(hit_count)
+  elseif type(hit_cfg.sign_text_format) == "string" then
+    sign_text = string.format(hit_cfg.sign_text_format, hit_count)
+  else
+    sign_text = tostring(hit_count)
+  end
+  sign_text = format_sign_text(sign_text)
+  if not sign_text or sign_text == "" then
+    return nil
+  end
+
+  if show_sign_column then
+    pcall(vim.api.nvim_buf_set_extmark, buf, M.hit_count_namespace, line_num - 1, 0, {
+      priority = 201,
+      strict = false,
+      sign_text = sign_text,
+      sign_hl_group = hl_group,
+    })
+    return nil
+  end
+
+  return sign_text, hl_group
+end
 
 local function clear_region_highlight(buf)
   if buf and vim.api.nvim_buf_is_valid(buf) then
@@ -147,6 +215,7 @@ function M.clear_buffer(buf)
     return
   end
   vim.api.nvim_buf_clear_namespace(buf, M.namespace, 0, -1)
+  vim.api.nvim_buf_clear_namespace(buf, M.hit_count_namespace, 0, -1)
 end
 
 --- Clear all coverage marks from all buffers
@@ -227,6 +296,7 @@ function M.render_file(buf, file_entry)
 
   -- Track partial coverage statistics
   local partial_lines = {}
+  local show_coverage_in_sign_column = config.show_coverage_in_sign_column and true or false
 
   -- Create a map of line coverage for fast lookup
   local line_map = {}
@@ -292,18 +362,11 @@ function M.render_file(buf, file_entry)
     end
 
     -- Build virtual text (only for non-sign display modes)
-    local virt_text = {}
     local hit_count_display = config.hit_count and config.hit_count.display or "eol"
-    if hit_count_display ~= "sign" and hit_count_display ~= "" and hit_count then
-      table.insert(virt_text, { " " .. hit_count, hl_group })
-    end
+    local virt_text, virt_pos = build_virt_text(hit_count, hit_count_display, show_coverage_in_sign_column, hl_group)
 
-    if config.show_percentage and hit_count and hit_count > 0 then
-      table.insert(virt_text, { " (hit)", hl_group })
-    end
-
-    -- Place extmark on line with virtual text, line highlighting, and sign text
-    local should_render = #virt_text > 0 or config.enable_line_hl or (hit_count_display == "sign" and hit_count)
+    -- Place extmark on line with virtual text, line highlighting, and optional sign text
+    local should_render = show_coverage_in_sign_column or #virt_text > 0 or config.enable_line_hl or (hit_count_display == "sign" and hit_count)
 
     if should_render then
       local extmark_opts = {
@@ -312,39 +375,31 @@ function M.render_file(buf, file_entry)
         strict = false,
       }
 
+      if show_coverage_in_sign_column then
+        -- Use a left-half block glyph and apply a foreground-only sign
+        -- highlight so the colored portion appears on the left side of
+        -- the sign column cell while the rest remains the editor background.
+        extmark_opts.sign_text = "▌"
+        extmark_opts.sign_hl_group = get_sign_hl_for_group(hl_group)
+      end
+
       -- Add virtual text if present
       if #virt_text > 0 then
         extmark_opts.virt_text = virt_text
-        -- Only set virt_text_pos if it's a valid position (not "sign" or empty)
-        if hit_count_display == "eol" or hit_count_display == "inline" or hit_count_display == "overlay" or hit_count_display == "right_align" then
-          extmark_opts.virt_text_pos = hit_count_display
-        else
-          -- Default to eol for branch info when not in a valid display mode
-          extmark_opts.virt_text_pos = "eol"
-        end
+        extmark_opts.virt_text_pos = virt_pos or "eol"
       end
 
       -- Add line highlighting if enabled
-      if config.enable_line_hl then
+      if config.enable_line_hl and not show_coverage_in_sign_column then
         extmark_opts.line_hl_group = hl_group
       end
 
       -- Add sign text with hit count in sign column (left gutter)
       if hit_count_display == "sign" and hit_count then
-        local sign_text
-        if type(config.hit_count.sign_text_format) == "function" then
-          sign_text = config.hit_count.sign_text_format(hit_count)
-        elseif type(config.hit_count.sign_text_format) == "string" then
-          sign_text = string.format(config.hit_count.sign_text_format, hit_count)
-        else
-          -- Fallback: show exact hit count
-          sign_text = tostring(hit_count)
-        end
-        sign_text = format_sign_text(sign_text)
-        -- Only set sign_text if it's a valid non-empty string (Neovim requirement)
-        if sign_text and type(sign_text) == "string" and sign_text ~= "" then
+        local sign_text, sign_hl = get_hitcount_sign(buf, line_num, hit_count, hl_group, show_coverage_in_sign_column)
+        if sign_text and sign_text ~= "" then
           extmark_opts.sign_text = sign_text
-          extmark_opts.sign_hl_group = hl_group
+          extmark_opts.sign_hl_group = sign_hl
         end
       end
 

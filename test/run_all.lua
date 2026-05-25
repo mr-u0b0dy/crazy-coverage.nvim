@@ -135,6 +135,59 @@ test("all results are at most 2 display cells", function()
   end
 end)
 
+-- 6. Renderer Display Modes
+print("\n[Renderer Display Modes]")
+test("Sign-column coverage mode disables line highlights", function()
+  local config = require('crazy-coverage.config')
+  local renderer = require('crazy-coverage.renderer')
+
+  local previous_config = config.get_config()
+  config.set_config({
+    show_coverage_in_sign_column = true,
+    enable_line_hl = true,
+    hit_count = {
+      display = "eol",
+      show_by_default = true,
+      sign_text_format = function(hit_count)
+        return tostring(hit_count)
+      end,
+    },
+  })
+
+  local buf = vim.api.nvim_create_buf(true, true)
+  local file_path = cwd .. "/test/fixtures/sign-column-mode.lua"
+  vim.api.nvim_buf_set_name(buf, file_path)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"first line", "second line"})
+
+  local ok, err = pcall(function()
+    renderer.render_file(buf, {
+      path = file_path,
+      lines = {
+        { line = 1, hits = 4 },
+        { line = 2, hits = 0 },
+      },
+    })
+
+    local marks = vim.api.nvim_buf_get_extmarks(buf, renderer.namespace, 0, -1, { details = true })
+    assert(#marks == 2)
+
+    local first = marks[1][4]
+    assert(first.sign_text ~= nil)
+    assert(first.sign_hl_group ~= nil)
+    assert(first.line_hl_group == nil)
+    assert(first.virt_text ~= nil)
+
+    local second = marks[2][4]
+    assert(second.sign_text ~= nil)
+    assert(second.line_hl_group == nil)
+  end)
+
+  config.set_config(previous_config)
+  vim.api.nvim_buf_delete(buf, { force = true })
+
+  assert(ok, err)
+end)
+
 -- 6. Actual File Parsing (if fixtures exist)
 print("\n[File Parsing]")
 test("Parse LCOV fixture", function()

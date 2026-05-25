@@ -6,6 +6,7 @@ local M = {
   uncovered_hl = "CoverageUncovered",
   partial_hl = "CoveragePartial",
 
+
   -- Auto-adapt colors based on current theme (background and foreground)
   -- When enabled, automatically adjusts coverage colors to match your colorscheme
   auto_adapt_colors = true,
@@ -39,6 +40,9 @@ local M = {
 
   -- Show percentage for lines
   show_percentage = false,
+
+  -- Show coverage status in the sign column instead of in-buffer line highlighting
+  show_coverage_in_sign_column = false,
 
   -- Show branch summary in branch overlay header (taken/total and percentage)
   show_branch_summary = true,
@@ -470,6 +474,39 @@ function M.setup_highlights()
     default = false,
   })
 
+  -- Sign glyph highlight groups (foreground-only, no background).
+  -- These are internal-only names generated here and not intended for
+  -- user configuration. They are based on the primary line highlight
+  -- group names with a "Sign" suffix.
+  local covered_sign = (M.covered_hl or "CoverageCovered") .. "Sign"
+  local uncovered_sign = (M.uncovered_hl or "CoverageUncovered") .. "Sign"
+  local partial_sign = (M.partial_hl or "CoveragePartial") .. "Sign"
+
+  M.covered_sign_hl = covered_sign
+  M.uncovered_sign_hl = uncovered_sign
+  M.partial_sign_hl = partial_sign
+
+  vim.api.nvim_set_hl(0, covered_sign, {
+    fg = covered_color.bg,
+    bg = "NONE",
+    bold = true,
+    default = false,
+  })
+
+  vim.api.nvim_set_hl(0, uncovered_sign, {
+    fg = uncovered_color.bg,
+    bg = "NONE",
+    bold = true,
+    default = false,
+  })
+
+  vim.api.nvim_set_hl(0, partial_sign, {
+    fg = partial_color.bg,
+    bg = "NONE",
+    bold = true,
+    default = false,
+  })
+
   vim.api.nvim_set_hl(0, (M.region_overlay and M.region_overlay.highlight_hl) or "CoverageRegionActive", {
     bg = partial_color.bg,
     fg = partial_color.fg,
@@ -526,6 +563,7 @@ function M.set_config(user_config)
     default_show_hit_count = true,
     show_hit_count = true,
     show_percentage = true,
+    show_coverage_in_sign_column = true,
     show_branch_summary = true,
     enable_line_hl = true,
     center_on_navigate = true,

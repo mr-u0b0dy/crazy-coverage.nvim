@@ -75,6 +75,17 @@ Display coverage percentage for each line. When enabled, shows the percentage of
 show_percentage = false
 ```
 
+### `show_coverage_in_sign_column`
+
+**Type:** `boolean`
+**Default:** `false`
+
+Show coverage status in the sign column instead of using in-buffer line highlights for coverage lines. Hit-count display is still controlled separately by `hit_count.display`.
+
+```lua
+show_coverage_in_sign_column = true
+```
+
 ### `show_branch_summary`
 
 **Type:** `boolean`
@@ -160,6 +171,7 @@ nvim_tree = {
 ```
 
 **Fill symbols** indicate coverage level:
+
 - `▁` (0-20%)
 - `▂` (20-40%)
 - `▄` (40-60%)
@@ -205,6 +217,7 @@ neo_tree = {
 ```
 
 **Fill symbols** indicate coverage level:
+
 - `▁` (0-20%)
 - `▂` (20-40%)
 - `▄` (40-60%)
@@ -230,6 +243,7 @@ require("crazy-coverage").setup({
   },
 })
 ```
+
 ```
 
 ## Highlight Groups
@@ -268,6 +282,7 @@ require("crazy-coverage").setup({
 **Default:** `{ covered = nil, uncovered = nil, partial = nil }`
 
 Manual color overrides for coverage highlighting. Each color can be:
+
 - A hex string: `"#00AA00"` (sets background only)
 - A table: `{ bg = "#00AA00", fg = "#FFFFFF" }` (sets background and foreground)
 - `nil` (uses auto-adapted colors if `auto_adapt_colors = true`)
@@ -401,6 +416,7 @@ require("crazy-coverage").setup({
 When auto-adaptation is enabled, the plugin detects your theme and uses:
 
 **Dark themes:**
+
 ```lua
 covered   = { bg = "#003300", fg = "#00FF00" }  -- Dark green bg, bright green fg
 uncovered = { bg = "#330000", fg = "#FF4444" }  -- Dark red bg, bright red fg
@@ -408,6 +424,7 @@ partial   = { bg = "#332200", fg = "#FFAA00" }  -- Dark yellow bg, bright orange
 ```
 
 **Light themes:**
+
 ```lua
 covered   = { bg = "#CCFFCC", fg = "#006600" }  -- Light green bg, dark green fg
 uncovered = { bg = "#FFCCCC", fg = "#CC0000" }  -- Light red bg, dark red fg
@@ -422,6 +439,7 @@ These colors are automatically re-applied when the colorscheme changes.
 
 **Type:** `table`
 **Default:**
+
 ```lua
 {
   "build/coverage",  -- Standard CMake coverage output
@@ -436,12 +454,14 @@ Directories to search for coverage files, relative to the project root. The plug
 **Intelligent File Detection**: The plugin doesn't just search for filenames - it verifies files by reading their content to confirm they're valid coverage files. This means coverage files can have any name and any extension, as long as the file contains valid coverage data.
 
 **Search order example:**
+
 1. Check `project_root/build/coverage/` - for any coverage file
 2. Check `project_root/coverage/` - for any coverage file
 3. Check `project_root/build/` - for any coverage file
 4. Check `project_root/` - for any coverage file
 
 **Supported Coverage Formats** (auto-detected by content):
+
 - **LCOV**: Files containing `TN:`, `FN:`, `DA:`, or `end_of_record` markers
 - **LLVM JSON**: Files containing `"version"` and `"data"` fields
 - **Cobertura XML**: Files containing `<coverage>`, `<package>`, or `<class>` tags
@@ -451,6 +471,7 @@ Directories to search for coverage files, relative to the project root. The plug
 Filename doesn't matter - the plugin verifies coverage by actual content!
 
 **Examples of auto-detected files:**
+
 ```
 project_root/build/my_coverage_report         ← No extension
 project_root/coverage_2025_01_09.json         ← Custom name
@@ -475,6 +496,7 @@ coverage_dirs = {
 
 **Type:** `table`
 **Default:**
+
 ```lua
 {
   c = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
@@ -532,6 +554,7 @@ cache_enabled = true
 **Default:** `vim.fn.stdpath("cache") .. "/crazy-coverage.nvim"`
 
 Directory where cached coverage data is stored. On most systems, this defaults to:
+
 - Linux: `~/.cache/nvim/crazy-coverage.nvim`
 - macOS: `~/Library/Caches/nvim/crazy-coverage.nvim`
 - Windows: `~/AppData/Local/nvim-data/crazy-coverage.nvim`
@@ -548,6 +571,7 @@ cache_dir = vim.fn.stdpath("cache") .. "/crazy-coverage.nvim"
 **Deprecated:** This option is deprecated in favor of using `:CoverageToggle` which provides smarter auto-loading with file watching.
 
 When `true`, attempts to auto-load coverage when opening a file. However, it's recommended to use `:CoverageToggle` instead, which provides:
+
 - Explicit control over when coverage is loaded
 - File watching for automatic reloading
 - Cleaner resource management
