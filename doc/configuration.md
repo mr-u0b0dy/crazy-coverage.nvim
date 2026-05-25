@@ -244,8 +244,6 @@ require("crazy-coverage").setup({
 })
 ```
 
-```
-
 ## Highlight Groups
 
 ### `auto_adapt_colors`
