@@ -6,7 +6,7 @@ A Neovim plugin for displaying code coverage overlays directly in your editor wi
 
 - **Multi-Format Support**: LCOV, LLVM JSON, Cobertura XML, Go Coverprofile, GCOV, LLVM Profdata
 - **Smart Toggle**: Single command auto-loads coverage and watches for changes
-- **Flexible Display**: Show hit counts via virtual text and move coverage status into the sign column
+- **Flexible Display**: Show hit counts via virtual text, with optional coverage status in the sign column
 - **Branch/Region Overlays**: Inspect branch and LLVM region hit details at cursor
 - **Tree Integration**: Coverage in NvimTree and neo-tree (optional)
 - **Configurable**: Customize colors, display behavior, and summary popup
