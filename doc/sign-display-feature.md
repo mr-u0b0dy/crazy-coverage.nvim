@@ -65,7 +65,7 @@ require("crazy-coverage").setup({
 ## Commands
 
 - `:CoverageToggleSignColumn` - Toggle coverage status in the sign column
-- `:CoverageToggleHitCount` - Toggle end-of-line virtual text (existing feature)
+- `:CoverageToggleHitCount` - Toggle hit-count display on/off for `eol`, `inline`, `overlay`, `right_align`, or `sign`
 
 ## Usage Examples
 

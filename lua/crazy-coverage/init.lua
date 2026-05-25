@@ -1131,7 +1131,7 @@ end
 
 --- Toggle coverage display in the sign column
 function M.toggle_sign_column()
-  local current_config = config.get_config()
+  local current_config = vim.deepcopy(config.get_config())
   current_config.show_coverage_in_sign_column = not current_config.show_coverage_in_sign_column
   config.set_config(current_config)
 
@@ -1258,10 +1258,6 @@ function M.create_commands()
 
   vim.api.nvim_create_user_command("CoveragePrevPartial", function()
     M.prev_partial()
-  end, {})
-
-  vim.api.nvim_create_user_command("CoverageToggleHitCount", function()
-    M.toggle_hitcount()
   end, {})
 
   -- Toggle branch overlay floating window
