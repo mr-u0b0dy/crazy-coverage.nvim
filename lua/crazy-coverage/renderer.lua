@@ -174,12 +174,12 @@ local function get_hitcount_sign(buf, line_num, hit_count, hl_group, show_sign_c
       priority = 201,
       strict = false,
       sign_text = sign_text,
-      sign_hl_group = hl_group,
+      sign_hl_group = get_sign_hl_for_group(hl_group),
     })
     return nil
   end
 
-  return sign_text, hl_group
+  return sign_text, get_sign_hl_for_group(hl_group)
 end
 
 local function clear_region_highlight(buf)

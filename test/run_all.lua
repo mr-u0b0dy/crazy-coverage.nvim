@@ -137,6 +137,10 @@ end)
 
 -- 6. Renderer Display Modes
 print("\n[Renderer Display Modes]")
+test("Sign-column coverage defaults to disabled", function()
+  local config = require('crazy-coverage.config')
+  assert(config.get_config().show_coverage_in_sign_column == false)
+end)
 test("Sign-column coverage mode disables line highlights", function()
   local config = require('crazy-coverage.config')
   local renderer = require('crazy-coverage.renderer')
@@ -184,6 +188,80 @@ test("Sign-column coverage mode disables line highlights", function()
 
   config.set_config(previous_config)
   vim.api.nvim_buf_delete(buf, { force = true })
+
+  assert(ok, err)
+end)
+
+test("Hit-count sign uses sign highlight group in sign column", function()
+  local config = require('crazy-coverage.config')
+  local renderer = require('crazy-coverage.renderer')
+
+  local previous_config = config.get_config()
+  config.set_config({
+    show_coverage_in_sign_column = false,
+    enable_line_hl = true,
+    hit_count = {
+      display = "sign",
+      show_by_default = true,
+      sign_text_format = function(hit_count)
+        return tostring(hit_count)
+      end,
+    },
+  })
+
+  local buf = vim.api.nvim_create_buf(true, true)
+  local file_path = cwd .. "/test/fixtures/sign-hit-count.lua"
+  vim.api.nvim_buf_set_name(buf, file_path)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"first line"})
+
+  local ok, err = pcall(function()
+    renderer.render_file(buf, {
+      path = file_path,
+      lines = {
+        { line = 1, hits = 4 },
+      },
+    })
+
+    local marks = vim.api.nvim_buf_get_extmarks(buf, renderer.namespace, 0, -1, { details = true })
+    assert(#marks == 1)
+
+    local details = marks[1][4]
+    local expected_sign_hl = config.covered_sign_hl or (config.covered_hl .. "Sign")
+    assert(details.sign_text ~= nil)
+    assert(details.sign_hl_group == expected_sign_hl)
+    assert(details.sign_hl_group ~= config.covered_hl)
+  end)
+
+  config.set_config(previous_config)
+  vim.api.nvim_buf_delete(buf, { force = true })
+
+  assert(ok, err)
+end)
+
+test("Sign-column coverage default stays false across config merges", function()
+  local config = require('crazy-coverage.config')
+
+  local previous_config = config.get_config()
+  local ok, err = pcall(function()
+    config.set_config({
+      show_coverage_in_sign_column = true,
+    })
+    assert(config.get_config().show_coverage_in_sign_column == true)
+
+    config.set_config({
+      hit_count = {
+        display = "eol",
+        show_by_default = true,
+        sign_text_format = function(hit_count)
+          return tostring(hit_count)
+        end,
+      },
+    })
+
+    assert(config.get_config().show_coverage_in_sign_column == false)
+  end)
+
+  config.set_config(previous_config)
 
   assert(ok, err)
 end)

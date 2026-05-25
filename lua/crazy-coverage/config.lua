@@ -552,6 +552,10 @@ function M.set_config(user_config)
     end
   end
 
+  if user_config.show_coverage_in_sign_column == nil then
+    M.show_coverage_in_sign_column = false
+  end
+
   -- Whitelist of valid config keys
   local valid_keys = {
     covered_hl = true,
