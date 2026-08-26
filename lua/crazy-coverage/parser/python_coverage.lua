@@ -56,8 +56,52 @@ local function resolve_source_path(source_path, coverage_dir, project_root)
   return normalize_path(coverage_dir .. "/" .. relative_path)
 end
 
+--- Look for a `coverage` executable in common virtualenv locations near the
+--- project so :CoverageLoad works even when coverage.py is only installed in
+--- an isolated venv (e.g. coverage-examples/python's build/venv) rather than
+--- on Neovim's PATH or the system python3.
+---@param project_root string|nil
+---@param coverage_dir string
 ---@return string|nil
-local function find_coverage_command()
+local function find_venv_coverage(project_root, coverage_dir)
+  local dirs = {}
+  if project_root and project_root ~= "" then
+    table.insert(dirs, project_root)
+  end
+  if coverage_dir and coverage_dir ~= "" and coverage_dir ~= project_root then
+    table.insert(dirs, coverage_dir)
+  end
+
+  local venv_env = vim.env.VIRTUAL_ENV
+  if venv_env and venv_env ~= "" then
+    local candidate = venv_env .. "/bin/coverage"
+    if vim.fn.executable(candidate) == 1 then
+      return vim.fn.shellescape(candidate)
+    end
+  end
+
+  local venv_subdirs = { ".venv", "venv", "env", "build/venv" }
+  for _, dir in ipairs(dirs) do
+    for _, sub in ipairs(venv_subdirs) do
+      local candidate = dir .. "/" .. sub .. "/bin/coverage"
+      if vim.fn.executable(candidate) == 1 then
+        return vim.fn.shellescape(candidate)
+      end
+    end
+  end
+
+  return nil
+end
+
+---@param project_root string|nil
+---@param coverage_dir string
+---@return string|nil
+local function find_coverage_command(project_root, coverage_dir)
+  local venv_command = find_venv_coverage(project_root, coverage_dir)
+  if venv_command then
+    return venv_command
+  end
+
   if vim.fn.executable("coverage") == 1 then
     return "coverage"
   end
@@ -70,9 +114,11 @@ local function find_coverage_command()
 end
 
 ---@param coverage_file string
+---@param project_root string|nil
 ---@return string|nil
-local function convert_coverage_db_to_json(coverage_file)
-  local command = find_coverage_command()
+local function convert_coverage_db_to_json(coverage_file, project_root)
+  local coverage_dir = vim.fn.fnamemodify(coverage_file, ":p:h")
+  local command = find_coverage_command(project_root, coverage_dir)
   if not command then
     vim.notify("coverage.py command not found. Install coverage or python3 with the coverage package.", vim.log.levels.ERROR)
     return nil
@@ -222,7 +268,7 @@ function M.parse(file_path, project_root)
   local temporary_json
 
   if file_path:match("%.coverage$") or file_path:match("^%.coverage%.") then
-    temporary_json = convert_coverage_db_to_json(file_path)
+    temporary_json = convert_coverage_db_to_json(file_path, project_root)
     if not temporary_json then
       return nil
     end
