@@ -499,6 +499,7 @@ coverage_dirs = {
 {
   c = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
   cpp = { "*.lcov", "*.info", "coverage.json", "coverage.xml", "*.profdata" },
+  python = { ".coverage", "coverage.json", "coverage.xml", "coverage.lcov" },
 }
 ```
 
@@ -510,7 +511,7 @@ The plugin will search for these patterns in the configured directories, but if 
 coverage_patterns = {
   c = { "*.lcov", "coverage.json" },
   cpp = { "*.lcov", "coverage.json" },
-  python = { "coverage.xml", ".coverage" },
+  python = { ".coverage", "coverage.json", "coverage.xml", "coverage.lcov" },
   rust = { "coverage.json", "lcov.info" },
 }
 ```
@@ -528,6 +529,7 @@ project_markers = {
   "CMakeLists.txt",
   "Makefile",
   "compile_commands.json",
+  "pyproject.toml", -- Add for Python projects
   "package.json",  -- Add for JavaScript/TypeScript projects
   "Cargo.toml",    -- Add for Rust projects
 }

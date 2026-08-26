@@ -27,6 +27,13 @@ coverage-examples/
 │   ├── math_utils.go
 │   └── math_utils_test.go
 │
+├── python/               # Python examples
+│   ├── Makefile          # coverage.py targets
+│   ├── README.md         # Python-specific documentation
+│   ├── pyproject.toml
+│   ├── src/
+│   └── tests/
+│
 └── rust/                 # Rust examples
     ├── Makefile          # Rust coverage targets
     ├── README.md         # Rust-specific documentation
@@ -62,6 +69,22 @@ cd go
 make cover          # Generate native Go coverprofile
 make lcov           # Convert to LCOV report
 # Then load in Neovim: :CoverageLoad build/coverage.out
+```
+
+### Python Examples
+
+```bash
+cd python
+make coverage       # Creates build/venv (coverage + pytest) on first run, then generates .coverage
+make xml            # Export Cobertura XML
+make json           # Export coverage.py JSON
+make lcov           # Export LCOV report
+make html           # Export browsable HTML report (build/coverage/html/index.html)
+# Then load in Neovim:
+# :CoverageLoad .coverage
+# :CoverageLoad build/coverage/coverage.xml
+# :CoverageLoad build/coverage/coverage.json
+# :CoverageLoad build/coverage/coverage.lcov
 ```
 
 ### Rust Examples
@@ -117,6 +140,8 @@ make llvm-report    # Build, run, and generate JSON report
 | JSON | `build/coverage/coverage.json` | LLVM | `:CoverageLoad build/coverage/coverage.json` |
 | Go Coverprofile | `build/coverage.out` | Go test | `:CoverageLoad build/coverage.out` |
 | Cobertura XML | `build/coverage/coverage.xml` | Go/C/C++ | `:CoverageLoad build/coverage/coverage.xml` |
+| Python coverage.py JSON | `build/coverage/coverage.json` | coverage.py | `:CoverageLoad build/coverage/coverage.json` |
+| Python .coverage | `.coverage` | coverage.py | `:CoverageLoad .coverage` |
 
 ## Build Commands Summary
 
@@ -167,8 +192,8 @@ make clean          # Remove build artifacts
 
 ## Features
 
-- **Multi-language support**: C, C++, Go, and Rust examples
-- **Multiple coverage tools**: GCC (LCOV) and LLVM (JSON)
+- **Multi-language support**: C, C++, Go, Python, and Rust examples
+- **Multiple coverage tools**: GCC (LCOV), LLVM (JSON), and coverage.py
 - **Clean build system**: Artifacts in `build/` directory only
 - **Intentional gaps**: Some code paths are intentionally untested to demonstrate visualization
 - **Documentation**: Each example includes detailed README with instructions
@@ -201,6 +226,16 @@ brew install go                    # macOS
 # Optional (for Cobertura conversion in Go example)
 go install github.com/boumenot/gocover-cobertura@latest
 ```
+
+For Python tools:
+
+```bash
+python3 -m venv --help  # confirm the standard `venv` module is available
+```
+
+`coverage` and `pytest` don't need to be installed manually — `python/Makefile` provisions its own
+virtualenv at `python/build/venv` and installs them there automatically. This avoids
+"externally managed environment" `pip install` failures on distros like Arch, Debian, or Ubuntu.
 
 For Rust tools:
 

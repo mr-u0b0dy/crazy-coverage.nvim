@@ -8,7 +8,7 @@ The plugin uses a multi-level approach to automatically find your coverage file:
 
 1. **Smart Directory Search** - Searches standard coverage directories in order
 2. **Content Inspection** - Verifies files are actually coverage files by reading content
-3. **Format Detection** - Automatically detects LCOV, JSON, XML, GCOV, LLVM Profdata
+3. **Format Detection** - Automatically detects LCOV, JSON, XML, GCOV, LLVM Profdata, Python coverage.py
 4. **Flexible Configuration** - Supports custom search directories
 
 ## How It Works
@@ -23,6 +23,7 @@ The plugin searches upward from the current file location for project markers:
 - `compile_commands.json` - Compilation database
 - `go.mod` - Go module root
 - `Cargo.toml` - Rust crate root
+- `pyproject.toml` - Python project root
 - Custom markers can be configured
 
 ### Step 2: Search Coverage Directories
@@ -46,8 +47,9 @@ For each file found, the plugin checks if it's actually a coverage file by:
 
 - **LCOV**: Lines contain `TN:`, `FN:`, `DA:`, or `end_of_record`
 - **LLVM JSON**: Contains `"version"` and `"data"` fields
+- **Python coverage.py JSON**: Contains `"meta"` and `"files"` fields
 - **Cobertura XML**: Contains `<coverage>`, `<package>`, `<class>`, or `<line>` tags
-- **File Extension Fallback**: `.lcov`, `.info`, `.json`, `.xml`, `.profdata`, `.gcda`, `.gcno`
+- **File Extension Fallback**: `.lcov`, `.info`, `.json`, `.xml`, `.profdata`, `.gcda`, `.gcno`, `.coverage`
 
 ### Step 4: Return First Valid File
 
@@ -95,6 +97,7 @@ All formats are auto-detected by content:
 |--------|-----------|-----------|
 | LCOV | `*.lcov`, `*.info` | `TN:`, `FN:`, `DA:`, `end_of_record` |
 | LLVM JSON | `*.json` | `"version"`, `"data"` |
+| Python Coverage.py JSON | `coverage.json`, `.coverage` | `"meta"`, `"files"` |
 | Cobertura XML | `*.xml` | `<coverage>`, `<package>`, `<class>` |
 | GCOV | `*.gcda`, `*.gcno` | File extension (binary) |
 | LLVM Profdata | `*.profdata` | File extension (binary) |

@@ -8,6 +8,7 @@ M.parsers = {
   lcov = require("crazy-coverage.parser.lcov"),
   llvm_json = require("crazy-coverage.parser.llvm_json"),
   tarpaulin = require("crazy-coverage.parser.tarpaulin"),
+  python_coverage = require("crazy-coverage.parser.python_coverage"),
   cobertura = require("crazy-coverage.parser.cobertura"),
   go_coverprofile = require("crazy-coverage.parser.go"),
   gcov = require("crazy-coverage.converter.gcov"),

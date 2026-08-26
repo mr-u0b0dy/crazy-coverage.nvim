@@ -386,7 +386,7 @@ require("crazy-coverage").setup()
 ## Next Steps
 
 - See [Configuration Reference](configuration.md) for all 15+ config options
-- See [Coverage Examples](../coverage-examples/) for C/C++, Go, and Rust examples
+- See [Coverage Examples](../coverage-examples/) for C/C++, Go, Python, and Rust examples
 - See [Supported Formats](formats.md) for coverage generation details
 ```
 

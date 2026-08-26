@@ -89,7 +89,7 @@ end
 
 --- Detect coverage format based on file extension and content
 ---@param file_path string
----@return string|nil -- 'lcov', 'llvm_json', 'cobertura', 'gcov', 'llvm_profdata', 'go_coverprofile', or nil
+---@return string|nil -- 'lcov', 'llvm_json', 'python_coverage', 'cobertura', 'gcov', 'llvm_profdata', 'go_coverprofile', or nil
 local function is_go_coverprofile(lines)
   if not lines or #lines < 1 then
     return false
@@ -128,6 +128,11 @@ function M.detect_format(file_path)
   end
 
   local ext = file_path:match("%.([^.]+)$")
+  local file_name = vim.fn.fnamemodify(file_path, ":t")
+
+  if file_name == ".coverage" or file_name:match("^%.coverage%.") then
+    return "python_coverage"
+  end
 
   if ext == "info" or ext == "lcov" then
     return "lcov"
@@ -153,6 +158,9 @@ function M.detect_format(file_path)
   end
 
   if ext == "json" then
+    if lines_contain_markers(prefix_lines, { '"meta"', '"files"' }) then
+      return "python_coverage"
+    end
     -- Reuse already-read prefix lines instead of re-reading the file.
     if lines_contain_markers(prefix_lines, { '"traces"', '"functions"' }) then
       return "tarpaulin"
@@ -165,6 +173,9 @@ function M.detect_format(file_path)
   -- Try content-based detection for text formats
   if prefix_lines and #prefix_lines > 0 then
     local first_line = prefix_lines[1]
+    if lines_contain_markers(prefix_lines, { '"meta"', '"files"' }) then
+      return "python_coverage"
+    end
     if lines_contain_markers(prefix_lines, { '"traces"', '"functions"' }) then
       return "tarpaulin"
     elseif lines_contain_markers(prefix_lines, { '"version"', '"data"' }) then

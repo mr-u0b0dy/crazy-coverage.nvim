@@ -216,7 +216,7 @@ nvim src/math.c
 - [ ] Jump to next/previous uncovered line command
 
 #### Medium Priority
-- [ ] Python coverage support (`.coverage` SQLite)
+- [x] Python coverage support (`.coverage` SQLite)
 - [ ] Go coverage support (`coverage.out`)
 - [ ] Rust coverage support (`llvm-cov` for Rust)
 - [ ] JavaScript coverage support (Istanbul/NYC JSON)
