@@ -39,12 +39,12 @@ nvim --headless -u NONE +"lua dofile('test/test_format_detection.lua')" +qa
 - [ ] Improve Cobertura parser (better XML handling)
 - [ ] Add GCOV binary format parser
 - [ ] Add LLVM Profdata binary format parser
-- [ ] Add Python coverage (.coverage) parser
+- [x] Add Python coverage (.coverage) parser
 - [ ] Add Rust tarpaulin parser
 - [ ] Add Go coverage parser
 
 ### Language Support
-- [ ] Python language hooks
+- [x] Python language hooks
 - [ ] Rust language hooks
 - [ ] Go language hooks
 - [ ] JavaScript/TypeScript language hooks

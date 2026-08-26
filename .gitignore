@@ -24,6 +24,12 @@ target/
 Cargo.lock
 *.pdb
 
+# Python
+.coverage
+__pycache__/
+*.pyc
+.pytest_cache/
+
 # Coverage reports
 coverage.lcov
 coverage.json

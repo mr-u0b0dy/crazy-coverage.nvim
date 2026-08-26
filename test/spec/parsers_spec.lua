@@ -274,6 +274,92 @@ describe("LLVM JSON Parser", function()
   end)
 end)
 
+describe("Python Coverage Parser", function()
+  local python_parser = require("crazy-coverage.parser.python_coverage")
+  local utils = require("crazy-coverage.utils")
+  local temp_file, temp_dir, temp_bin_dir, original_path
+
+  before_each(function()
+    original_path = vim.env.PATH
+  end)
+
+  after_each(function()
+    if temp_dir then
+      helpers.cleanup_temp_dir(temp_dir)
+      temp_file, temp_dir = nil, nil
+    end
+
+    if temp_bin_dir then
+      helpers.cleanup_temp_dir(temp_bin_dir)
+      temp_bin_dir = nil
+    end
+
+    if original_path then
+      vim.env.PATH = original_path
+    end
+  end)
+
+  it("should detect .coverage files as python coverage", function()
+    local coverage_file
+    coverage_file, temp_dir = helpers.create_temp_coverage_file(".coverage", "sqlite format 3\0")
+
+    assert.equals("python_coverage", utils.detect_format(coverage_file))
+  end)
+
+  it("should parse coverage.py JSON reports", function()
+    temp_file, temp_dir = helpers.create_temp_coverage_file("json", helpers.sample_python_coverage_json())
+
+    local result = python_parser.parse(temp_file, temp_dir)
+
+    assert.is_not_nil(result)
+    assert.is_table(result)
+
+    local found_file, file_data = next(result)
+    assert.is_not_nil(found_file)
+    assert.is_not_nil(file_data)
+    assert.equals(2, #file_data.lines)
+    assert.equals(2, #file_data.branches)
+    assert.equals(10, file_data.lines[1].line)
+    assert.equals(1, file_data.lines[1].hits)
+    assert.equals(11, file_data.lines[2].line)
+    assert.equals(0, file_data.lines[2].hits)
+  end)
+
+  it("should convert .coverage files through the coverage command", function()
+    local coverage_json = helpers.sample_python_coverage_json()
+    -- The real `coverage json -o <path> ...` writes its report to whatever path
+    -- follows `-o`; mimic that instead of a fixed path so this works regardless
+    -- of the vim.fn.tempname() output path the production code picks.
+    local script = [=[#!/bin/sh
+out_file=""
+prev=""
+for arg in "$@"; do
+  if [ "$prev" = "-o" ]; then
+    out_file="$arg"
+  fi
+  prev="$arg"
+done
+cat > "$out_file" <<'EOF'
+]=] .. coverage_json .. "\n" .. [=[EOF
+]=]
+
+    local coverage_bin
+    coverage_bin, temp_bin_dir = helpers.create_temp_executable("coverage", script)
+    vim.env.PATH = temp_bin_dir .. ":" .. original_path
+
+    temp_file, temp_dir = helpers.create_temp_coverage_file(".coverage", "sqlite format 3\0")
+
+    local result = python_parser.parse(temp_file, temp_dir)
+
+    assert.is_not_nil(result)
+    local resolved_path, file_data = next(result)
+    assert.is_not_nil(resolved_path)
+    assert.is_not_nil(file_data)
+    assert.equals(2, #file_data.lines)
+    assert.equals(2, #file_data.branches)
+  end)
+end)
+
 describe("Tarpaulin JSON Parser", function()
   local tarpaulin_parser = require("crazy-coverage.parser.tarpaulin")
   local parser_dispatcher = require("crazy-coverage.parser.init")

@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "format": 3,
+    "version": "7.6.0"
+  },
+  "files": {
+    "../main.py": {
+      "executed_lines": [10, 12],
+      "missing_lines": [11],
+      "executed_branches": [[10, 11]],
+      "missing_branches": [[10, 13]]
+    }
+  },
+  "totals": {
+    "covered_lines": 2,
+    "num_statements": 3
+  }
+}

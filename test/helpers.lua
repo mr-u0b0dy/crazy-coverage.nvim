@@ -10,13 +10,35 @@ function M.create_temp_coverage_file(format, content)
   os.execute("mkdir -p " .. tmp_dir)
 
   local ext = format == "llvm" and "json" or format
-  local filename = tmp_dir .. "/coverage." .. ext
+  local filename
+  if ext == ".coverage" or ext == "coverage" then
+    filename = tmp_dir .. "/.coverage"
+  else
+    filename = tmp_dir .. "/coverage." .. ext
+  end
   local file = io.open(filename, "w")
   assert(file, "failed to create temporary coverage file: " .. filename)
 
   local ok, err = file:write(content)
   file:close()
   assert(ok, "failed to write temporary coverage file: " .. filename .. " (" .. tostring(err) .. ")")
+
+  return filename, tmp_dir
+end
+
+function M.create_temp_executable(name, script)
+  local tmp_dir = "/tmp/crazy-coverage-bin-" .. os.time()
+  os.execute("mkdir -p " .. tmp_dir)
+
+  local filename = tmp_dir .. "/" .. name
+  local file = io.open(filename, "w")
+  assert(file, "failed to create temporary executable: " .. filename)
+
+  local ok, err = file:write(script)
+  file:close()
+  assert(ok, "failed to write temporary executable: " .. filename .. " (" .. tostring(err) .. ")")
+
+  assert(os.execute(string.format("chmod +x %s", vim.fn.shellescape(filename))), "failed to chmod executable: " .. filename)
 
   return filename, tmp_dir
 end
@@ -78,6 +100,27 @@ DA:11,0
 DA:12,3
 end_of_record
 ]=]
+end
+
+function M.sample_python_coverage_json()
+  return [=[{
+  "meta": {
+    "format": 3,
+    "version": "7.6.0"
+  },
+  "files": {
+    "../main.py": {
+      "executed_lines": [10],
+      "missing_lines": [11],
+      "executed_branches": [[10, 11]],
+      "missing_branches": [[10, 13]]
+    }
+  },
+  "totals": {
+    "covered_lines": 2,
+    "num_statements": 3
+  }
+}]=]
 end
 
 return M
