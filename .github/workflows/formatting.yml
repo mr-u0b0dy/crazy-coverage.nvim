@@ -18,7 +18,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check formatting with EditorConfig
-        uses: editorconfig-checker/action-editorconfig-checker@d2ed4fd072ae6f887e9407c909af0f585d2ad9f4
+        uses: editorconfig-checker/action-editorconfig-checker@51f63319f592f97930c73d9c46184d20bd206393
+        with:
+          version: v4.0.1
 
       - name: Run editorconfig-checker
         run: editorconfig-checker
