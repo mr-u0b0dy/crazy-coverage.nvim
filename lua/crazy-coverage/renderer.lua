@@ -612,19 +612,19 @@ function M.render_summary(summary)
     end
   end
 
+  -- The buffer always keeps every line; only the window height is capped so the
+  -- popup stays scrollable when the file list doesn't fit.
+  local ui = vim.api.nvim_list_uis()[1]
+  local total_width = ui and ui.width or vim.o.columns
+  local total_height = ui and ui.height or vim.o.lines
   local height = #lines
   if cfg.max_height and height > cfg.max_height then
     height = cfg.max_height
-    local trimmed = {}
-    local trimmed_hls = {}
-    for i = 1, height - 1 do
-      table.insert(trimmed, lines[i])
-      table.insert(trimmed_hls, highlights[i])
-    end
-    table.insert(trimmed, "...")
-    table.insert(trimmed_hls, {})
-    lines = trimmed
-    highlights = trimmed_hls
+  end
+  -- Leave room for the border and the command line
+  local available_height = math.max(total_height - 4, 3)
+  if height > available_height then
+    height = available_height
   end
 
   local width = math.max(max_line_width, 20)
@@ -687,9 +687,6 @@ function M.render_summary(summary)
       focusable = true,
     }
   else
-    local ui = vim.api.nvim_list_uis()[1]
-    local total_width = ui and ui.width or vim.o.columns
-    local total_height = ui and ui.height or vim.o.lines
     local row = math.floor((total_height - height) / 2)
     local col = math.floor((total_width - width) / 2)
     if row < 0 then row = 0 end
@@ -711,6 +708,14 @@ function M.render_summary(summary)
   local summary_win = vim.api.nvim_open_win(summary_buf, true, opts)
   _summary_popup.win = summary_win
   _summary_popup.buf = summary_buf
+
+  -- Scrolling behaviour for content taller than the window
+  pcall(vim.api.nvim_win_set_option, summary_win, "wrap", false)
+  pcall(vim.api.nvim_win_set_option, summary_win, "scrolloff", 0)
+  pcall(vim.api.nvim_win_set_option, summary_win, "sidescrolloff", 0)
+  if #lines > height then
+    pcall(vim.api.nvim_win_set_option, summary_win, "cursorline", true)
+  end
 
   vim.keymap.set("n", "q", function()
     M.close_summary()
